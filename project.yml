@@ -1,0 +1,40 @@
+name: GetFit
+options:
+  bundleIdPrefix: com.tarungs
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  GetFit:
+    type: application
+    platform: iOS
+    sources:
+      - GetFit
+      - GetFitWidgets
+    entitlements:
+      path: GetFit/GetFit.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_GENERATION: true
+        PRODUCT_BUNDLE_IDENTIFIER: com.tarungs.GetFit
+        PRODUCT_NAME: Get Fit
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_NSSupportsLiveActivities: true
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Get Fit uses Apple Health data to automatically track and display your daily step count."
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Get Fit uses Apple Health to sync your daily fitness activity."
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        SWIFT_EMIT_LOC_STRINGS: true
