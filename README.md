@@ -1,65 +1,104 @@
-# 🏋️‍♂️ Get Fit — The Zero-Fluff Workout Tracker
+<div align="center">
 
-> *"Because logging a bench press shouldn't feel like doing your taxes."*
+  <img src="GetFit/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="128" height="128" alt="Get Fit App Icon" style="border-radius: 28px;">
 
-Welcome to **Get Fit**, a clean, minimalist, dark-mode native iOS workout app built with **SwiftUI** & **SwiftData**. No ads, no social feeds nobody asked for, no 10-screen onboarding surveys—just pure progressive overload, Live Activity rest timers, and beautiful fitness tracking.
+  # Get Fit
+
+  **The Zero-Fluff, Local-First iOS Workout & Progressive Overload Tracker**
+
+  [![iOS 18.0+](https://img.shields.io/badge/iOS-18.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com)
+  [![Swift 6.0](https://img.shields.io/badge/Swift-6.0-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
+  [![SwiftData](https://img.shields.io/badge/Storage-SwiftData-007ACC?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.apple.com/xcode/swiftdata/)
+  [![Dynamic Island](https://img.shields.io/badge/Feature-Dynamic%20Island-111111?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/activitykit/)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#license)
+
+  *Built out of pure frustration with bloated gym apps filled with ads, paywalls, and mandatory account signups.*
+
+</div>
 
 ---
 
-## 🔥 Features That Make Lifting Fun Again
+## 🎯 Why Get Fit?
+
+Most workout apps today have turned into bloated social networks. You open the app at the gym, and before you can log a set of bench presses, you're forced to dismiss three popups, log into a cloud account, or navigate through five sub-menus.
+
+**Get Fit was built to change that.**
+
+It is an opinionated, lightning-fast native iOS app designed for lifters who prioritize **progressive overload**, **fast set logging**, and **zero distractions**.
+
+---
+
+## ✨ Key Features
 
 ### ⚡ Progressive Overload Assistant
-Ever stared at a barbell wondering *"wait... what weight did I do last week?"*  
-**Get Fit** remembers for you. Every exercise automatically displays a smart **`✨ Overload Target: XX kg`** badge based on your previous top sets.
+No more guessing your weights. Get Fit analyzes your historical performance for every machine and automatically calculates your next target:
+- **`✨ Overload Target: 82.5 kg`** for barbell/dumbbell movements.
+- Fractional weight increments support (`7.5 kg`, `12.5 kg`).
 
-### ⏱️ Dynamic Island Rest Timers
-Push the app to the background after a grueling set, and your rest countdown stays alive directly in Apple's **Dynamic Island** and **Lock Screen Live Activity**. Lock your phone, take a sip of water, and get notified right when it's time to lift again.
-
-### 📹 In-App Form Demos & Posture Photos
-Not sure if your elbows are flaring too much on incline bench? Watch YouTube Shorts posture demos fullscreen directly inside the app without leaving your workout sheet.
+### 🏝️ Dynamic Island & Lock Screen Live Activities
+Hit your rest period, lock your phone, and walk away. The countdown runs natively in your iPhone's **Dynamic Island** and **Lock Screen** via Apple's ActivityKit. You get a tactile notification the second your rest is over.
 
 ### 🔴🟢🔵 KokonutUI 3-Activity Rings
-Track 3 genuinely independent fitness pillars inside your Profile:
-- 🔴 **Daily Steps** (Walking & movement)
-- 🟢 **Workout & Cardio Time** (Focused gym session minutes)
-- 🔵 **Weekly Consistency** (Workout days completed out of 5)
+Track 3 independent fitness pillars in your Profile:
+- 🔴 **Daily Steps**: Auto-synced via Apple HealthKit.
+- 🟢 **Workout & Cardio Time**: Total focused training minutes logged today.
+- 🔵 **Weekly Consistency**: Days completed toward your weekly goal (e.g. 5 days/week).
+
+### 📹 Fullscreen In-App Form Demos
+Need to check your form on an exercise? Watch tutorial videos and YouTube Shorts directly inside the app using `SFSafariViewController` without breaking your workout flow.
 
 ### 📸 Shareable Workout Graphic Cards
-Finished a brutal Push Day? Tap **"Finish Workout"** to generate a sleek dark-mode summary card graphic with your total tonnage lifted, duration, and top sets—ready to share on Instagram or save to Photos!
-
-### 🏃 Cardio Finishers & Log
-Do an optional 20-30 min treadmill or stairmaster session on Push/Pull days? Log your cardio finishers seamlessly alongside your lifting sessions.
+Completed a heavy session? Generate a high-resolution, dark-mode summary card graphic with your total tonnage, duration, and top sets—ready to share on Instagram, WhatsApp, or save to Photos.
 
 ---
 
-## 🛠️ Built With
+## 🏗️ Architecture & Technology Stack
 
-- **Framework**: SwiftUI (iOS 18+)
-- **Database**: SwiftData (local-first, fast offline storage)
-- **Live Activities**: ActivityKit & WidgetKit (Dynamic Island integration)
-- **Health Integration**: HealthKit (Auto-sync daily step counts)
-- **Design Aesthetic**: Dark Obsidian (`#0F141C`), Pale Sky Blue (`#AECAF5`), Glassmorphic Cards
+Get Fit is built 100% natively using modern Swift standards:
+
+| Layer | Technology |
+|---|---|
+| **UI Framework** | SwiftUI (Declarative UI, Dark Mode Native) |
+| **Data Engine** | SwiftData (`@Model`, `@Query`, `@Relationship`) |
+| **Live Activities** | ActivityKit & WidgetKit |
+| **Health Integration** | HealthKit (`HKHealthStore` steps auto-sync) |
+| **Project Gen** | XcodeGen (`project.yml`) |
+| **Video Playback** | `SFSafariViewController` Representable |
 
 ---
 
-## 🚀 Quick Start (For Developers)
+## 🚀 Building Locally
 
-1. **Clone the repo**:
+### Prerequisites
+- macOS 14.0+ (Sonoma or Sequoia)
+- Xcode 16.0+
+- Homebrew (for XcodeGen)
+
+### Quick Setup
+
+1. **Clone the repository**:
    ```bash
    git clone git@github.com:gst537/Get_Fit.git
    cd Get_Fit
    ```
-2. **Generate Xcode Project** *(using XcodeGen)*:
+
+2. **Generate the Xcode Project**:
    ```bash
+   brew install xcodegen
    xcodegen generate
    ```
-3. **Run in Xcode**:
-   Open `GetFit.xcodeproj`, select **iPhone 17 Simulator** (or your physical iPhone), and press `⌘R`!
+
+3. **Open and Run**:
+   ```bash
+   open GetFit.xcodeproj
+   ```
+   Select **iPhone 17** simulator (or your connected device) and press `⌘R`.
 
 ---
 
-## 💡 The Philosophy
+## 🤝 Contributing & License
 
-> **Lift heavy. Rest smart. Stay consistent.**
+Contributions, feature ideas, and pull requests are welcome!  
+Distributed under the **MIT License**.
 
-Built with ❤️ by [gst537](https://github.com/gst537).
+Built with precision by **[gst537](https://github.com/gst537)**.
