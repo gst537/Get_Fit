@@ -197,3 +197,47 @@ final class CardioLog {
         self.notes = notes
     }
 }
+
+// MARK: - NutritionGoal
+
+@Model
+final class NutritionGoal {
+    var id: UUID
+    var targetCalories: Int
+    var targetProtein: Int
+    var targetCarbs: Int
+    var targetFats: Int
+
+    init(targetCalories: Int = 2200, targetProtein: Int = 160, targetCarbs: Int = 220, targetFats: Int = 70) {
+        self.id = UUID()
+        self.targetCalories = targetCalories
+        self.targetProtein = targetProtein
+        self.targetCarbs = targetCarbs
+        self.targetFats = targetFats
+    }
+}
+
+// MARK: - MealLog
+
+@Model
+final class MealLog {
+    var id: UUID
+    var date: Date
+    var name: String
+    var mealType: String // "Breakfast", "Lunch", "Dinner", "Snack"
+    var calories: Int
+    var proteinGrams: Int
+    var carbsGrams: Int
+    var fatsGrams: Int
+
+    init(name: String, mealType: String = "Breakfast", calories: Int = 0, proteinGrams: Int = 0, carbsGrams: Int = 0, fatsGrams: Int = 0, date: Date = .now) {
+        self.id = UUID()
+        self.date = date
+        self.name = name
+        self.mealType = mealType
+        self.calories = calories
+        self.proteinGrams = proteinGrams
+        self.carbsGrams = carbsGrams
+        self.fatsGrams = fatsGrams
+    }
+}

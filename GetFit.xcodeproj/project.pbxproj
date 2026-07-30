@@ -16,6 +16,7 @@
 		1EB7726308AEE939BD4319F7 /* ScheduleCustomizerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6082D2738376A641860B5A4D /* ScheduleCustomizerSheet.swift */; };
 		2A4CF4B712A6F550FB1F6EEA /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49A76C5856BF70C988E394D /* AddExerciseSheet.swift */; };
 		2AE98037E652067198E0C2F7 /* KokonutAppleActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACD9E2B8953935EAEF67BB38 /* KokonutAppleActivityCard.swift */; };
+		2FDF1B076EC671163B960EB8 /* AddFoodSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284DFA568114DA9747774975 /* AddFoodSheet.swift */; };
 		3B027ECB5A357983847B9EE2 /* CreateExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD6AD6C5D4C8C93F0C4F29A /* CreateExerciseSheet.swift */; };
 		3E6B18F2B38470D8BDAFD148 /* RestTimerActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77860A9C14FE08F151BCF34A /* RestTimerActivityManager.swift */; };
 		43FF9EBBB191804EA8719EC0 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E09DA9200ADB177EBE69D35 /* RestTimerAttributes.swift */; };
@@ -39,6 +40,7 @@
 		D124EDBD1855676B95CE8B8C /* RestTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AED06FB77D686A413F5CF0 /* RestTimerView.swift */; };
 		D65188B7F44DD9FC9C76EBB2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD3E2E44349C4A176E8B7E /* DashboardView.swift */; };
 		E404775E624ED53D3EC09D85 /* WorkoutSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EECB1B5EE57614123C729F /* WorkoutSummaryCardView.swift */; };
+		F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */; };
 		F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15888ED4181530646D032A1A /* BodyWeightView.swift */; };
 /* End PBXBuildFile section */
 
@@ -47,6 +49,7 @@
 		04E2E0B7BFD92102581ABCDB /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
 		0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionChartView.swift; sourceTree = "<group>"; };
 		15888ED4181530646D032A1A /* BodyWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightView.swift; sourceTree = "<group>"; };
+		284DFA568114DA9747774975 /* AddFoodSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFoodSheet.swift; sourceTree = "<group>"; };
 		37832AD76D2051C59101AA17 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		43409CB5E95180697F649E60 /* GetFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetFitApp.swift; sourceTree = "<group>"; };
 		51B88257202486233472A38F /* GetFit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GetFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,6 +59,7 @@
 		6565581985F7DB4B57FE26AF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		67AED06FB77D686A413F5CF0 /* RestTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerView.swift; sourceTree = "<group>"; };
 		77860A9C14FE08F151BCF34A /* RestTimerActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerActivityManager.swift; sourceTree = "<group>"; };
+		790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionTrackerView.swift; sourceTree = "<group>"; };
 		8700C75705BC2D6B0ABAFBBE /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		891DF35282B68DCED2DB5A0D /* YouTubePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerView.swift; sourceTree = "<group>"; };
 		89BD98BD7346629574622C48 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
@@ -151,6 +155,7 @@
 			children = (
 				974ED2F10C622BDA29EF6AE8 /* ActiveWorkoutView.swift */,
 				A49A76C5856BF70C988E394D /* AddExerciseSheet.swift */,
+				284DFA568114DA9747774975 /* AddFoodSheet.swift */,
 				15888ED4181530646D032A1A /* BodyWeightView.swift */,
 				5F329746B73EF52C2451695B /* CardioTrackerView.swift */,
 				6565581985F7DB4B57FE26AF /* ContentView.swift */,
@@ -160,6 +165,7 @@
 				04E2E0B7BFD92102581ABCDB /* ExerciseDetailSheet.swift */,
 				ACD9E2B8953935EAEF67BB38 /* KokonutAppleActivityCard.swift */,
 				B7D40389D127C2B61287E54E /* MuscleVolumeAnalyticsView.swift */,
+				790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */,
 				A77CB33CE5B8E0559732C9CF /* PlateCalculatorSheet.swift */,
 				A537B93C92FFEA40D64CA12E /* ProfileView.swift */,
 				0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */,
@@ -247,6 +253,7 @@
 			files = (
 				CA136AB1D21F346DCC9A3057 /* ActiveWorkoutView.swift in Sources */,
 				2A4CF4B712A6F550FB1F6EEA /* AddExerciseSheet.swift in Sources */,
+				2FDF1B076EC671163B960EB8 /* AddFoodSheet.swift in Sources */,
 				F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */,
 				6774F0A6271CAE5514D84764 /* CardioTrackerView.swift in Sources */,
 				51F71AC40FB1DEEE715D7A0C /* ContentView.swift in Sources */,
@@ -259,6 +266,7 @@
 				2AE98037E652067198E0C2F7 /* KokonutAppleActivityCard.swift in Sources */,
 				1A037B25B4744D0647F2DCC1 /* Models.swift in Sources */,
 				CABBCE1C6295EB7467450E44 /* MuscleVolumeAnalyticsView.swift in Sources */,
+				F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */,
 				52F40DEB86D78EFF1DD78020 /* PlateCalculatorSheet.swift in Sources */,
 				5FB7F7FAEAA8FBA86F043EE6 /* ProfileView.swift in Sources */,
 				5DD30BA3051748E9639753D4 /* ProgressionChartView.swift in Sources */,

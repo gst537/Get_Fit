@@ -15,7 +15,9 @@ struct GetFitApp: App {
             UserStats.self,
             WeeklySchedule.self,
             BodyWeightEntry.self,
-            CardioLog.self
+            CardioLog.self,
+            NutritionGoal.self,
+            MealLog.self
         ])
         do {
             container = try ModelContainer(for: schema)

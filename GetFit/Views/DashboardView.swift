@@ -18,6 +18,7 @@ struct DashboardView: View {
     @State private var selectedEntryToEdit: SplitMachineEntry?
     @State private var showProfileSheet = false
     @State private var showRestDaySheet = false
+    @State private var selectedTab = 0 // 0: Workouts, 1: Nutrition
     
     private var stats: UserStats? {
         userStats.first
@@ -64,47 +65,62 @@ struct DashboardView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                streakSection
-                
-                // 2x2 Metric Cards Grid
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-                    stepsCard
-                    bodyWeightCard
-                    historyCard
-                    cardioCard
-                }
-                
-                WeeklyScheduleView()
-                if let split = todaySplit {
-                    splitSection(split)
-                } else {
-                    restDaySection
-                }
-                if !isRestDay {
-                    startWorkoutButton
-                        .padding(.top, 8)
-                }
-                
-                Button {
-                    showCreateExercise = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 16))
-                        Text("Create Exercise")
-                            .font(.body)
-                            .fontWeight(.regular)
-                    }
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                }
+        VStack(spacing: 0) {
+            Picker("View", selection: $selectedTab) {
+                Text("Workouts").tag(0)
+                Text("Nutrition").tag(1)
             }
+            .pickerStyle(.segmented)
             .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.bottom, 40)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+            
+            if selectedTab == 0 {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 28) {
+                        streakSection
+                        
+                        // 2x2 Metric Cards Grid
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                            stepsCard
+                            bodyWeightCard
+                            historyCard
+                            cardioCard
+                        }
+                        
+                        WeeklyScheduleView()
+                        if let split = todaySplit {
+                            splitSection(split)
+                        } else {
+                            restDaySection
+                        }
+                        if !isRestDay {
+                            startWorkoutButton
+                                .padding(.top, 8)
+                        }
+                        
+                        Button {
+                            showCreateExercise = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus.circle")
+                                    .font(.system(size: 16))
+                                Text("Create Exercise")
+                                    .font(.body)
+                                    .fontWeight(.regular)
+                            }
+                            .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 40)
+                }
+            } else {
+                NutritionTrackerView()
+            }
         }
         .background(Color(UIColor.systemBackground))
         .onAppear {
