@@ -57,7 +57,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Ultra-Fast Google Gemini Vision API
+    // MARK: - Ultra-Fast Google Gemini Vision API (x-goog-api-key Authentication)
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         // Ultra-fast 512px downscaling & 0.4 JPEG compression (creates tiny ~35KB payload for sub-second uploads)
@@ -130,12 +130,14 @@ final class AIFoodVisionService: @unchecked Sendable {
         var lastErrorMessage = "Could not connect to Gemini API."
         
         for model in modelCandidates {
-            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
+            // Official Google AI Studio REST Endpoint with x-goog-api-key header
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent"
             guard let url = URL(string: urlString) else { continue }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = httpBody
             request.timeoutInterval = 30
             
