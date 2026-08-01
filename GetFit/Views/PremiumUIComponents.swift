@@ -13,7 +13,7 @@ struct MatteBlackCard: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .background(Color(red: 0.07, green: 0.07, blue: 0.09)) // Stealth Matte Black
+            .background(Color(red: 0.07, green: 0.07, blue: 0.09)) // Stealth Pure Matte Black
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -38,46 +38,98 @@ extension View {
     }
 }
 
-// MARK: - High-Definition Holographic Human Body Visualizer
+// MARK: - Ultra-Realistic 3D Male Holographic Body Visualizer
 
 struct HolographicBodyVisualizer: View {
     let targetMuscles: [String]
-    @State private var isPulseGlow = false
-    
-    private var normalizedMuscles: Set<String> {
-        Set(targetMuscles.map { $0.lowercased() })
-    }
+    @State private var viewSelection: Int = 0 // 0: Front, 1: Rear
+    @State private var isGlowPulsing = false
     
     let iceBlue = Color(red: 0.55, green: 0.88, blue: 1.00)
     
+    private var isRearFocus: Bool {
+        let lower = targetMuscles.map { $0.lowercased() }
+        return lower.contains("back") || lower.contains("lats") || lower.contains("glutes") || lower.contains("hamstrings") || lower.contains("traps")
+    }
+    
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
+            // Front / Rear Selector Header
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "cube.transparent")
+                        .font(.caption)
+                        .foregroundStyle(iceBlue)
+                    
+                    Text("3D Anatomical Male Model")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.gray)
+                }
+                
+                Spacer()
+                
+                HStack(spacing: 2) {
+                    Button {
+                        withAnimation { viewSelection = 0 }
+                    } label: {
+                        Text("FRONT")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(viewSelection == 0 ? .black : Color.gray)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(viewSelection == 0 ? iceBlue : Color.clear)
+                            .clipShape(Capsule())
+                    }
+                    
+                    Button {
+                        withAnimation { viewSelection = 1 }
+                    } label: {
+                        Text("REAR")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(viewSelection == 1 ? .black : Color.gray)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(viewSelection == 1 ? iceBlue : Color.clear)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(2)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+            }
+            
+            // Ultra-Realistic 3D Render Canvas
             ZStack {
-                // Pure Matte Black Hologram Container
+                // Background Tech Grid
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.05, green: 0.05, blue: 0.07))
+                    .fill(Color(red: 0.04, green: 0.04, blue: 0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(iceBlue.opacity(0.20), lineWidth: 1.0)
                     )
                 
-                // Holographic Tech Grid Lines
-                VStack(spacing: 18) {
-                    ForEach(0..<6, id: \.self) { _ in
-                        Divider().background(iceBlue.opacity(0.05))
-                    }
+                // Realistic 3D Model Asset Image
+                if viewSelection == 0 {
+                    Image("MaleBodyFront")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 250)
+                        .shadow(color: iceBlue.opacity(0.25), radius: 12)
+                } else {
+                    Image("MaleBodyBack")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 250)
+                        .shadow(color: iceBlue.opacity(0.25), radius: 12)
                 }
                 
-                // Detailed 3D-Style Holographic Human Body (Front & Rear)
-                HStack(spacing: 32) {
-                    bodySilhouetteView(isFront: true)
-                    bodySilhouetteView(isFront: false)
-                }
-                .padding(.vertical, 16)
+                // Dynamic Glowing Muscle Target Overlay Markers
+                muscleTargetOverlay
             }
-            .frame(height: 230)
+            .frame(height: 250)
             
-            // Muscle Legend Pills
+            // Targeted Muscle Legend Pills
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(targetMuscles, id: \.self) { muscle in
@@ -101,206 +153,67 @@ struct HolographicBodyVisualizer: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                isPulseGlow = true
+            if isRearFocus {
+                viewSelection = 1
+            }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                isGlowPulsing = true
             }
         }
     }
     
-    // MARK: - HD Silhouette Render
+    // MARK: - Glowing Muscle Overlay Markers
     
-    private func bodySilhouetteView(isFront: Bool) -> some View {
-        VStack(spacing: 4) {
-            Text(isFront ? "FRONT" : "REAR")
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.0)
-                .foregroundStyle(iceBlue.opacity(0.8))
-            
-            ZStack {
-                // Head & Neck Outline
-                VStack(spacing: 2) {
-                    Circle()
-                        .stroke(iceBlue.opacity(0.4), lineWidth: 1.5)
-                        .frame(width: 24, height: 24)
-                    
-                    Capsule()
-                        .stroke(iceBlue.opacity(0.3), lineWidth: 1.2)
-                        .frame(width: 10, height: 8)
-                }
-                .offset(y: -82)
+    private var muscleTargetOverlay: some View {
+        ZStack {
+            ForEach(targetMuscles, id: \.self) { muscle in
+                let color = MuscleGroupBadge.colorForMuscle(muscle)
                 
-                if isFront {
-                    // FRONT MUSCLES
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 10, height: 10)
+                        .scaleEffect(isGlowPulsing ? 1.25 : 1.0)
+                        .shadow(color: color, radius: 8)
                     
-                    // Shoulders / Deltoids
-                    let isDelts = normalizedMuscles.contains("shoulders") || normalizedMuscles.contains("delts")
-                    HStack(spacing: 44) {
-                        Capsule()
-                            .fill(isDelts ? MuscleGroupBadge.colorForMuscle("shoulders") : iceBlue.opacity(0.18))
-                            .frame(width: 13, height: 22)
-                            .shadow(color: isDelts ? MuscleGroupBadge.colorForMuscle("shoulders") : .clear, radius: 8)
-                        Capsule()
-                            .fill(isDelts ? MuscleGroupBadge.colorForMuscle("shoulders") : iceBlue.opacity(0.18))
-                            .frame(width: 13, height: 22)
-                            .shadow(color: isDelts ? MuscleGroupBadge.colorForMuscle("shoulders") : .clear, radius: 8)
-                    }
-                    .offset(y: -58)
-                    
-                    // Pectorals / Chest
-                    let isChest = normalizedMuscles.contains("chest") || normalizedMuscles.contains("pectorals")
-                    HStack(spacing: 2) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(isChest ? MuscleGroupBadge.colorForMuscle("chest") : iceBlue.opacity(0.22))
-                            .frame(width: 20, height: 20)
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(isChest ? MuscleGroupBadge.colorForMuscle("chest") : iceBlue.opacity(0.22))
-                            .frame(width: 20, height: 20)
-                    }
-                    .shadow(color: isChest ? MuscleGroupBadge.colorForMuscle("chest") : .clear, radius: 8)
-                    .offset(y: -50)
-                    
-                    // Biceps
-                    let isBiceps = normalizedMuscles.contains("biceps") || normalizedMuscles.contains("arms")
-                    HStack(spacing: 48) {
-                        Capsule()
-                            .fill(isBiceps ? MuscleGroupBadge.colorForMuscle("biceps") : iceBlue.opacity(0.18))
-                            .frame(width: 10, height: 24)
-                            .shadow(color: isBiceps ? MuscleGroupBadge.colorForMuscle("biceps") : .clear, radius: 8)
-                        Capsule()
-                            .fill(isBiceps ? MuscleGroupBadge.colorForMuscle("biceps") : iceBlue.opacity(0.18))
-                            .frame(width: 10, height: 24)
-                            .shadow(color: isBiceps ? MuscleGroupBadge.colorForMuscle("biceps") : .clear, radius: 8)
-                    }
-                    .offset(y: -32)
-                    
-                    // Abdominals / Core
-                    let isCore = normalizedMuscles.contains("core") || normalizedMuscles.contains("abs")
-                    VStack(spacing: 2) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            HStack(spacing: 2) {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(isCore ? MuscleGroupBadge.colorForMuscle("core") : iceBlue.opacity(0.20))
-                                    .frame(width: 11, height: 7)
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(isCore ? MuscleGroupBadge.colorForMuscle("core") : iceBlue.opacity(0.20))
-                                    .frame(width: 11, height: 7)
-                            }
-                        }
-                    }
-                    .shadow(color: isCore ? MuscleGroupBadge.colorForMuscle("core") : .clear, radius: 6)
-                    .offset(y: -26)
-                    
-                    // Quadriceps / Legs
-                    let isQuads = normalizedMuscles.contains("quads") || normalizedMuscles.contains("quadriceps") || normalizedMuscles.contains("legs")
-                    HStack(spacing: 6) {
-                        Capsule()
-                            .fill(isQuads ? MuscleGroupBadge.colorForMuscle("quads") : iceBlue.opacity(0.22))
-                            .frame(width: 18, height: 48)
-                            .shadow(color: isQuads ? MuscleGroupBadge.colorForMuscle("quads") : .clear, radius: 10)
-                        Capsule()
-                            .fill(isQuads ? MuscleGroupBadge.colorForMuscle("quads") : iceBlue.opacity(0.22))
-                            .frame(width: 18, height: 48)
-                            .shadow(color: isQuads ? MuscleGroupBadge.colorForMuscle("quads") : .clear, radius: 10)
-                    }
-                    .offset(y: 12)
-                    
-                    // Calves Front
-                    let isCalves = normalizedMuscles.contains("calves")
-                    HStack(spacing: 12) {
-                        Capsule()
-                            .fill(isCalves ? MuscleGroupBadge.colorForMuscle("calves") : iceBlue.opacity(0.18))
-                            .frame(width: 11, height: 34)
-                            .shadow(color: isCalves ? MuscleGroupBadge.colorForMuscle("calves") : .clear, radius: 6)
-                        Capsule()
-                            .fill(isCalves ? MuscleGroupBadge.colorForMuscle("calves") : iceBlue.opacity(0.18))
-                            .frame(width: 11, height: 34)
-                            .shadow(color: isCalves ? MuscleGroupBadge.colorForMuscle("calves") : .clear, radius: 6)
-                    }
-                    .offset(y: 56)
-                    
-                } else {
-                    // REAR MUSCLES
-                    
-                    // Upper Traps & Upper Back
-                    let isTraps = normalizedMuscles.contains("traps") || normalizedMuscles.contains("back")
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isTraps ? MuscleGroupBadge.colorForMuscle("traps") : iceBlue.opacity(0.22))
-                        .frame(width: 38, height: 18)
-                        .shadow(color: isTraps ? MuscleGroupBadge.colorForMuscle("traps") : .clear, radius: 8)
-                        .offset(y: -58)
-                    
-                    // Latissimus / Lats / Back
-                    let isBack = normalizedMuscles.contains("back") || normalizedMuscles.contains("lats")
-                    VStack(spacing: 2) {
-                        HStack(spacing: 2) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(isBack ? MuscleGroupBadge.colorForMuscle("back") : iceBlue.opacity(0.22))
-                                .frame(width: 18, height: 26)
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(isBack ? MuscleGroupBadge.colorForMuscle("back") : iceBlue.opacity(0.22))
-                                .frame(width: 18, height: 26)
-                        }
-                    }
-                    .shadow(color: isBack ? MuscleGroupBadge.colorForMuscle("back") : .clear, radius: 8)
-                    .offset(y: -38)
-                    
-                    // Triceps
-                    let isTriceps = normalizedMuscles.contains("triceps")
-                    HStack(spacing: 48) {
-                        Capsule()
-                            .fill(isTriceps ? MuscleGroupBadge.colorForMuscle("triceps") : iceBlue.opacity(0.18))
-                            .frame(width: 10, height: 24)
-                            .shadow(color: isTriceps ? MuscleGroupBadge.colorForMuscle("triceps") : .clear, radius: 8)
-                        Capsule()
-                            .fill(isTriceps ? MuscleGroupBadge.colorForMuscle("triceps") : iceBlue.opacity(0.18))
-                            .frame(width: 10, height: 24)
-                            .shadow(color: isTriceps ? MuscleGroupBadge.colorForMuscle("triceps") : .clear, radius: 8)
-                    }
-                    .offset(y: -32)
-                    
-                    // Gluteus / Glutes
-                    let isGlutes = normalizedMuscles.contains("glutes")
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(isGlutes ? MuscleGroupBadge.colorForMuscle("glutes") : iceBlue.opacity(0.25))
-                            .frame(width: 20, height: 20)
-                        Circle()
-                            .fill(isGlutes ? MuscleGroupBadge.colorForMuscle("glutes") : iceBlue.opacity(0.25))
-                            .frame(width: 20, height: 20)
-                    }
-                    .shadow(color: isGlutes ? MuscleGroupBadge.colorForMuscle("glutes") : .clear, radius: 10)
-                    .offset(y: -14)
-                    
-                    // Hamstrings
-                    let isHamstrings = normalizedMuscles.contains("hamstrings") || normalizedMuscles.contains("legs")
-                    HStack(spacing: 6) {
-                        Capsule()
-                            .fill(isHamstrings ? MuscleGroupBadge.colorForMuscle("hamstrings") : iceBlue.opacity(0.22))
-                            .frame(width: 17, height: 44)
-                            .shadow(color: isHamstrings ? MuscleGroupBadge.colorForMuscle("hamstrings") : .clear, radius: 10)
-                        Capsule()
-                            .fill(isHamstrings ? MuscleGroupBadge.colorForMuscle("hamstrings") : iceBlue.opacity(0.22))
-                            .frame(width: 17, height: 44)
-                            .shadow(color: isHamstrings ? MuscleGroupBadge.colorForMuscle("hamstrings") : .clear, radius: 10)
-                    }
-                    .offset(y: 16)
-                    
-                    // Calves Rear
-                    let isCalves = normalizedMuscles.contains("calves")
-                    HStack(spacing: 12) {
-                        Capsule()
-                            .fill(isCalves ? MuscleGroupBadge.colorForMuscle("calves") : iceBlue.opacity(0.18))
-                            .frame(width: 11, height: 34)
-                            .shadow(color: isCalves ? MuscleGroupBadge.colorForMuscle("calves") : .clear, radius: 6)
-                        Capsule()
-                            .fill(isCalves ? MuscleGroupBadge.colorForMuscle("calves") : iceBlue.opacity(0.18))
-                            .frame(width: 11, height: 34)
-                            .shadow(color: isCalves ? MuscleGroupBadge.colorForMuscle("calves") : .clear, radius: 6)
-                    }
-                    .offset(y: 56)
+                    Text(muscle.uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(color.opacity(0.40))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(color, lineWidth: 0.8))
                 }
+                .offset(offsetForMuscle(muscle, isFrontView: viewSelection == 0))
             }
-            .frame(width: 95, height: 180)
+        }
+    }
+    
+    private func offsetForMuscle(_ muscle: String, isFrontView: Bool) -> CGSize {
+        switch muscle.lowercased() {
+        case "quads", "quadriceps", "legs":
+            return isFrontView ? CGSize(width: 0, height: 35) : CGSize(width: 0, height: 35)
+        case "chest":
+            return isFrontView ? CGSize(width: 0, height: -45) : CGSize(width: 0, height: -45)
+        case "shoulders", "delts":
+            return isFrontView ? CGSize(width: -65, height: -55) : CGSize(width: 65, height: -55)
+        case "biceps":
+            return isFrontView ? CGSize(width: 60, height: -25) : CGSize(width: 60, height: -25)
+        case "triceps":
+            return isFrontView ? CGSize(width: -60, height: -25) : CGSize(width: -60, height: -25)
+        case "core", "abs":
+            return isFrontView ? CGSize(width: 0, height: -15) : CGSize(width: 0, height: -15)
+        case "glutes":
+            return isFrontView ? CGSize(width: 0, height: 5) : CGSize(width: 0, height: 5)
+        case "back", "lats":
+            return isFrontView ? CGSize(width: 0, height: -35) : CGSize(width: 0, height: -35)
+        case "hamstrings":
+            return isFrontView ? CGSize(width: 0, height: 45) : CGSize(width: 0, height: 45)
+        case "calves":
+            return isFrontView ? CGSize(width: 0, height: 85) : CGSize(width: 0, height: 85)
+        default:
+            return CGSize(width: 0, height: 0)
         }
     }
 }
