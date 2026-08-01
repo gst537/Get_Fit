@@ -38,15 +38,18 @@ final class AIFoodVisionService: @unchecked Sendable {
         let isCompleteDish: Bool
     }
     
-    // Curated Precision Food & Dish Database
+    // Curated High-Precision Food & Dish Catalog
     private let ingredientCatalog: [FoodIngredientProfile] = [
         // Complete Dishes (High Priority Single Match)
         FoodIngredientProfile(keyword: "biryani", name: "Chicken Biryani Plate", calories: 650, protein: 38, carbs: 75, fats: 20, icon: "🍛", isCompleteDish: true),
         FoodIngredientProfile(keyword: "pulao", name: "Vegetable Biryani / Pulao", calories: 540, protein: 14, carbs: 82, fats: 16, icon: "🍛", isCompleteDish: true),
         FoodIngredientProfile(keyword: "curry", name: "Chicken & Rice Curry Bowl", calories: 580, protein: 36, carbs: 55, fats: 22, icon: "🍲", isCompleteDish: true),
         FoodIngredientProfile(keyword: "dal", name: "Lentil Dal & Rice Plate", calories: 420, protein: 18, carbs: 68, fats: 8, icon: "🍲", isCompleteDish: true),
+        FoodIngredientProfile(keyword: "dosa", name: "Masala Dosa & Chutney", calories: 380, protein: 8, carbs: 58, fats: 14, icon: "🥞", isCompleteDish: true),
+        FoodIngredientProfile(keyword: "samosa", name: "Potato Samosas (2 pcs)", calories: 310, protein: 5, carbs: 36, fats: 16, icon: "🥟", isCompleteDish: true),
         FoodIngredientProfile(keyword: "pizza", name: "Pepperoni Pizza (2 slices)", calories: 560, protein: 24, carbs: 64, fats: 24, icon: "🍕", isCompleteDish: true),
         FoodIngredientProfile(keyword: "burger", name: "Beef Cheeseburger & Fries", calories: 780, protein: 36, carbs: 72, fats: 38, icon: "🍔", isCompleteDish: true),
+        FoodIngredientProfile(keyword: "taco", name: "Beef Tacos (2 pcs)", calories: 420, protein: 22, carbs: 36, fats: 20, icon: "🌮", isCompleteDish: true),
         FoodIngredientProfile(keyword: "pasta", name: "Bolognese Meat Pasta", calories: 590, protein: 26, carbs: 72, fats: 18, icon: "🍝", isCompleteDish: true),
         FoodIngredientProfile(keyword: "sandwich", name: "Deli Turkey & Cheese Sandwich", calories: 440, protein: 28, carbs: 42, fats: 16, icon: "🥪", isCompleteDish: true),
         FoodIngredientProfile(keyword: "ramen", name: "Pork Ramen Bowl", calories: 620, protein: 28, carbs: 70, fats: 24, icon: "🍜", isCompleteDish: true),
@@ -56,7 +59,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         FoodIngredientProfile(keyword: "salad", name: "Chicken Caesar Salad Bowl", calories: 420, protein: 34, carbs: 18, fats: 22, icon: "🥗", isCompleteDish: true),
         FoodIngredientProfile(keyword: "wrap", name: "Chicken & Avocado Wrap", calories: 490, protein: 32, carbs: 44, fats: 18, icon: "🌯", isCompleteDish: true),
 
-        // Component Ingredients (Used if no complete dish matched, max 3 items)
+        // Component Ingredients (Max 3 items if no single complete dish matched)
         FoodIngredientProfile(keyword: "salmon", name: "Grilled Salmon Filet (180g)", calories: 380, protein: 36, carbs: 0, fats: 22, icon: "🐟", isCompleteDish: false),
         FoodIngredientProfile(keyword: "chicken", name: "Grilled Chicken Breast (200g)", calories: 310, protein: 44, carbs: 0, fats: 6, icon: "🍗", isCompleteDish: false),
         FoodIngredientProfile(keyword: "steak", name: "Sirloin Steak (220g)", calories: 460, protein: 48, carbs: 0, fats: 26, icon: "🥩", isCompleteDish: false),
@@ -71,7 +74,9 @@ final class AIFoodVisionService: @unchecked Sendable {
     ]
 
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
-        guard let cgImage = image.cgImage else {
+        // Downscale image to 1024 max dimension for 3x faster Vision analysis
+        let prepImage = image.resizedForVision(maxDimension: 1024)
+        guard let cgImage = prepImage.cgImage else {
             return fallbackResult()
         }
         
@@ -200,7 +205,8 @@ final class AIFoodVisionService: @unchecked Sendable {
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        let prepImage = image.resizedForVision(maxDimension: 1200)
+        guard let data = prepImage.jpegData(compressionQuality: 0.8) else { return nil }
         let fileManager = FileManager.default
         guard let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         
@@ -222,5 +228,21 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     func loadMealImage(from path: String) -> UIImage? {
         return UIImage(contentsOfFile: path)
+    }
+}
+
+// MARK: - Performance Image Resizing Helper
+extension UIImage {
+    func resizedForVision(maxDimension: CGFloat) -> UIImage {
+        let maxSide = max(size.width, size.height)
+        guard maxSide > maxDimension else { return self }
+        
+        let scale = maxDimension / maxSide
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }
