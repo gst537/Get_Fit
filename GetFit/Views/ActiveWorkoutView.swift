@@ -277,6 +277,14 @@ struct ActiveWorkoutView: View {
                 }
             }
             
+            // Body Part Activation & Execution Guide
+            BodyPartActivationCard(
+                machineName: machine.name,
+                targetMuscles: machine.targetMuscles,
+                instructions: machine.instructions,
+                equipmentType: machine.equipmentType
+            )
+            
             let loggedSets = loggedSets(for: machine.id)
             if !loggedSets.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {

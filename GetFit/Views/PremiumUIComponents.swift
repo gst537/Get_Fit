@@ -1,64 +1,95 @@
 import SwiftUI
 
-// MARK: - Glassmorphic Card Modifier
+// MARK: - iOS 18 Liquid Glass Texture Modifier
 
-struct GlassmorphicCard: ViewModifier {
+struct LiquidGlassCard: ViewModifier {
     let cornerRadius: CGFloat
-    let glowColor: Color
-    let glowOpacity: Double
+    let accentColor: Color
+    let liquidOpacity: Double
     
-    init(cornerRadius: CGFloat = 20, glowColor: Color = Color(red: 0.68, green: 0.78, blue: 0.90), glowOpacity: Double = 0.08) {
+    init(cornerRadius: CGFloat = 20, accentColor: Color = Color(red: 0.40, green: 0.70, blue: 1.00), liquidOpacity: Double = 0.12) {
         self.cornerRadius = cornerRadius
-        self.glowColor = glowColor
-        self.glowOpacity = glowOpacity
+        self.accentColor = accentColor
+        self.liquidOpacity = liquidOpacity
     }
     
     func body(content: Content) -> some View {
         content
             .background(
                 ZStack {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.ultraThinMaterial)
-                        .environment(\.colorScheme, .dark)
-                    
+                    // 1. Deep Fluid Base Layer
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    glowColor.opacity(glowOpacity),
-                                    Color.clear
+                                    Color(red: 0.11, green: 0.13, blue: 0.18),
+                                    Color(red: 0.06, green: 0.07, blue: 0.10)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
+                    
+                    // 2. Liquid Glass Blur & Material Sheen
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.regularMaterial)
+                        .environment(\.colorScheme, .dark)
+                        .opacity(0.7)
+                    
+                    // 3. Fluid Specular Reflection Highlight (Top Shine)
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.14),
+                                    accentColor.opacity(liquidOpacity),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            // 4. Prismatic Liquid Glass Edge Refraction Border
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                glowColor.opacity(0.3),
-                                glowColor.opacity(0.05)
+                                Color.white.opacity(0.40),
+                                accentColor.opacity(0.45),
+                                Color.white.opacity(0.10),
+                                Color.clear
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.8
+                        lineWidth: 1.2
                     )
             )
+            .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
+            .shadow(color: accentColor.opacity(0.08), radius: 16, x: 0, y: 4)
     }
 }
 
 extension View {
+    func liquidGlass(
+        cornerRadius: CGFloat = 20,
+        accentColor: Color = Color(red: 0.40, green: 0.70, blue: 1.00),
+        liquidOpacity: Double = 0.12
+    ) -> some View {
+        self.modifier(LiquidGlassCard(cornerRadius: cornerRadius, accentColor: accentColor, liquidOpacity: liquidOpacity))
+    }
+    
+    // Backwards compatibility alias for glassmorphic
     func glassmorphic(
         cornerRadius: CGFloat = 20,
-        glowColor: Color = Color(red: 0.68, green: 0.78, blue: 0.90),
-        glowOpacity: Double = 0.08
+        glowColor: Color = Color(red: 0.40, green: 0.70, blue: 1.00),
+        glowOpacity: Double = 0.12
     ) -> some View {
-        self.modifier(GlassmorphicCard(cornerRadius: cornerRadius, glowColor: glowColor, glowOpacity: glowOpacity))
+        self.modifier(LiquidGlassCard(cornerRadius: cornerRadius, accentColor: glowColor, liquidOpacity: glowOpacity))
     }
 }
 
@@ -76,7 +107,7 @@ struct AnimatedRingView: View {
         self.progress = min(progress, 1.0)
         self.lineWidth = lineWidth
         self.gradient = gradient.isEmpty
-            ? [Color(red: 0.68, green: 0.78, blue: 0.90), Color(red: 0.45, green: 0.65, blue: 0.95)]
+            ? [Color(red: 0.20, green: 0.85, blue: 1.00), Color(red: 0.00, green: 0.55, blue: 1.00)]
             : gradient
         self.size = size
     }
@@ -85,7 +116,7 @@ struct AnimatedRingView: View {
         ZStack {
             // Background Track
             Circle()
-                .stroke(Color.gray.opacity(0.15), lineWidth: lineWidth)
+                .stroke(Color.white.opacity(0.08), lineWidth: lineWidth)
             
             // Animated Progress Arc
             Circle()
@@ -100,14 +131,14 @@ struct AnimatedRingView: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .shadow(color: gradient.first?.opacity(0.4) ?? .clear, radius: 4, x: 0, y: 0)
+                .shadow(color: gradient.first?.opacity(0.5) ?? .clear, radius: 6, x: 0, y: 0)
             
             // Glow dot at tip
             if animatedProgress > 0.02 {
                 Circle()
                     .fill(gradient.last ?? .blue)
                     .frame(width: lineWidth * 1.1, height: lineWidth * 1.1)
-                    .shadow(color: gradient.last?.opacity(0.6) ?? .clear, radius: 6)
+                    .shadow(color: gradient.last?.opacity(0.8) ?? .clear, radius: 8)
                     .offset(y: -size / 2)
                     .rotationEffect(.degrees(360 * animatedProgress - 90))
             }
@@ -126,46 +157,183 @@ struct AnimatedRingView: View {
     }
 }
 
-// MARK: - Muscle Group Badge
+// MARK: - Vibrant High-Contrast Muscle Group Badge
 
 struct MuscleGroupBadge: View {
     let muscle: String
     let color: Color
     
-    init(muscle: String, color: Color = Color(red: 0.68, green: 0.78, blue: 0.90)) {
+    init(muscle: String, color: Color? = nil) {
         self.muscle = muscle
-        self.color = color
+        self.color = color ?? MuscleGroupBadge.colorForMuscle(muscle)
     }
     
     static func colorForMuscle(_ muscle: String) -> Color {
         switch muscle.lowercased() {
-        case "chest": return Color(red: 0.95, green: 0.45, blue: 0.45)
-        case "back": return Color(red: 0.45, green: 0.75, blue: 0.95)
-        case "shoulders": return Color(red: 0.95, green: 0.65, blue: 0.30)
-        case "biceps": return Color(red: 0.55, green: 0.85, blue: 0.55)
-        case "triceps": return Color(red: 0.75, green: 0.55, blue: 0.95)
-        case "legs", "quads", "hamstrings", "glutes": return Color(red: 0.90, green: 0.50, blue: 0.70)
-        case "core", "abs": return Color(red: 0.95, green: 0.80, blue: 0.35)
-        case "calves": return Color(red: 0.50, green: 0.85, blue: 0.80)
-        case "forearms": return Color(red: 0.70, green: 0.70, blue: 0.90)
-        case "traps": return Color(red: 0.85, green: 0.60, blue: 0.50)
-        default: return Color(red: 0.68, green: 0.78, blue: 0.90)
+        case "quads", "quadriceps":
+            return Color(red: 0.20, green: 0.85, blue: 1.00) // Electric Cyan
+        case "glutes":
+            return Color(red: 1.00, green: 0.35, blue: 0.65) // Neon Rose Pink
+        case "hamstrings":
+            return Color(red: 0.90, green: 0.40, blue: 0.95) // Vivid Purple
+        case "chest":
+            return Color(red: 1.00, green: 0.30, blue: 0.40) // Neon Crimson
+        case "back", "lats":
+            return Color(red: 0.25, green: 0.65, blue: 1.00) // Deep Azure
+        case "shoulders", "delts":
+            return Color(red: 1.00, green: 0.55, blue: 0.15) // Electric Amber
+        case "biceps":
+            return Color(red: 0.25, green: 0.90, blue: 0.55) // Emerald Green
+        case "triceps":
+            return Color(red: 0.75, green: 0.45, blue: 1.00) // Bright Violet
+        case "core", "abs":
+            return Color(red: 1.00, green: 0.78, blue: 0.20) // Glowing Gold
+        case "calves":
+            return Color(red: 0.15, green: 0.90, blue: 0.85) // Neon Teal
+        case "forearms":
+            return Color(red: 0.70, green: 0.75, blue: 1.00) // Light Indigo
+        case "traps":
+            return Color(red: 1.00, green: 0.45, blue: 0.30) // Sunset Coral
+        default:
+            return Color(red: 0.40, green: 0.70, blue: 1.00)
         }
     }
     
     var body: some View {
         Text(muscle.uppercased())
             .font(.system(size: 10, weight: .bold))
-            .tracking(0.8)
-            .foregroundStyle(color)
+            .tracking(0.9)
+            .foregroundStyle(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(color.opacity(0.15))
+            .background(color.opacity(0.28))
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .stroke(color.opacity(0.3), lineWidth: 0.6)
+                    .stroke(color.opacity(0.70), lineWidth: 1.0)
             )
+            .shadow(color: color.opacity(0.35), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Body Part Activation Card & Instructions
+
+struct BodyPartActivationCard: View {
+    let machineName: String
+    let targetMuscles: [String]
+    let instructions: String
+    let equipmentType: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Section Header
+            HStack {
+                Image(systemName: "figure.strengthtraining.traditional")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(red: 0.20, green: 0.85, blue: 1.00))
+                
+                Text("Body Part Activation & Form Guide")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                Text(equipmentType.uppercased())
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.gray)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+            }
+            
+            // Targeted Muscle Activation Gauges
+            if !targetMuscles.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(Array(targetMuscles.enumerated()), id: \.offset) { index, muscle in
+                        let isPrimary = index == 0
+                        let percentage = isPrimary ? 90 : max(40, 75 - (index * 20))
+                        let color = MuscleGroupBadge.colorForMuscle(muscle)
+                        
+                        HStack(spacing: 10) {
+                            Text(isPrimary ? "🎯" : "⚡")
+                                .font(.caption2)
+                            
+                            Text(muscle.capitalized)
+                                .font(.caption)
+                                .fontWeight(isPrimary ? .medium : .regular)
+                                .foregroundStyle(.white)
+                                .frame(width: 80, alignment: .leading)
+                            
+                            // Activation Bar Gauge
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(height: 6)
+                                
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [color, color.opacity(0.7)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: CGFloat(percentage) * 1.2, height: 6)
+                                    .shadow(color: color.opacity(0.4), radius: 3)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("\(percentage)%")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(color)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(Color.white.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            
+            // Colorful Step-by-Step Form & Instructions
+            if !instructions.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("💡 Execution Tips:")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color(red: 1.00, green: 0.78, blue: 0.20))
+                    
+                    let steps = parseInstructions(instructions)
+                    ForEach(Array(steps.enumerated()), id: \.offset) { idx, step in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("\(idx + 1)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.black)
+                                .frame(width: 16, height: 16)
+                                .background(Color(red: 0.20, green: 0.85, blue: 1.00))
+                                .clipShape(Circle())
+                            
+                            Text(step)
+                                .font(.caption)
+                                .fontWeight(.light)
+                                .foregroundStyle(Color.gray)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .liquidGlass(cornerRadius: 16, accentColor: Color(red: 0.20, green: 0.85, blue: 1.00))
+    }
+    
+    private func parseInstructions(_ text: String) -> [String] {
+        let sentences = text.components(separatedBy: CharacterSet(charactersIn: ".!\n"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return Array(sentences.prefix(3))
     }
 }
 
@@ -181,20 +349,21 @@ struct PRBadge: View {
                 .font(.caption2)
             Text("PR \(weight)")
                 .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.35))
+                .foregroundStyle(Color(red: 1.00, green: 0.85, blue: 0.20))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
-            Color(red: 0.95, green: 0.80, blue: 0.35).opacity(isGlowing ? 0.20 : 0.10)
+            Color(red: 1.00, green: 0.80, blue: 0.20).opacity(isGlowing ? 0.30 : 0.15)
         )
         .clipShape(Capsule())
         .overlay(
             Capsule()
-                .stroke(Color(red: 0.95, green: 0.80, blue: 0.35).opacity(0.4), lineWidth: 0.6)
+                .stroke(Color(red: 1.00, green: 0.85, blue: 0.20).opacity(0.80), lineWidth: 1.0)
         )
+        .shadow(color: Color(red: 1.00, green: 0.80, blue: 0.20).opacity(0.5), radius: 6)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 isGlowing = true
             }
         }
@@ -211,11 +380,11 @@ struct SetCompletionEffect: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isCompleted ? accentColor.opacity(0.06) : Color.clear)
+                    .fill(isCompleted ? accentColor.opacity(0.12) : Color.clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isCompleted ? accentColor.opacity(0.15) : Color.clear, lineWidth: 0.6)
+                    .stroke(isCompleted ? accentColor.opacity(0.40) : Color.clear, lineWidth: 0.8)
             )
             .scaleEffect(isCompleted ? 1.0 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.6), value: isCompleted)
@@ -223,7 +392,7 @@ struct SetCompletionEffect: ViewModifier {
 }
 
 extension View {
-    func setCompletionEffect(isCompleted: Bool, accentColor: Color = Color(red: 0.45, green: 0.85, blue: 0.65)) -> some View {
+    func setCompletionEffect(isCompleted: Bool, accentColor: Color = Color(red: 0.20, green: 0.85, blue: 1.00)) -> some View {
         self.modifier(SetCompletionEffect(isCompleted: isCompleted, accentColor: accentColor))
     }
 }
@@ -240,7 +409,7 @@ struct ShimmerEffect: ViewModifier {
                 LinearGradient(
                     colors: [
                         .clear,
-                        color.opacity(0.08),
+                        color.opacity(0.12),
                         .clear
                     ],
                     startPoint: .init(x: phase - 0.5, y: 0),
@@ -257,7 +426,7 @@ struct ShimmerEffect: ViewModifier {
 }
 
 extension View {
-    func shimmerGlow(color: Color = Color(red: 0.68, green: 0.78, blue: 0.90)) -> some View {
+    func shimmerGlow(color: Color = Color(red: 0.40, green: 0.70, blue: 1.00)) -> some View {
         self.modifier(ShimmerEffect(color: color))
     }
 }
