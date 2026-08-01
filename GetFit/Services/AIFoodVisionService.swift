@@ -54,17 +54,6 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Guard check: Warn if key doesn't start with AIzaSy
-        if !cleanKey.hasPrefix("AIzaSy") && cleanKey.count < 30 {
-            return FoodAnalysisResult(
-                plateTitle: "Invalid Key Format",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "The pasted key is a Google Cloud project ID/Token. Please copy the API Key starting with 'AIzaSy' from aistudio.google.com."
-            )
-        }
-        
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
@@ -146,12 +135,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            // Support both standard key parameter & Bearer header if custom token format is passed
-            if !apiKey.hasPrefix("AIzaSy") {
-                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            }
-            
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             request.httpBody = httpBody
             request.timeoutInterval = 20
             
@@ -202,11 +186,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                     if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let errorObj = jsonObj["error"] as? [String: Any],
                        let message = errorObj["message"] as? String {
-                        if message.lowercased().contains("api key not valid") || message.lowercased().contains("invalid_argument") {
-                            lastErrorMessage = "API Key Invalid. Please copy the key starting with 'AIzaSy' from aistudio.google.com"
-                        } else {
-                            lastErrorMessage = "Gemini Error (\(statusCode)): \(message)"
-                        }
+                        lastErrorMessage = "Gemini Error (\(statusCode)): \(message)"
                     } else {
                         lastErrorMessage = "Gemini API returned code \(statusCode). Please verify your API Key."
                     }
