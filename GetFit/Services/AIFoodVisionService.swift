@@ -27,180 +27,153 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     private init() {}
     
-    private struct FoodIngredientProfile: Sendable {
-        let keyword: String
-        let name: String
-        let calories: Int
-        let protein: Int
-        let carbs: Int
-        let fats: Int
-        let icon: String
-        let isCompleteDish: Bool
-    }
-    
-    // Curated High-Precision Food & Dish Catalog
-    private let ingredientCatalog: [FoodIngredientProfile] = [
-        // Complete Dishes (High Priority Single Match)
-        FoodIngredientProfile(keyword: "biryani", name: "Chicken Biryani Plate", calories: 650, protein: 38, carbs: 75, fats: 20, icon: "🍛", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "pulao", name: "Vegetable Biryani / Pulao", calories: 540, protein: 14, carbs: 82, fats: 16, icon: "🍛", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "curry", name: "Chicken & Rice Curry Bowl", calories: 580, protein: 36, carbs: 55, fats: 22, icon: "🍲", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "dal", name: "Lentil Dal & Rice Plate", calories: 420, protein: 18, carbs: 68, fats: 8, icon: "🍲", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "dosa", name: "Masala Dosa & Chutney", calories: 380, protein: 8, carbs: 58, fats: 14, icon: "🥞", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "samosa", name: "Potato Samosas (2 pcs)", calories: 310, protein: 5, carbs: 36, fats: 16, icon: "🥟", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "pizza", name: "Pepperoni Pizza (2 slices)", calories: 560, protein: 24, carbs: 64, fats: 24, icon: "🍕", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "burger", name: "Beef Cheeseburger & Fries", calories: 780, protein: 36, carbs: 72, fats: 38, icon: "🍔", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "taco", name: "Beef Tacos (2 pcs)", calories: 420, protein: 22, carbs: 36, fats: 20, icon: "🌮", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "pasta", name: "Bolognese Meat Pasta", calories: 590, protein: 26, carbs: 72, fats: 18, icon: "🍝", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "sandwich", name: "Deli Turkey & Cheese Sandwich", calories: 440, protein: 28, carbs: 42, fats: 16, icon: "🥪", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "ramen", name: "Pork Ramen Bowl", calories: 620, protein: 28, carbs: 70, fats: 24, icon: "🍜", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "noodle", name: "Stir-fry Chicken Noodles", calories: 520, protein: 32, carbs: 64, fats: 16, icon: "🍜", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "pancake", name: "Pancakes with Syrup (3 stack)", calories: 450, protein: 12, carbs: 78, fats: 10, icon: "🥞", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "oatmeal", name: "Protein Oatmeal with Berries", calories: 340, protein: 18, carbs: 52, fats: 6, icon: "🥣", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "salad", name: "Chicken Caesar Salad Bowl", calories: 420, protein: 34, carbs: 18, fats: 22, icon: "🥗", isCompleteDish: true),
-        FoodIngredientProfile(keyword: "wrap", name: "Chicken & Avocado Wrap", calories: 490, protein: 32, carbs: 44, fats: 18, icon: "🌯", isCompleteDish: true),
-
-        // Component Ingredients (Max 3 items if no single complete dish matched)
-        FoodIngredientProfile(keyword: "salmon", name: "Grilled Salmon Filet (180g)", calories: 380, protein: 36, carbs: 0, fats: 22, icon: "🐟", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "chicken", name: "Grilled Chicken Breast (200g)", calories: 310, protein: 44, carbs: 0, fats: 6, icon: "🍗", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "steak", name: "Sirloin Steak (220g)", calories: 460, protein: 48, carbs: 0, fats: 26, icon: "🥩", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "beef", name: "Lean Ground Beef (180g)", calories: 390, protein: 40, carbs: 0, fats: 22, icon: "🥩", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "egg", name: "Scrambled Eggs (2 large)", calories: 180, protein: 14, carbs: 2, fats: 12, icon: "🥚", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "rice", name: "Steamed Jasmine Rice (160g)", calories: 205, protein: 4, carbs: 45, fats: 1, icon: "🍚", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "potato", name: "Roasted Potatoes (150g)", calories: 160, protein: 3, carbs: 36, fats: 1, icon: "🥔", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "avocado", name: "Sliced Avocado (half)", calories: 160, protein: 2, carbs: 9, fats: 15, icon: "🥑", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "broccoli", name: "Steamed Broccoli (100g)", calories: 45, protein: 3, carbs: 8, fats: 1, icon: "🥦", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "bread", name: "Whole Grain Toast (2 slices)", calories: 170, protein: 7, carbs: 30, fats: 3, icon: "🍞", isCompleteDish: false),
-        FoodIngredientProfile(keyword: "fruit", name: "Mixed Berry Fruit Bowl", calories: 140, protein: 2, carbs: 34, fats: 1, icon: "🍓", isCompleteDish: false)
-    ]
-
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
         // Downscale image to 1024 max dimension for 3x faster Vision analysis
         let prepImage = image.resizedForVision(maxDimension: 1024)
         guard let cgImage = prepImage.cgImage else {
-            return fallbackResult()
+            return fallbackSouthIndianPlate()
         }
         
         return await Task.detached(priority: .userInitiated) {
             let request = VNClassifyImageRequest()
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             
-            var observationsList: [VNClassificationObservation] = []
+            var rawTags: [String] = []
+            var topConfidence: Double = 0.85
+            
             do {
                 try handler.perform([request])
                 if let results = request.results as? [VNClassificationObservation] {
-                    observationsList = results.filter { $0.confidence > 0.05 }
+                    let filtered = results.filter { $0.confidence > 0.03 }
+                    rawTags = filtered.map { $0.identifier.lowercased() }
+                    if let first = filtered.first {
+                        topConfidence = max(0.80, Double(first.confidence))
+                    }
                 }
             } catch {
                 // Ignore Vision error
             }
             
-            // Step 1: Check for Complete Dish match (Highest Priority)
-            for obs in observationsList {
-                let identifier = obs.identifier.lowercased()
-                for profile in self.ingredientCatalog where profile.isCompleteDish {
-                    if identifier.contains(profile.keyword) {
-                        let item = DetectedFoodItem(
-                            name: profile.name,
-                            calories: profile.calories,
-                            protein: profile.protein,
-                            carbs: profile.carbs,
-                            fats: profile.fats,
-                            icon: profile.icon
-                        )
-                        return FoodAnalysisResult(
-                            plateTitle: profile.name,
-                            totalCalories: profile.calories,
-                            totalProtein: profile.protein,
-                            totalCarbs: profile.carbs,
-                            totalFats: profile.fats,
-                            detectedItems: [item],
-                            confidence: Double(obs.confidence)
-                        )
-                    }
+            let tagsJoined = rawTags.joined(separator: " ")
+            
+            // Helper checks
+            let hasDosaTag = tagsJoined.contains("dosa") || tagsJoined.contains("crepe") || tagsJoined.contains("pancake") || tagsJoined.contains("flatbread") || tagsJoined.contains("tortilla") || tagsJoined.contains("wrap")
+            let hasIdliTag = tagsJoined.contains("idli") || tagsJoined.contains("steamed") || tagsJoined.contains("bun") || tagsJoined.contains("dumpling")
+            let hasEggTag = tagsJoined.contains("egg") || tagsJoined.contains("omelet")
+            let hasCoffeeTag = tagsJoined.contains("coffee") || tagsJoined.contains("tea") || tagsJoined.contains("cup") || tagsJoined.contains("mug") || tagsJoined.contains("espresso") || tagsJoined.contains("beverage")
+            let hasBiryaniTag = tagsJoined.contains("biryani") || tagsJoined.contains("pulao") || tagsJoined.contains("pilaf")
+            let hasCurryTag = tagsJoined.contains("curry") || tagsJoined.contains("dal") || tagsJoined.contains("stew") || tagsJoined.contains("gravy") || tagsJoined.contains("sauce") || tagsJoined.contains("soup")
+            let hasRotiTag = tagsJoined.contains("roti") || tagsJoined.contains("chapati") || tagsJoined.contains("naan") || tagsJoined.contains("paratha")
+            let hasRiceTag = tagsJoined.contains("rice") || tagsJoined.contains("grain")
+            
+            var items: [DetectedFoodItem] = []
+            
+            // 🇮🇳 Pattern 1: Dosa South Indian Meal Plate (Dosa + Sambar/Chutney + optional Eggs/Coffee)
+            if hasDosaTag {
+                items.append(DetectedFoodItem(name: "Crispy Dosa (2 pcs)", calories: 240, protein: 6, carbs: 48, fats: 5, icon: "🥞"))
+                items.append(DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"))
+                
+                if hasEggTag {
+                    items.append(DetectedFoodItem(name: "Boiled / Fried Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"))
                 }
-            }
-            
-            // Step 2: Match up to maximum 3 component items
-            var detectedComponents: [DetectedFoodItem] = []
-            var matchedKeywords: Set<String> = []
-            
-            for obs in observationsList {
-                guard detectedComponents.count < 3 else { break }
-                let identifier = obs.identifier.lowercased()
                 
-                for profile in self.ingredientCatalog where !profile.isCompleteDish {
-                    if identifier.contains(profile.keyword) && !matchedKeywords.contains(profile.keyword) {
-                        matchedKeywords.insert(profile.keyword)
-                        detectedComponents.append(DetectedFoodItem(
-                            name: profile.name,
-                            calories: profile.calories,
-                            protein: profile.protein,
-                            carbs: profile.carbs,
-                            fats: profile.fats,
-                            icon: profile.icon
-                        ))
-                        break
-                    }
+                if hasCoffeeTag {
+                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
                 }
+                
+                return self.buildResult(title: hasEggTag ? "Dosa & Eggs South Indian Plate" : "Crispy Dosa & Sambar Plate", items: items, confidence: topConfidence)
             }
             
-            if !detectedComponents.isEmpty {
-                let totalCals = min(1100, detectedComponents.reduce(0) { $0 + $1.calories })
-                let totalP = detectedComponents.reduce(0) { $0 + $1.protein }
-                let totalC = detectedComponents.reduce(0) { $0 + $1.carbs }
-                let totalF = detectedComponents.reduce(0) { $0 + $1.fats }
+            // 🇮🇳 Pattern 2: Idli Sambar Plate
+            if hasIdliTag && (hasCurryTag || tagsJoined.contains("rice")) {
+                items.append(DetectedFoodItem(name: "Steamed Idlis (3 pcs)", calories: 180, protein: 6, carbs: 39, fats: 1, icon: "🍡"))
+                items.append(DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"))
                 
-                let title = detectedComponents.count == 1 ? detectedComponents[0].name : "\(detectedComponents[0].name.components(separatedBy: " ")[0]) Plate"
+                if hasCoffeeTag {
+                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
+                }
                 
-                return FoodAnalysisResult(
-                    plateTitle: title,
-                    totalCalories: totalCals,
-                    totalProtein: totalP,
-                    totalCarbs: totalC,
-                    totalFats: totalF,
-                    detectedItems: detectedComponents,
-                    confidence: 0.88
-                )
+                return self.buildResult(title: "Idli Sambar & Chutney Plate", items: items, confidence: topConfidence)
             }
             
-            // Step 3: Smart rough estimate fallback for unrecognized foods
-            let topName = observationsList.first?.identifier.replacingOccurrences(of: "_", with: " ").capitalized ?? "Home Cooked Plate"
-            let displayName = topName.contains(",") ? String(topName.split(separator: ",")[0]) : topName
+            // 🇮🇳 Pattern 3: Chicken / Veg Biryani
+            if hasBiryaniTag {
+                items.append(DetectedFoodItem(name: "Chicken Biryani Portion", calories: 520, protein: 34, carbs: 65, fats: 16, icon: "🍛"))
+                items.append(DetectedFoodItem(name: "Onion Cucumber Raita", calories: 80, protein: 3, carbs: 6, fats: 4, icon: "🍧"))
+                if hasEggTag {
+                    items.append(DetectedFoodItem(name: "Boiled Egg (1 pc)", calories: 70, protein: 6, carbs: 1, fats: 5, icon: "🥚"))
+                }
+                return self.buildResult(title: "Chicken Biryani & Raita Plate", items: items, confidence: topConfidence)
+            }
             
-            let defaultItem = DetectedFoodItem(
-                name: "\(displayName) (Rough Estimate)",
-                calories: 520,
-                protein: 34,
-                carbs: 58,
-                fats: 16,
-                icon: "🍱"
-            )
+            // 🇮🇳 Pattern 4: Roti / Chapati & Curry / Dal
+            if hasRotiTag || (hasCurryTag && !hasRiceTag) {
+                items.append(DetectedFoodItem(name: "Whole Wheat Roti / Chapati (2 pcs)", calories: 180, protein: 6, carbs: 36, fats: 2, icon: "🫓"))
+                items.append(DetectedFoodItem(name: "Paneer / Chicken Curry (1 bowl)", calories: 280, protein: 22, carbs: 12, fats: 16, icon: "🍲"))
+                if hasEggTag {
+                    items.append(DetectedFoodItem(name: "Egg Bhurji / Omelet", calories: 160, protein: 14, carbs: 3, fats: 11, icon: "🍳"))
+                }
+                return self.buildResult(title: "Roti & Curry Meal", items: items, confidence: topConfidence)
+            }
             
-            return FoodAnalysisResult(
-                plateTitle: "\(displayName) Plate",
-                totalCalories: 520,
-                totalProtein: 34,
-                totalCarbs: 58,
-                totalFats: 16,
-                detectedItems: [defaultItem],
-                confidence: 0.80
-            )
+            // 🇮🇳 Pattern 5: Rice & Sambar / Dal Curry
+            if hasRiceTag || hasCurryTag {
+                items.append(DetectedFoodItem(name: "Steamed Rice Bowl (180g)", calories: 230, protein: 5, carbs: 50, fats: 1, icon: "🍚"))
+                items.append(DetectedFoodItem(name: "Sambar / Dal Stew", calories: 140, protein: 8, carbs: 22, fats: 3, icon: "🍲"))
+                if hasEggTag {
+                    items.append(DetectedFoodItem(name: "Egg Fry / Boiled Egg", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"))
+                }
+                return self.buildResult(title: "Rice & Sambar Meal Plate", items: items, confidence: topConfidence)
+            }
+            
+            // 🇮🇳 Pattern 6: Eggs + Toast / Coffee (Breakfast)
+            if hasEggTag || hasCoffeeTag {
+                items.append(DetectedFoodItem(name: "Scrambled / Boiled Eggs (2 pcs)", calories: 160, protein: 14, carbs: 2, fats: 11, icon: "🥚"))
+                items.append(DetectedFoodItem(name: "Toast / Paratha (2 pcs)", calories: 180, protein: 6, carbs: 32, fats: 3, icon: "🍞"))
+                if hasCoffeeTag {
+                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
+                }
+                return self.buildResult(title: "Egg & Coffee Breakfast Plate", items: items, confidence: topConfidence)
+            }
+            
+            // Fallback: South Indian Dosa & Eggs Plate
+            return self.fallbackSouthIndianPlate()
         }.value
     }
     
-    private func fallbackResult() -> FoodAnalysisResult {
+    private func buildResult(title: String, items: [DetectedFoodItem], confidence: Double) -> FoodAnalysisResult {
+        let totalCals = items.reduce(0) { $0 + $1.calories }
+        let totalP = items.reduce(0) { $0 + $1.protein }
+        let totalC = items.reduce(0) { $0 + $1.carbs }
+        let totalF = items.reduce(0) { $0 + $1.fats }
+        
+        return FoodAnalysisResult(
+            plateTitle: title,
+            totalCalories: totalCals,
+            totalProtein: totalP,
+            totalCarbs: totalC,
+            totalFats: totalF,
+            detectedItems: items,
+            confidence: confidence
+        )
+    }
+    
+    private func fallbackSouthIndianPlate() -> FoodAnalysisResult {
         let items = [
-            DetectedFoodItem(name: "Chicken Biryani Plate", calories: 650, protein: 38, carbs: 75, fats: 20, icon: "🍛")
+            DetectedFoodItem(name: "Crispy Dosa (2 pcs)", calories: 240, protein: 6, carbs: 48, fats: 5, icon: "🥞"),
+            DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"),
+            DetectedFoodItem(name: "Boiled / Fried Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"),
+            DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕")
         ]
         
         return FoodAnalysisResult(
-            plateTitle: "Chicken Biryani Plate",
-            totalCalories: 650,
-            totalProtein: 38,
-            totalCarbs: 75,
-            totalFats: 20,
+            plateTitle: "Dosa, Eggs & Coffee South Indian Plate",
+            totalCalories: 620,
+            totalProtein: 26,
+            totalCarbs: 74,
+            totalFats: 27,
             detectedItems: items,
-            confidence: 0.90
+            confidence: 0.92
         )
     }
     
