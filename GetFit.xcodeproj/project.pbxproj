@@ -56,7 +56,7 @@
 		28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFoodVisionService.swift; sourceTree = "<group>"; };
 		37832AD76D2051C59101AA17 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		43409CB5E95180697F649E60 /* GetFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetFitApp.swift; sourceTree = "<group>"; };
-		51B88257202486233472A38F /* GetFit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GetFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		51B88257202486233472A38F /* Get Fit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Get Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E09DA9200ADB177EBE69D35 /* RestTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerAttributes.swift; sourceTree = "<group>"; };
 		5F329746B73EF52C2451695B /* CardioTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardioTrackerView.swift; sourceTree = "<group>"; };
 		6082D2738376A641860B5A4D /* ScheduleCustomizerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCustomizerSheet.swift; sourceTree = "<group>"; };
@@ -101,7 +101,7 @@
 		2951BD2E0BEA613C88ED67D4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				51B88257202486233472A38F /* GetFit.app */,
+				51B88257202486233472A38F /* Get Fit.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -208,7 +208,7 @@
 			packageProductDependencies = (
 			);
 			productName = GetFit;
-			productReference = 51B88257202486233472A38F /* GetFit.app */;
+			productReference = 51B88257202486233472A38F /* Get Fit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -219,8 +219,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 8596DA77C5B3C724F22CE31F /* Build configuration list for PBXProject "GetFit" */;
 			developmentRegion = en;
@@ -306,6 +304,7 @@
 				CODE_SIGN_ENTITLEMENTS = GetFit/GetFit.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43C5QBPH79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Get Fit requires camera access to snap photos of your meals and analyze calories.";
@@ -459,6 +458,7 @@
 				CODE_SIGN_ENTITLEMENTS = GetFit/GetFit.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43C5QBPH79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Get Fit requires camera access to snap photos of your meals and analyze calories.";

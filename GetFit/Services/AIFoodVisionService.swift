@@ -156,7 +156,7 @@ final class AIFoodVisionService: @unchecked Sendable {
     private func analyzeOnDeviceSouthIndian(image: UIImage) async -> FoodAnalysisResult {
         let prepImage = image.resizedForVision(maxDimension: 1024)
         guard let cgImage = prepImage.cgImage else {
-            return fallbackSouthIndianPlate()
+            return genericMealFallback()
         }
         
         return await Task.detached(priority: .userInitiated) {
@@ -249,7 +249,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                 return self.buildResult(title: "Egg & Coffee Breakfast Plate", items: items, confidence: topConfidence)
             }
             
-            return self.fallbackSouthIndianPlate()
+            return self.genericMealFallback()
         }.value
     }
     
@@ -270,22 +270,19 @@ final class AIFoodVisionService: @unchecked Sendable {
         )
     }
     
-    private func fallbackSouthIndianPlate() -> FoodAnalysisResult {
+    private func genericMealFallback() -> FoodAnalysisResult {
         let items = [
-            DetectedFoodItem(name: "Crispy Dosa (2 pcs)", calories: 240, protein: 6, carbs: 48, fats: 5, icon: "🥞"),
-            DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"),
-            DetectedFoodItem(name: "Boiled / Fried Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"),
-            DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕")
+            DetectedFoodItem(name: "Scanned Meal Plate (Estimated Portion)", calories: 450, protein: 30, carbs: 48, fats: 14, icon: "🍱")
         ]
         
         return FoodAnalysisResult(
-            plateTitle: "Dosa, Eggs & Coffee South Indian Plate",
-            totalCalories: 620,
-            totalProtein: 26,
-            totalCarbs: 74,
-            totalFats: 27,
+            plateTitle: "Scanned Meal Plate",
+            totalCalories: 450,
+            totalProtein: 30,
+            totalCarbs: 48,
+            totalFats: 14,
             detectedItems: items,
-            confidence: 0.92
+            confidence: 0.75
         )
     }
     
