@@ -57,7 +57,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Ultra-Fast Google Gemini Vision API (512px Compressed Image)
+    // MARK: - Ultra-Fast Google Gemini Vision API
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         // Ultra-fast 512px downscaling & 0.4 JPEG compression (creates tiny ~35KB payload for sub-second uploads)
@@ -88,15 +88,15 @@ final class AIFoodVisionService: @unchecked Sendable {
         You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
         JSON Structure:
         {
-          "plateTitle": "Summary Title of Plate (e.g. Chana & Vegetable Salad Plate)",
+          "plateTitle": "Summary Title of Plate (e.g. Chicken Biryani & Raita Plate)",
           "items": [
             {
-              "name": "Exact Item Name with Portion (e.g., Spicy Chana & Veggie Sundal)",
-              "calories": 240,
-              "protein": 12,
-              "carbs": 32,
-              "fats": 6,
-              "icon": "🥗"
+              "name": "Exact Item Name with Portion (e.g., Chicken Biryani Portion)",
+              "calories": 570,
+              "protein": 35,
+              "carbs": 69,
+              "fats": 16,
+              "icon": "🍛"
             }
           ]
         }
@@ -136,7 +136,6 @@ final class AIFoodVisionService: @unchecked Sendable {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             request.httpBody = httpBody
             request.timeoutInterval = 30
             
