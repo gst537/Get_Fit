@@ -229,10 +229,20 @@ struct ActiveWorkoutView: View {
         
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text(machine.name)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(machine.name)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                    
+                    if let muscles = entry.machine?.targetMuscles, !muscles.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(muscles.prefix(3), id: \.self) { muscle in
+                                MuscleGroupBadge(muscle: muscle, color: MuscleGroupBadge.colorForMuscle(muscle))
+                            }
+                        }
+                    }
+                }
                 Spacer()
                 if machine.equipmentType.lowercased() == "barbell" {
                     Button(action: {
@@ -254,10 +264,17 @@ struct ActiveWorkoutView: View {
             }
             
             if let best = previousBest(for: machine.id) {
-                Text("Previous Best: \(weightUnit.formatNumber(weightUnit.displayWeight(best.weight))) \(weightUnit.unitLabel) × \(best.reps)")
-                    .font(.caption)
-                    .fontWeight(.light)
-                    .foregroundColor(.gray)
+                HStack(spacing: 8) {
+                    Text("Previous Best: \(weightUnit.formatNumber(weightUnit.displayWeight(best.weight))) \(weightUnit.unitLabel) × \(best.reps)")
+                        .font(.caption)
+                        .fontWeight(.light)
+                        .foregroundColor(.gray)
+                    
+                    let currentInputWeight = weightUnit.toKg(weightInputs[machine.id] ?? 0)
+                    if isPR(machineName: machine.name, currentWeight: currentInputWeight, allSessions: completedSessions) {
+                        PRBadge(weight: "\(weightUnit.formatNumber(weightUnit.displayWeight(currentInputWeight))) \(weightUnit.unitLabel)")
+                    }
+                }
             }
             
             let loggedSets = loggedSets(for: machine.id)
@@ -282,6 +299,7 @@ struct ActiveWorkoutView: View {
                                     .foregroundColor(.gray)
                             }
                         }
+                        .setCompletionEffect(isCompleted: true)
                     }
                 }
                 .padding(12)
@@ -410,6 +428,8 @@ struct ActiveWorkoutView: View {
                 Spacer()
                 
                 Button(action: {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
                     logSet(for: entry, machine: machine, loggedSetsCount: loggedSets.count)
                 }) {
                     Image(systemName: "checkmark")
@@ -422,6 +442,7 @@ struct ActiveWorkoutView: View {
             }
         }
         .padding(16)
+        .glassmorphic(cornerRadius: 20)
     }
     
     private func incrementStep(for equipmentType: String) -> Double {
@@ -631,5 +652,15 @@ struct ActiveWorkoutView: View {
 
     private func formatWeight(_ w: Double) -> String {
         w.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", w) : String(format: "%.1f", w)
+    }
+    
+    // Check if current weight is a PR
+    private func isPR(machineName: String, currentWeight: Double, allSessions: [WorkoutSession]) -> Bool {
+        let previousMax = allSessions
+            .flatMap { $0.setLogs }
+            .filter { $0.machineName == machineName }
+            .map { $0.weight }
+            .max() ?? 0
+        return currentWeight > previousMax && currentWeight > 0
     }
 }

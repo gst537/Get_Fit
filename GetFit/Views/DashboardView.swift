@@ -4,6 +4,7 @@ import SwiftData
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var healthKitManager = HealthKitManager.shared
+    @StateObject private var weightUnit = WeightUnitManager.shared
     @Query private var userStats: [UserStats]
     @Query private var schedule: [WeeklySchedule]
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }) private var completedSessions: [WorkoutSession]
@@ -251,8 +252,8 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .glassmorphic(cornerRadius: 18)
+            .shimmerGlow()
         }
     }
     
@@ -301,7 +302,7 @@ struct DashboardView: View {
                 
                 if let latest = weightEntries.first {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(String(format: "%.1f kg", latest.weight))
+                        Text(weightUnit.formatWeight(latest.weight))
                             .font(.system(size: 26, weight: .light))
                             .foregroundStyle(.white)
                         
@@ -311,7 +312,7 @@ struct DashboardView: View {
                             HStack(spacing: 2) {
                                 Image(systemName: diff < 0 ? "arrow.down" : diff > 0 ? "arrow.up" : "arrow.forward")
                                     .font(.caption2)
-                                Text(String(format: "%.1f kg", abs(diff)))
+                                Text(weightUnit.formatWeight(abs(diff)))
                                     .font(.caption2)
                             }
                             .foregroundStyle(diff <= 0 ? Color.green.opacity(0.8) : Color.orange.opacity(0.8))
@@ -326,8 +327,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .glassmorphic(cornerRadius: 18)
         }
     }
 
@@ -362,8 +362,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .glassmorphic(cornerRadius: 18)
         }
     }
     
@@ -402,8 +401,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .glassmorphic(cornerRadius: 18)
         }
     }
     
@@ -436,8 +434,7 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 36)
-            .background(Color(UIColor.secondarySystemBackground).opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .glassmorphic(cornerRadius: 20)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showRestDaySheet) {
@@ -479,6 +476,19 @@ struct DashboardView: View {
             }
             .padding(.bottom, 16)
             
+            // Muscle group badges
+            let allMuscles = Array(Set(sortedEntries.compactMap { $0.machine?.targetMuscles }.flatMap { $0 }))
+            if !allMuscles.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(allMuscles, id: \.self) { muscle in
+                            MuscleGroupBadge(muscle: muscle, color: MuscleGroupBadge.colorForMuscle(muscle))
+                        }
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            
             // Exercise rows
             ForEach(sortedEntries) { entry in
                 VStack(spacing: 0) {
@@ -504,7 +514,7 @@ struct DashboardView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 if entry.defaultWeight > 0 {
-                                    Text("\(formatWeight(entry.defaultWeight)) kg")
+                                    Text(weightUnit.formatWeight(entry.defaultWeight))
                                         .font(.subheadline)
                                         .fontWeight(.light)
                                         .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
@@ -551,6 +561,7 @@ struct DashboardView: View {
                 .padding(.vertical, 16)
                 .background(Color(red: 0.68, green: 0.78, blue: 0.90))
                 .clipShape(Capsule())
+                .shadow(color: Color(red: 0.68, green: 0.78, blue: 0.90).opacity(0.3), radius: 12, x: 0, y: 6)
         }
     }
 }

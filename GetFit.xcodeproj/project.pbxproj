@@ -42,6 +42,7 @@
 		D65188B7F44DD9FC9C76EBB2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD3E2E44349C4A176E8B7E /* DashboardView.swift */; };
 		E404775E624ED53D3EC09D85 /* WorkoutSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EECB1B5EE57614123C729F /* WorkoutSummaryCardView.swift */; };
 		E9442F00F51C7E1BF12DE063 /* WeightUnitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93204621530132EEB28F7C1F /* WeightUnitManager.swift */; };
+		F06A1674A5F6E9E6B9B1ED48 /* PremiumUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19C7253066C4595E493361A /* PremiumUIComponents.swift */; };
 		F16CE7E9B2D627019CD88B43 /* AIFoodVisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */; };
 		F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */; };
 		F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15888ED4181530646D032A1A /* BodyWeightView.swift */; };
@@ -86,6 +87,7 @@
 		D22E5D623B18DCA71D6A1998 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D4F22C4C3B91845CDFEA9F67 /* SplitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitDetailView.swift; sourceTree = "<group>"; };
 		DA08A832880BDF2D4A7441AB /* QuickSwapSplitMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSwapSplitMenu.swift; sourceTree = "<group>"; };
+		E19C7253066C4595E493361A /* PremiumUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumUIComponents.swift; sourceTree = "<group>"; };
 		E5EECB1B5EE57614123C729F /* WorkoutSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryCardView.swift; sourceTree = "<group>"; };
 		F81CEFF320ACB72D30188792 /* StepTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepTrackerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -176,6 +178,7 @@
 				B7D40389D127C2B61287E54E /* MuscleVolumeAnalyticsView.swift */,
 				790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */,
 				A77CB33CE5B8E0559732C9CF /* PlateCalculatorSheet.swift */,
+				E19C7253066C4595E493361A /* PremiumUIComponents.swift */,
 				A537B93C92FFEA40D64CA12E /* ProfileView.swift */,
 				0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */,
 				DA08A832880BDF2D4A7441AB /* QuickSwapSplitMenu.swift */,
@@ -278,6 +281,7 @@
 				CABBCE1C6295EB7467450E44 /* MuscleVolumeAnalyticsView.swift in Sources */,
 				F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */,
 				52F40DEB86D78EFF1DD78020 /* PlateCalculatorSheet.swift in Sources */,
+				F06A1674A5F6E9E6B9B1ED48 /* PremiumUIComponents.swift in Sources */,
 				5FB7F7FAEAA8FBA86F043EE6 /* ProfileView.swift in Sources */,
 				5DD30BA3051748E9639753D4 /* ProgressionChartView.swift in Sources */,
 				4674A36B62C13B8F626C6D25 /* ProgressiveOverloadService.swift in Sources */,

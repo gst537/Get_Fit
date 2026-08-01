@@ -108,26 +108,11 @@ struct NutritionTrackerView: View {
     private var heroCalorieCard: some View {
         VStack(spacing: 16) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Daily Calorie Target")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
-                    
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(remainingCalories)")
-                            .font(.system(size: 36, weight: .light, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        Text("kcal left")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(paleBlue)
-                    }
-                }
-                
+                Text("Daily Calories")
+                    .font(.caption)
+                    .fontWeight(.light)
+                    .foregroundStyle(Color.gray)
                 Spacer()
-                
                 Button {
                     showEditGoalSheet = true
                 } label: {
@@ -146,105 +131,100 @@ struct NutritionTrackerView: View {
                 }
             }
             
-            // Progress Bar
             let progress = min(1.0, Double(totalConsumedCalories) / Double(max(1, activeGoal.targetCalories)))
             
-            VStack(spacing: 6) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 10)
-                        
-                        Capsule()
-                            .fill(LinearGradient(colors: [paleBlue, paleBlue.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: geo.size.width * CGFloat(progress), height: 10)
-                    }
-                }
-                .frame(height: 10)
+            ZStack {
+                AnimatedRingView(
+                    progress: progress,
+                    lineWidth: 12,
+                    gradient: [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)],
+                    size: 140
+                )
                 
-                HStack {
-                    Text("\(totalConsumedCalories) kcal consumed")
+                VStack(spacing: 2) {
+                    Text("\(remainingCalories)")
+                        .font(.system(size: 32, weight: .light, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("kcal left")
                         .font(.caption2)
-                        .foregroundStyle(Color.gray)
-                    Spacer()
-                    Text("Goal: \(activeGoal.targetCalories) kcal")
-                        .font(.caption2)
-                        .foregroundStyle(Color.gray)
+                        .fontWeight(.medium)
+                        .foregroundStyle(paleBlue)
                 }
+            }
+            
+            HStack {
+                Text("\(totalConsumedCalories) consumed")
+                    .font(.caption2)
+                    .foregroundStyle(Color.gray)
+                Spacer()
+                Text("Goal: \(activeGoal.targetCalories) kcal")
+                    .font(.caption2)
+                    .foregroundStyle(Color.gray)
             }
         }
         .padding(20)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .glassmorphic(cornerRadius: 20)
     }
     
     // MARK: - Macro Progress Card
     
     private var macroProgressCard: some View {
         HStack(spacing: 12) {
-            // Protein
-            macroBarItem(
+            macroRingItem(
                 title: "Protein",
                 consumed: totalConsumedProtein,
                 target: activeGoal.targetProtein,
                 unit: "g",
-                color: paleBlue
+                gradient: [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)]
             )
             
-            // Carbs
-            macroBarItem(
+            macroRingItem(
                 title: "Carbs",
                 consumed: totalConsumedCarbs,
                 target: activeGoal.targetCarbs,
                 unit: "g",
-                color: warmGold
+                gradient: [warmGold, Color(red: 0.95, green: 0.85, blue: 0.50)]
             )
             
-            // Fats
-            macroBarItem(
+            macroRingItem(
                 title: "Fats",
                 consumed: totalConsumedFats,
                 target: activeGoal.targetFats,
                 unit: "g",
-                color: mintGreen
+                gradient: [mintGreen, Color(red: 0.35, green: 0.90, blue: 0.70)]
             )
         }
     }
     
-    private func macroBarItem(title: String, consumed: Int, target: Int, unit: String, color: Color) -> some View {
+    private func macroRingItem(title: String, consumed: Int, target: Int, unit: String, gradient: [Color]) -> some View {
         let progress = min(1.0, Double(consumed) / Double(max(1, target)))
         
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(color)
-            
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(consumed)")
-                    .font(.headline)
-                    .fontWeight(.regular)
-                    .foregroundStyle(.white)
-                Text("/\(target)\(unit)")
-                    .font(.caption2)
-                    .foregroundStyle(Color.gray)
-            }
-            
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 6)
+        return VStack(spacing: 8) {
+            ZStack {
+                AnimatedRingView(
+                    progress: progress,
+                    lineWidth: 5,
+                    gradient: gradient,
+                    size: 52
+                )
                 
-                Capsule()
-                    .fill(color)
-                    .frame(width: max(0, min(80, 80 * CGFloat(progress))), height: 6)
+                Text("\(consumed)")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white)
             }
+            
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(gradient.first ?? .white)
+            
+            Text("\(consumed)/\(target)\(unit)")
+                .font(.system(size: 9))
+                .foregroundStyle(Color.gray)
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(maxWidth: .infinity)
+        .glassmorphic(cornerRadius: 16)
     }
     
     // MARK: - Meal Categories Section
@@ -379,8 +359,7 @@ struct NutritionTrackerView: View {
             }
         }
         .padding(16)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .glassmorphic(cornerRadius: 18)
     }
     
     private func deleteMeal(_ meal: MealLog) {
