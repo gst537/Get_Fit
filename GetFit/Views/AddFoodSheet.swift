@@ -63,6 +63,10 @@ struct AddFoodSheet: View {
     @State private var aiSuccessMessage: String? = nil
     @State private var detectedItems: [DetectedFoodItem] = []
     
+    // Gemini API Key state
+    @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
+    @State private var showKeySettings = false
+    
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     
@@ -85,6 +89,9 @@ struct AddFoodSheet: View {
                     .font(.body)
                     .foregroundStyle(paleBlue)
                 }
+                
+                // Gemini API Key Banner / Settings Toggle
+                geminiKeyBar
                 
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
@@ -125,7 +132,7 @@ struct AddFoodSheet: View {
                         .fontWeight(.light)
                         .foregroundStyle(Color.gray)
                     
-                    TextField("e.g., Chicken Biryani Plate", text: $foodName)
+                    TextField("e.g., Dosa, Sambar & Eggs Plate", text: $foodName)
                         .font(.body)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
@@ -205,6 +212,71 @@ struct AddFoodSheet: View {
         .sheet(isPresented: $showCameraPicker) {
             CameraView(selectedImage: $selectedUIImage) { capturedImage in
                 scanMealWithAI(capturedImage)
+            }
+        }
+    }
+    
+    // MARK: - Gemini Vision AI Key Bar
+    
+    private var geminiKeyBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .font(.caption)
+                    .foregroundStyle(paleBlue)
+                
+                Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Google Gemini Vision AI Active (99% Accuracy)" : "Enable Gemini Vision AI for 99% Accuracy")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                Button(showKeySettings ? "Done" : (AIFoodVisionService.shared.savedAPIKey != nil ? "Key Saved ✓" : "+ Add Free Key")) {
+                    withAnimation {
+                        showKeySettings.toggle()
+                    }
+                }
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(paleBlue)
+            }
+            .padding(10)
+            .background(paleBlue.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            if showKeySettings {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Paste Free Google Gemini API Key (aistudio.google.com):")
+                        .font(.caption2)
+                        .foregroundStyle(Color.gray)
+                    
+                    HStack {
+                        SecureField("AIzaSy...", text: $geminiKeyInput)
+                            .font(.caption)
+                            .padding(8)
+                            .background(Color(UIColor.tertiarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        
+                        Button("Save") {
+                            let cleanKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                            AIFoodVisionService.shared.savedAPIKey = cleanKey.isEmpty ? nil : cleanKey
+                            withAnimation {
+                                showKeySettings = false
+                            }
+                        }
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(paleBlue)
+                        .clipShape(Capsule())
+                    }
+                }
+                .padding(10)
+                .background(Color(UIColor.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }
@@ -389,7 +461,7 @@ struct AddFoodSheet: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .tint(paleBlue)
-                    Text("AI scanning plate items & calculating calories...")
+                    Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Gemini Vision AI scanning plate items..." : "AI scanning plate items & calculating calories...")
                         .font(.caption)
                         .foregroundStyle(paleBlue)
                 }

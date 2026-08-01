@@ -32,6 +32,8 @@ targets:
         INFOPLIST_KEY_NSSupportsLiveActivities: true
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Get Fit uses Apple Health data to automatically track and display your daily step count."
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Get Fit uses Apple Health to sync your daily fitness activity."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Get Fit requires camera access to snap photos of your meals and analyze calories."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Get Fit requires photo library access to choose meal photos for calorie tracking."
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true
