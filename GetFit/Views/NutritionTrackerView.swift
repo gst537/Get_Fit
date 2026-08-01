@@ -9,6 +9,7 @@ struct NutritionTrackerView: View {
     @State private var showAddFoodSheet = false
     @State private var selectedCategoryForAdd = "Breakfast"
     @State private var showEditGoalSheet = false
+    @State private var selectedMealPhoto: UIImage? = nil
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     let warmGold = Color(red: 0.95, green: 0.75, blue: 0.40)
@@ -73,6 +74,32 @@ struct NutritionTrackerView: View {
         }
         .sheet(isPresented: $showEditGoalSheet) {
             EditNutritionGoalSheet(goal: activeGoal)
+        }
+        .sheet(item: Binding<IdentifiableImage?>(
+            get: { selectedMealPhoto.map { IdentifiableImage(image: $0) } },
+            set: { selectedMealPhoto = $0?.image }
+        )) { item in
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        selectedMealPhoto = nil
+                    }
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundStyle(paleBlue)
+                }
+                .padding()
+                
+                Image(uiImage: item.image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding()
+                
+                Spacer()
+            }
+            .background(Color.black.ignoresSafeArea())
         }
     }
     
@@ -224,7 +251,7 @@ struct NutritionTrackerView: View {
     
     private var mealCategoriesSection: some View {
         VStack(spacing: 16) {
-            mealCategoryBlock(title: "Breakfast", icon: "sun.rise.fill", categoryName: "Breakfast")
+            mealCategoryBlock(title: "Breakfast", icon: "sunrise.fill", categoryName: "Breakfast")
             mealCategoryBlock(title: "Lunch", icon: "sun.max.fill", categoryName: "Lunch")
             mealCategoryBlock(title: "Dinner", icon: "moon.fill", categoryName: "Dinner")
             mealCategoryBlock(title: "Snacks", icon: "leaf.fill", categoryName: "Snack")
@@ -286,7 +313,19 @@ struct NutritionTrackerView: View {
                 VStack(spacing: 0) {
                     ForEach(categoryMeals) { meal in
                         VStack(spacing: 0) {
-                            HStack {
+                            HStack(spacing: 12) {
+                                if let path = meal.imagePath, let uiImg = AIFoodVisionService.shared.loadMealImage(from: path) {
+                                    Button {
+                                        selectedMealPhoto = uiImg
+                                    } label: {
+                                        Image(uiImage: uiImg)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 44, height: 44)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    }
+                                }
+                                
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(meal.name)
                                         .font(.body)
@@ -457,6 +496,11 @@ struct EditNutritionGoalSheet: View {
             fatsText = "\(goal.targetFats)"
         }
     }
+}
+
+struct IdentifiableImage: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 #Preview {

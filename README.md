@@ -1,104 +1,74 @@
-<div align="center">
+# Get Fit
 
-  <img src="GetFit/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="128" height="128" alt="Get Fit App Icon" style="border-radius: 28px;">
+Get Fit is a native, local-first iOS fitness application built with SwiftUI, SwiftData, and ActivityKit. It provides progressive overload tracking, Live Activity rest timers, and on-device food photo recognition without cloud dependencies, advertisements, or mandatory user accounts.
 
-  # Get Fit
+## Key Features
 
-  **The Zero-Fluff, Local-First iOS Workout & Progressive Overload Tracker**
+### Workout Engine & Progressive Overload
+- **Split Management**: Support for Push/Pull/Legs, Upper/Lower, and custom workout splits.
+- **Automatic Target Calculation**: Recommends target weights for upcoming sets based on historical exercise maxes.
+- **Fractional Weight Precision**: Supports exact decimal weight entries (e.g. `7.5 kg`, `12.5 kg`) with configurable increment steppers.
 
-  [![iOS 18.0+](https://img.shields.io/badge/iOS-18.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com)
-  [![Swift 6.0](https://img.shields.io/badge/Swift-6.0-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
-  [![SwiftData](https://img.shields.io/badge/Storage-SwiftData-007ACC?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.apple.com/xcode/swiftdata/)
-  [![Dynamic Island](https://img.shields.io/badge/Feature-Dynamic%20Island-111111?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/activitykit/)
-  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#license)
+### Live Activity Rest Timers
+- **Dynamic Island & Lock Screen**: Displays real-time rest countdowns via Apple's ActivityKit when the app is backgrounded.
+- **Haptic Alerts**: Triggers tactile feedback upon rest timer completion.
 
-  *Built out of pure frustration with bloated gym apps filled with ads, paywalls, and mandatory account signups.*
+### Nutrition & Macro Tracker
+- **Calorie & Macro Goals**: Tracks daily calorie intake alongside Protein, Carbs, and Fats progress.
+- **Meal Category Logs**: Categorizes food entries under Breakfast, Lunch, Dinner, and Snacks.
+- **AI Food Photo Recognition**: On-device image classification powered by Apple's Vision framework (`VNClassifyImageRequest`). Automatically detects dishes, breaks down multi-item plates, and estimates macros with full manual review before saving.
 
-</div>
+### Activity Rings & Metrics
+- **3-Ring Dashboard**:
+  - 🔴 **Daily Steps**: Auto-synced with Apple HealthKit.
+  - 🟢 **Workout & Cardio Time**: Sums focused lifting and cardio minutes.
+  - 🔵 **Weekly Consistency**: Tracks active training days against weekly targets.
+- **Body Weight Charts**: Equal-spaced indexed trend charts to visualize weight progression without date compression issues.
+- **Cardio Log**: Dedicated cardio finisher tracker for treadmill, stairmaster, or outdoor sessions.
 
----
+### Utilities & Exporting
+- **Shareable Summary Cards**: Generates high-resolution dark-mode summary graphics using `ImageRenderer` for native iOS export (`ShareLink`).
+- **In-App Tutorial Player**: View exercise posture videos and YouTube Shorts directly inside the app using `SFSafariViewController`.
+- **Rest Day Management**: Interactive recovery sheet with quick-swap split reassignment.
 
-## 🎯 Why Get Fit?
+## Architecture & Technology Stack
 
-Most workout apps today have turned into bloated social networks. You open the app at the gym, and before you can log a set of bench presses, you're forced to dismiss three popups, log into a cloud account, or navigate through five sub-menus.
-
-**Get Fit was built to change that.**
-
-It is an opinionated, lightning-fast native iOS app designed for lifters who prioritize **progressive overload**, **fast set logging**, and **zero distractions**.
-
----
-
-## ✨ Key Features
-
-### ⚡ Progressive Overload Assistant
-No more guessing your weights. Get Fit analyzes your historical performance for every machine and automatically calculates your next target:
-- **`✨ Overload Target: 82.5 kg`** for barbell/dumbbell movements.
-- Fractional weight increments support (`7.5 kg`, `12.5 kg`).
-
-### 🏝️ Dynamic Island & Lock Screen Live Activities
-Hit your rest period, lock your phone, and walk away. The countdown runs natively in your iPhone's **Dynamic Island** and **Lock Screen** via Apple's ActivityKit. You get a tactile notification the second your rest is over.
-
-### 🔴🟢🔵 KokonutUI 3-Activity Rings
-Track 3 independent fitness pillars in your Profile:
-- 🔴 **Daily Steps**: Auto-synced via Apple HealthKit.
-- 🟢 **Workout & Cardio Time**: Total focused training minutes logged today.
-- 🔵 **Weekly Consistency**: Days completed toward your weekly goal (e.g. 5 days/week).
-
-### 📹 Fullscreen In-App Form Demos
-Need to check your form on an exercise? Watch tutorial videos and YouTube Shorts directly inside the app using `SFSafariViewController` without breaking your workout flow.
-
-### 📸 Shareable Workout Graphic Cards
-Completed a heavy session? Generate a high-resolution, dark-mode summary card graphic with your total tonnage, duration, and top sets—ready to share on Instagram, WhatsApp, or save to Photos.
-
----
-
-## 🏗️ Architecture & Technology Stack
-
-Get Fit is built 100% natively using modern Swift standards:
-
-| Layer | Technology |
+| Component | Technology |
 |---|---|
-| **UI Framework** | SwiftUI (Declarative UI, Dark Mode Native) |
-| **Data Engine** | SwiftData (`@Model`, `@Query`, `@Relationship`) |
+| **UI Framework** | SwiftUI (iOS 18.0+) |
+| **Persistence** | SwiftData (`@Model`, `@Query`, `@Relationship`) |
 | **Live Activities** | ActivityKit & WidgetKit |
-| **Health Integration** | HealthKit (`HKHealthStore` steps auto-sync) |
-| **Project Gen** | XcodeGen (`project.yml`) |
-| **Video Playback** | `SFSafariViewController` Representable |
+| **Health Integration** | HealthKit (`HKHealthStore`) |
+| **Computer Vision** | Vision Framework (`VNClassifyImageRequest`) |
+| **Project Build System** | XcodeGen (`project.yml`) |
+| **In-App Web Player** | `SFSafariViewController` |
 
----
-
-## 🚀 Building Locally
+## Local Setup
 
 ### Prerequisites
-- macOS 14.0+ (Sonoma or Sequoia)
+- macOS 14.0+
 - Xcode 16.0+
-- Homebrew (for XcodeGen)
+- XcodeGen (`brew install xcodegen`)
 
-### Quick Setup
+### Instructions
 
-1. **Clone the repository**:
+1. Clone the repository:
    ```bash
    git clone git@github.com:gst537/Get_Fit.git
    cd Get_Fit
    ```
 
-2. **Generate the Xcode Project**:
+2. Generate the Xcode project:
    ```bash
-   brew install xcodegen
    xcodegen generate
    ```
 
-3. **Open and Run**:
+3. Open and run in Xcode:
    ```bash
    open GetFit.xcodeproj
    ```
-   Select **iPhone 17** simulator (or your connected device) and press `⌘R`.
+   Select an iOS Simulator (or connected physical iPhone) and press `⌘R`.
 
----
+## License
 
-## 🤝 Contributing & License
-
-Contributions, feature ideas, and pull requests are welcome!  
-Distributed under the **MIT License**.
-
-Built with precision by **[gst537](https://github.com/gst537)**.
+Distributed under the MIT License.

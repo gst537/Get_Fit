@@ -229,8 +229,9 @@ final class MealLog {
     var proteinGrams: Int
     var carbsGrams: Int
     var fatsGrams: Int
+    var imagePath: String?
 
-    init(name: String, mealType: String = "Breakfast", calories: Int = 0, proteinGrams: Int = 0, carbsGrams: Int = 0, fatsGrams: Int = 0, date: Date = .now) {
+    init(name: String, mealType: String = "Breakfast", calories: Int = 0, proteinGrams: Int = 0, carbsGrams: Int = 0, fatsGrams: Int = 0, imagePath: String? = nil, date: Date = .now) {
         self.id = UUID()
         self.date = date
         self.name = name
@@ -239,5 +240,6 @@ final class MealLog {
         self.proteinGrams = proteinGrams
         self.carbsGrams = carbsGrams
         self.fatsGrams = fatsGrams
+        self.imagePath = imagePath
     }
 }

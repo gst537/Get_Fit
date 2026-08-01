@@ -242,7 +242,7 @@ struct DashboardView: View {
                     
                     if !healthKitManager.isAuthorized {
                         Button(action: syncHealthKitSteps) {
-                            Image(systemName: "heart.badge.plus")
+                            Image(systemName: "heart.fill")
                                 .font(.system(size: 14))
                                 .foregroundStyle(.pink)
                         }

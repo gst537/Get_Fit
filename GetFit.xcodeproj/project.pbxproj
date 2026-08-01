@@ -40,6 +40,7 @@
 		D124EDBD1855676B95CE8B8C /* RestTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AED06FB77D686A413F5CF0 /* RestTimerView.swift */; };
 		D65188B7F44DD9FC9C76EBB2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD3E2E44349C4A176E8B7E /* DashboardView.swift */; };
 		E404775E624ED53D3EC09D85 /* WorkoutSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EECB1B5EE57614123C729F /* WorkoutSummaryCardView.swift */; };
+		F16CE7E9B2D627019CD88B43 /* AIFoodVisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */; };
 		F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */; };
 		F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15888ED4181530646D032A1A /* BodyWeightView.swift */; };
 /* End PBXBuildFile section */
@@ -50,9 +51,10 @@
 		0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionChartView.swift; sourceTree = "<group>"; };
 		15888ED4181530646D032A1A /* BodyWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightView.swift; sourceTree = "<group>"; };
 		284DFA568114DA9747774975 /* AddFoodSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFoodSheet.swift; sourceTree = "<group>"; };
+		28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFoodVisionService.swift; sourceTree = "<group>"; };
 		37832AD76D2051C59101AA17 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		43409CB5E95180697F649E60 /* GetFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetFitApp.swift; sourceTree = "<group>"; };
-		51B88257202486233472A38F /* GetFit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GetFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		51B88257202486233472A38F /* Get Fit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Get Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E09DA9200ADB177EBE69D35 /* RestTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerAttributes.swift; sourceTree = "<group>"; };
 		5F329746B73EF52C2451695B /* CardioTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardioTrackerView.swift; sourceTree = "<group>"; };
 		6082D2738376A641860B5A4D /* ScheduleCustomizerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCustomizerSheet.swift; sourceTree = "<group>"; };
@@ -97,7 +99,7 @@
 		2951BD2E0BEA613C88ED67D4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				51B88257202486233472A38F /* GetFit.app */,
+				51B88257202486233472A38F /* Get Fit.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -127,6 +129,7 @@
 		625E2A17646FF3776289EB85 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */,
 				37832AD76D2051C59101AA17 /* HealthKitManager.swift */,
 				77860A9C14FE08F151BCF34A /* RestTimerActivityManager.swift */,
 			);
@@ -202,7 +205,7 @@
 			packageProductDependencies = (
 			);
 			productName = GetFit;
-			productReference = 51B88257202486233472A38F /* GetFit.app */;
+			productReference = 51B88257202486233472A38F /* Get Fit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -213,8 +216,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 8596DA77C5B3C724F22CE31F /* Build configuration list for PBXProject "GetFit" */;
 			developmentRegion = en;
@@ -251,6 +252,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F16CE7E9B2D627019CD88B43 /* AIFoodVisionService.swift in Sources */,
 				CA136AB1D21F346DCC9A3057 /* ActiveWorkoutView.swift in Sources */,
 				2A4CF4B712A6F550FB1F6EEA /* AddExerciseSheet.swift in Sources */,
 				2FDF1B076EC671163B960EB8 /* AddFoodSheet.swift in Sources */,
@@ -298,6 +300,7 @@
 				CODE_SIGN_ENTITLEMENTS = GetFit/GetFit.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43C5QBPH79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Get Fit uses Apple Health data to automatically track and display your daily step count.";
@@ -449,6 +452,7 @@
 				CODE_SIGN_ENTITLEMENTS = GetFit/GetFit.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43C5QBPH79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Get Fit uses Apple Health data to automatically track and display your daily step count.";
