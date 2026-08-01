@@ -2,6 +2,46 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 
+// MARK: - Native Camera View Wrapper
+struct CameraView: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    var onImageCaptured: ((UIImage) -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: CameraView
+        
+        init(_ parent: CameraView) {
+            self.parent = parent
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.selectedImage = image
+                parent.onImageCaptured?(image)
+            }
+            parent.dismiss()
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+
 struct AddFoodSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -18,6 +58,7 @@ struct AddFoodSheet: View {
     // Photo & AI Recognition state
     @State private var selectedItem: PhotosPickerItem? = nil
     @State private var selectedUIImage: UIImage? = nil
+    @State private var showCameraPicker = false
     @State private var isScanningWithAI = false
     @State private var aiSuccessMessage: String? = nil
     @State private var detectedItems: [DetectedFoodItem] = []
@@ -48,7 +89,7 @@ struct AddFoodSheet: View {
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
-                // Detected Items Breakdown Card (if AI scanned items)
+                // Detected Items Breakdown Card (Shows how total calories are reached)
                 if !detectedItems.isEmpty {
                     detectedItemsBreakdownCard
                 }
@@ -84,7 +125,7 @@ struct AddFoodSheet: View {
                         .fontWeight(.light)
                         .foregroundStyle(Color.gray)
                     
-                    TextField("e.g., Grilled Chicken & Rice", text: $foodName)
+                    TextField("e.g., Chicken Biryani Plate", text: $foodName)
                         .font(.body)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
@@ -93,7 +134,7 @@ struct AddFoodSheet: View {
                 
                 // Calories Field
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Calories (kcal)")
+                    Text("Total Calories (kcal)")
                         .font(.subheadline)
                         .fontWeight(.light)
                         .foregroundStyle(Color.gray)
@@ -161,26 +202,57 @@ struct AddFoodSheet: View {
                 }
             }
         }
+        .sheet(isPresented: $showCameraPicker) {
+            CameraView(selectedImage: $selectedUIImage) { capturedImage in
+                scanMealWithAI(capturedImage)
+            }
+        }
     }
     
-    // MARK: - Detected Items Breakdown Card
+    // MARK: - Detected Items Breakdown & Calorie Equation Card
     
     private var detectedItemsBreakdownCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
+            // Section Title
             HStack {
-                Text("🍽️ Identified Plate Items (\(detectedItems.count))")
+                Text("🍽️ Itemized Calorie & Macro Breakdown")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(paleBlue)
                 Spacer()
-                Text("Macro Breakdown")
+                Text("\(detectedItems.count) Items")
                     .font(.caption2)
                     .foregroundStyle(Color.gray)
             }
             
+            // Calorie Calculation Sum Equation Banner
+            let totalCalsCalculated = detectedItems.reduce(0) { $0 + $1.calories }
+            let equationString = detectedItems.map { "\($0.calories)" }.joined(separator: " + ")
+            
+            HStack(spacing: 8) {
+                Image(systemName: "calculator")
+                    .font(.caption)
+                    .foregroundStyle(paleBlue)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Total Calorie Calculation:")
+                        .font(.caption2)
+                        .foregroundStyle(Color.gray)
+                    Text("\(equationString) = \(totalCalsCalculated) kcal")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(paleBlue.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // Individual Food Items List
             VStack(spacing: 8) {
                 ForEach(detectedItems) { item in
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         Text(item.icon)
                             .font(.title3)
                         
@@ -191,12 +263,6 @@ struct AddFoodSheet: View {
                                 .foregroundStyle(.white)
                             
                             HStack(spacing: 6) {
-                                Text("\(item.calories) kcal")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.gray)
-                                Text("·")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.gray)
                                 Text("P: \(item.protein)g")
                                     .font(.caption2)
                                     .foregroundStyle(paleBlue)
@@ -210,9 +276,19 @@ struct AddFoodSheet: View {
                         }
                         
                         Spacer()
+                        
+                        // Per-Item Calorie Badge
+                        Text("\(item.calories) kcal")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(paleBlue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color(UIColor.tertiarySystemBackground))
+                            .clipShape(Capsule())
                     }
                     .padding(10)
-                    .background(Color(UIColor.tertiarySystemBackground))
+                    .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
@@ -247,38 +323,65 @@ struct AddFoodSheet: View {
                     }
                 }
             } else {
-                PhotosPicker(selection: $selectedItem, matching: .images) {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(paleBlue.opacity(0.15))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "camera.viewfinder")
-                                .font(.system(size: 20))
-                                .foregroundStyle(paleBlue)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Snap or Upload Food Photo")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.white)
+                // Dual Options: Take Photo with Camera OR Choose from Gallery
+                HStack(spacing: 12) {
+                    // Direct Camera Button
+                    Button {
+                        showCameraPicker = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(paleBlue.opacity(0.15))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(paleBlue)
+                            }
                             
-                            Text("AI will scan all plate items & macros")
-                                .font(.caption)
-                                .fontWeight(.light)
-                                .foregroundStyle(Color.gray)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Take Photo")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.white)
+                                Text("Use Camera")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.gray)
+                            }
                         }
-                        
-                        Spacer()
-                        
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 16))
-                            .foregroundStyle(paleBlue)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .padding(14)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
+                    // Gallery PhotosPicker Button
+                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                        HStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(paleBlue.opacity(0.15))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "photo.on.rectangle")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(paleBlue)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Gallery")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.white)
+                                Text("Choose Photo")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.gray)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
                 }
             }
             
@@ -286,7 +389,7 @@ struct AddFoodSheet: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .tint(paleBlue)
-                    Text("AI scanning plate items & macro breakdown...")
+                    Text("AI scanning plate items & calculating calories...")
                         .font(.caption)
                         .foregroundStyle(paleBlue)
                 }
@@ -326,7 +429,7 @@ struct AddFoodSheet: View {
             carbsText = "\(result.totalCarbs)"
             fatsText = "\(result.totalFats)"
             detectedItems = result.detectedItems
-            aiSuccessMessage = "Identified \(result.detectedItems.count) items on plate!"
+            aiSuccessMessage = "Identified '\(result.plateTitle)' (\(result.totalCalories) kcal)"
         }
     }
     

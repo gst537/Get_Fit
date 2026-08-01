@@ -18,12 +18,16 @@ struct ActiveWorkoutView: View {
     @State private var showPlateCalculator = false
     @State private var calculatorTargetWeight: Double = 60.0
     
+    // Interactive Progressive Overload Acceptance state
+    @State private var acceptedOverloads: [UUID: Bool] = [:]
+    
     @State private var showCardioFinisherSheet = false
     @State private var loggedCardioMinutes: Double? = nil
     @State private var loggedCardioDistance: Double? = nil
     @State private var showSummaryCard = false
 
     @Query(filter: #Predicate<SetLog> { $0.session != nil }) private var allSetLogs: [SetLog]
+    @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted }) private var completedSessions: [WorkoutSession]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -152,6 +156,7 @@ struct ActiveWorkoutView: View {
                     try? modelContext.save()
                     showCardioFinisherSheet = false
                 }
+                .font(.body)
                 .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
             }
             
@@ -160,44 +165,47 @@ struct ActiveWorkoutView: View {
                     .font(.caption)
                     .foregroundStyle(Color.gray)
                 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(["Treadmill Run", "Stairmaster", "Cycling", "Rowing", "Outdoor Run"], id: \.self) { type in
-                            Text(type)
-                                .font(.subheadline)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(finisherActivity == type ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
-                                .foregroundStyle(finisherActivity == type ? .black : .gray)
-                                .clipShape(Capsule())
-                                .onTapGesture { finisherActivity = type }
-                        }
+                HStack(spacing: 8) {
+                    ForEach(["Treadmill Run", "Stairmaster", "Rowing", "Cycling"], id: \.self) { act in
+                        Text(act)
+                            .font(.caption)
+                            .fontWeight(finisherActivity == act ? .medium : .regular)
+                            .foregroundStyle(finisherActivity == act ? .black : Color.gray)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(finisherActivity == act ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
+                            .clipShape(Capsule())
+                            .onTapGesture {
+                                finisherActivity = act
+                            }
                     }
                 }
             }
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Duration (Minutes)")
-                    .font(.caption)
-                    .foregroundStyle(Color.gray)
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Duration (mins)")
+                        .font(.caption)
+                        .foregroundStyle(Color.gray)
+                    TextField("25", text: $finisherDuration)
+                        .keyboardType(.numberPad)
+                        .font(.title3)
+                        .padding(10)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
                 
-                TextField("Duration", text: $finisherDuration)
-                    .keyboardType(.decimalPad)
-                    .padding(12)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Distance (km)")
-                    .font(.caption)
-                    .foregroundStyle(Color.gray)
-                
-                TextField("Distance", text: $finisherDistance)
-                    .keyboardType(.decimalPad)
-                    .padding(12)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Distance (km)")
+                        .font(.caption)
+                        .foregroundStyle(Color.gray)
+                    TextField("3.0", text: $finisherDistance)
+                        .keyboardType(.decimalPad)
+                        .font(.title3)
+                        .padding(10)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
             }
             
             Spacer()
@@ -208,7 +216,16 @@ struct ActiveWorkoutView: View {
     }
     
     private func exerciseCard(for entry: SplitMachineEntry, machine: GymMachine) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let rec = ProgressiveOverloadService.shared.calculateRecommendation(
+            for: machine.name,
+            equipmentType: machine.equipmentType,
+            category: machine.category,
+            defaultWeight: entry.defaultWeight,
+            defaultReps: entry.defaultReps,
+            completedSessions: completedSessions
+        )
+        
+        return VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text(machine.name)
                     .font(.body)
@@ -270,12 +287,83 @@ struct ActiveWorkoutView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             
-            if let suggestion = progressiveOverloadSuggestion(for: machine, entry: entry) {
+            // MARK: - Interactive Overload Banner
+            if rec.isOverloadTriggered || rec.isDeloadTriggered {
+                let isAccepted = acceptedOverloads[machine.id] ?? true
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: rec.isOverloadTriggered ? "sparkles" : "arrow.triangle.2.circlepath")
+                            .font(.caption)
+                            .foregroundStyle(rec.isOverloadTriggered ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.orange)
+                        
+                        Text(rec.isOverloadTriggered ? "Progressive Overload Target" : "Form & Recovery Reset")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(rec.isOverloadTriggered ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.orange)
+                    }
+                    
+                    Text(rec.reason)
+                        .font(.caption2)
+                        .foregroundStyle(Color.gray)
+                    
+                    HStack(spacing: 10) {
+                        Button {
+                            // Accept Overload
+                            acceptedOverloads[machine.id] = true
+                            weightInputs[machine.id] = rec.recommendedWeight
+                            weightStrings[machine.id] = formatWeight(rec.recommendedWeight)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: isAccepted ? "checkmark.circle.fill" : "circle")
+                                Text("Accept \(formatWeight(rec.recommendedWeight)) kg")
+                            }
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(isAccepted ? .black : Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(isAccepted ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(red: 0.68, green: 0.78, blue: 0.90), lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        
+                        Button {
+                            // Decline / Revert to original
+                            acceptedOverloads[machine.id] = false
+                            weightInputs[machine.id] = rec.previousWeight
+                            weightStrings[machine.id] = formatWeight(rec.previousWeight)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: !isAccepted ? "arrow.uturn.backward.circle.fill" : "arrow.uturn.backward")
+                                Text("Keep \(formatWeight(rec.previousWeight)) kg")
+                            }
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(!isAccepted ? .white : Color.gray)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(!isAccepted ? Color.gray.opacity(0.3) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+                }
+                .padding(12)
+                .background(Color(UIColor.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
                 HStack {
                     Image(systemName: "sparkles")
                         .font(.caption)
                         .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
-                    Text(suggestion)
+                    Text(rec.reason)
                         .font(.caption)
                         .fontWeight(.light)
                         .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
@@ -330,19 +418,6 @@ struct ActiveWorkoutView: View {
             }
         }
         .padding(16)
-    }
-    
-    private func progressiveOverloadSuggestion(for machine: GymMachine, entry: SplitMachineEntry) -> String? {
-        if let best = previousBest(for: machine.id) {
-            if machine.equipmentType.lowercased() == "bodyweight" {
-                return "✨ Overload Target: \(best.reps + 1) reps"
-            } else {
-                return "✨ Overload Target: \(formatWeight(best.weight + 2.5)) kg"
-            }
-        } else if entry.defaultWeight > 0 {
-            return "✨ Overload Target: \(formatWeight(entry.defaultWeight)) kg"
-        }
-        return nil
     }
     
     private func incrementStep(for equipmentType: String) -> Double {
@@ -481,10 +556,20 @@ struct ActiveWorkoutView: View {
     private func initializeInputs() {
         for entry in split.entries {
             if let machine = entry.machine {
-                let defaultW = entry.defaultWeight > 0 ? entry.defaultWeight : (previousBest(for: machine.id)?.weight ?? 0.0)
-                weightInputs[machine.id] = defaultW
-                weightStrings[machine.id] = formatWeight(defaultW)
+                let rec = ProgressiveOverloadService.shared.calculateRecommendation(
+                    for: machine.name,
+                    equipmentType: machine.equipmentType,
+                    category: machine.category,
+                    defaultWeight: entry.defaultWeight,
+                    defaultReps: entry.defaultReps,
+                    completedSessions: completedSessions
+                )
+                
+                let initialWeight = rec.isOverloadTriggered ? rec.recommendedWeight : (rec.previousWeight > 0 ? rec.previousWeight : (entry.defaultWeight > 0 ? entry.defaultWeight : 20.0))
+                weightInputs[machine.id] = initialWeight
+                weightStrings[machine.id] = formatWeight(initialWeight)
                 repInputs[machine.id] = entry.defaultReps
+                acceptedOverloads[machine.id] = rec.isOverloadTriggered
             }
         }
     }
@@ -499,7 +584,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func logSet(for entry: SplitMachineEntry, machine: GymMachine, loggedSetsCount: Int) {
-        let weight = weightInputs[machine.id] ?? 0.0
+        let weight = weightInputs[machine.id] ?? entry.defaultWeight
         let reps = repInputs[machine.id] ?? entry.defaultReps
         
         let newSet = SetLog(
@@ -510,49 +595,41 @@ struct ActiveWorkoutView: View {
             machineId: machine.id,
             equipmentType: machine.equipmentType
         )
+        
         newSet.session = session
         modelContext.insert(newSet)
         try? modelContext.save()
-
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         
+        // Trigger rest timer
         restDuration = 90
         showRestTimer = true
     }
-
+    
     private func deleteSet(_ setLog: SetLog) {
         modelContext.delete(setLog)
         try? modelContext.save()
+    }
+
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            elapsedTime += 1.0
+        }
     }
 
     private func finishWorkout() {
         session.isCompleted = true
         session.duration = elapsedTime
         try? modelContext.save()
-        
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         showSummaryCard = true
     }
 
-    private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            Task { @MainActor in
-                elapsedTime += 1
-            }
-        }
+    private func formatTime(_ time: Double) -> String {
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    private func formatTime(_ seconds: Double) -> String {
-        let mins = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        return String(format: "%02d:%02d", mins, secs)
-    }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight.truncatingRemainder(dividingBy: 1) == 0 {
-            return String(format: "%.0f", weight)
-        } else {
-            return String(format: "%.1f", weight)
-        }
+    private func formatWeight(_ w: Double) -> String {
+        w.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", w) : String(format: "%.1f", w)
     }
 }
