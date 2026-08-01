@@ -9,7 +9,7 @@ struct ExerciseDetailSheet: View {
     @State private var imageURLInput = ""
     @State private var showInAppSafari = false
     
-    let electricCyan = Color(red: 0.20, green: 0.85, blue: 1.00)
+    let iceBlue = Color(red: 0.55, green: 0.88, blue: 1.00)
 
     var body: some View {
         ScrollView {
@@ -28,13 +28,13 @@ struct ExerciseDetailSheet: View {
                             .foregroundStyle(.black)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(electricCyan)
+                            .background(iceBlue)
                             .clipShape(Capsule())
                         
                         HStack(spacing: 6) {
                             Image(systemName: iconForEquipment(exercise.equipmentType))
                                 .font(.system(size: 12))
-                                .foregroundStyle(electricCyan)
+                                .foregroundStyle(iceBlue)
                             Text(exercise.equipmentType)
                                 .font(.caption)
                                 .fontWeight(.medium)
@@ -91,7 +91,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(electricCyan)
+                        .foregroundStyle(iceBlue)
                     }
                     
                     if isEditingVideo {
@@ -115,11 +115,11 @@ struct ExerciseDetailSheet: View {
                             HStack(spacing: 16) {
                                 ZStack {
                                     Circle()
-                                        .fill(electricCyan.opacity(0.15))
+                                        .fill(iceBlue.opacity(0.15))
                                         .frame(width: 44, height: 44)
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 16))
-                                        .foregroundStyle(electricCyan)
+                                        .foregroundStyle(iceBlue)
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -147,7 +147,7 @@ struct ExerciseDetailSheet: View {
                         HStack {
                             Image(systemName: "play.rectangle")
                                 .font(.system(size: 20))
-                                .foregroundStyle(electricCyan.opacity(0.6))
+                                .foregroundStyle(iceBlue.opacity(0.6))
                             Text("No video added yet. Tap '+ Add Video' to attach a YouTube Short or tutorial.")
                                 .font(.caption)
                                 .fontWeight(.light)
@@ -181,7 +181,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(electricCyan)
+                        .foregroundStyle(iceBlue)
                     }
                     
                     if isEditingImage {
@@ -231,7 +231,7 @@ struct ExerciseDetailSheet: View {
                         HStack {
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 20))
-                                .foregroundStyle(electricCyan.opacity(0.6))
+                                .foregroundStyle(iceBlue.opacity(0.6))
                             Text("No photo added yet. Tap '+ Add Photo' to attach a setup diagram.")
                                 .font(.caption)
                                 .fontWeight(.light)
@@ -257,9 +257,9 @@ struct ExerciseDetailSheet: View {
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(electricCyan)
+                    .background(iceBlue)
                     .clipShape(Capsule())
-                    .shadow(color: electricCyan.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: iceBlue.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
             }
             .padding(24)
