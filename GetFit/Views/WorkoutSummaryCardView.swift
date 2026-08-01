@@ -4,6 +4,7 @@ import SwiftData
 struct WorkoutSummaryCardView: View {
     @Environment(\.dismiss) private var dismiss
     let session: WorkoutSession
+    @StateObject private var weightUnit = WeightUnitManager.shared
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     let darkCardBg = Color(red: 0.07, green: 0.09, blue: 0.13)
@@ -178,7 +179,7 @@ struct WorkoutSummaryCardView: View {
                         
                         Spacer()
                         
-                        Text(formatWeight(item.topWeight) + " kg")
+                        Text(weightUnit.formatWeight(item.topWeight))
                             .font(.body)
                             .fontWeight(.medium)
                             .foregroundStyle(paleBlue)
@@ -201,10 +202,11 @@ struct WorkoutSummaryCardView: View {
     }
     
     private func formatTonnage(_ weight: Double) -> String {
-        if weight >= 1000 {
-            return String(format: "%.1ft", weight / 1000.0)
+        let displayWeight = weightUnit.displayWeight(weight)
+        if displayWeight >= 1000 {
+            return String(format: "%.1ft", displayWeight / 1000.0)
         } else {
-            return String(format: "%.0f kg", weight)
+            return String(format: "%.0f %@", displayWeight, weightUnit.unitLabel)
         }
     }
     

@@ -4,6 +4,7 @@ import SwiftData
 struct WorkoutHistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }, sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
+    @StateObject private var weightUnit = WeightUnitManager.shared
     
     @State private var selectedSegment = 0
     @State private var selectedSession: WorkoutSession?
@@ -84,7 +85,7 @@ struct WorkoutHistoryView: View {
                                     
                                     let tonnage = totalTonnage(for: session)
                                     if tonnage > 0 {
-                                        Text(String(format: "%.1f kg", tonnage))
+                                        Text(weightUnit.formatWeight(tonnage))
                                             .font(.caption)
                                             .fontWeight(.light)
                                             .foregroundColor(paleBlue)
@@ -123,6 +124,7 @@ struct SessionDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     let session: WorkoutSession
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    @StateObject private var weightUnit = WeightUnitManager.shared
     @State private var showSummaryGraphic = false
     
     var body: some View {
@@ -155,7 +157,7 @@ struct SessionDetailSheet: View {
                             .font(.body)
                             .fontWeight(.light)
                         Spacer()
-                        Text(String(format: "%.1f kg", totalTonnage))
+                        Text(weightUnit.formatWeight(totalTonnage))
                             .font(.headline)
                             .foregroundColor(paleBlue)
                     }
@@ -172,7 +174,7 @@ struct SessionDetailSheet: View {
                                     .font(.subheadline)
                                     .fontWeight(.light)
                                 Spacer()
-                                Text("\(formatWeight(setLog.weight)) kg × \(setLog.reps)")
+                                Text("\(weightUnit.formatNumber(setLog.weight)) \(weightUnit.unitLabel) × \(setLog.reps)")
                                     .font(.subheadline)
                                     .fontWeight(.regular)
                             }

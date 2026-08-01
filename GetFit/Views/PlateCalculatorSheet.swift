@@ -2,11 +2,14 @@ import SwiftUI
 
 struct PlateCalculatorSheet: View {
     @State private var targetWeight: Double
-    let barWeight: Double = 20
+    @StateObject private var weightUnit = WeightUnitManager.shared
     @Environment(\.dismiss) private var dismiss
     
-    init(targetWeight: Double = 60.0) {
-        _targetWeight = State(initialValue: targetWeight)
+    var barWeight: Double { weightUnit.barWeight }
+    
+    init(targetWeight: Double? = nil) {
+        let initial = targetWeight ?? (WeightUnitManager.shared.unit == .kg ? 60.0 : 135.0)
+        _targetWeight = State(initialValue: initial)
     }
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
@@ -17,7 +20,7 @@ struct PlateCalculatorSheet: View {
     
     var plates: [(plateWeight: Double, count: Int)] {
         var remaining = weightPerSide
-        let availablePlates: [Double] = [25, 20, 15, 10, 5, 2.5, 1.25]
+        let availablePlates = weightUnit.availablePlates
         var result: [(Double, Int)] = []
         
         for p in availablePlates {
@@ -44,7 +47,7 @@ struct PlateCalculatorSheet: View {
                     .foregroundColor(.gray)
                 Spacer()
                 Button(action: {
-                    if targetWeight > barWeight { targetWeight -= 2.5 }
+                    if targetWeight > barWeight { targetWeight -= weightUnit.plateStep }
                 }) {
                     Image(systemName: "minus")
                         .font(.system(size: 20, weight: .light))
@@ -61,7 +64,7 @@ struct PlateCalculatorSheet: View {
                     .frame(minWidth: 70)
                 
                 Button(action: {
-                    targetWeight += 2.5
+                    targetWeight += weightUnit.plateStep
                 }) {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .light))
@@ -71,13 +74,13 @@ struct PlateCalculatorSheet: View {
                         .clipShape(Circle())
                 }
                 
-                Text("kg")
+                Text(weightUnit.unitLabel)
                     .font(.body)
                     .foregroundColor(.gray)
             }
             
             // 3. Bar Weight Display
-            Text("Bar: \(String(format: "%.0f", barWeight)) kg")
+            Text("Bar: \(String(format: "%.0f", barWeight)) \(weightUnit.unitLabel)")
                 .font(.subheadline)
                 .fontWeight(.light)
                 .foregroundColor(.gray)
@@ -102,7 +105,7 @@ struct PlateCalculatorSheet: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 8)
                         
-                        Text(String(format: "%g kg", plateInfo.plateWeight))
+                        Text(String(format: "%g \(weightUnit.unitLabel)", plateInfo.plateWeight))
                             .foregroundColor(.white)
                     }
                 }
@@ -112,7 +115,7 @@ struct PlateCalculatorSheet: View {
             
             // 5. Total Check
             let calculatedTotal = barWeight + plates.reduce(0) { $0 + $1.plateWeight * Double($1.count) } * 2
-            Text(String(format: "Total: %.1f kg", calculatedTotal))
+            Text(String(format: "Total: %.1f \(weightUnit.unitLabel)", calculatedTotal))
                 .font(.body)
                 .fontWeight(.light)
                 .foregroundColor(.white)
@@ -132,11 +135,11 @@ struct PlateCalculatorSheet: View {
     }
     
     func opacityForPlate(_ weight: Double) -> Double {
-        if weight == 25 { return 1.0 }
-        if weight == 20 { return 0.9 }
-        if weight == 15 { return 0.75 }
-        if weight == 10 { return 0.6 }
-        if weight == 5 { return 0.45 }
+        if weight >= 25 || weight >= 45 { return 1.0 }
+        if weight == 20 || weight == 35 { return 0.9 }
+        if weight == 15 || weight == 25 { return 0.75 }
+        if weight == 10 || weight == 10 { return 0.6 }
+        if weight == 5 || weight == 5 { return 0.45 }
         return 0.3
     }
 }

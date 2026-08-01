@@ -12,8 +12,14 @@ enum TimeRange: String, CaseIterable {
 struct BodyWeightView: View {
     @Query(sort: \BodyWeightEntry.date, order: .reverse) private var entries: [BodyWeightEntry]
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var weightUnit = WeightUnitManager.shared
     @State private var inputWeight: Double = 70.0
+    @State private var weightText: String = ""
     @State private var selectedRange: TimeRange = .month
+    
+    private func formatDisplayWeight(_ weight: Double) -> String {
+        return String(format: "%.1f", weight)
+    }
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     
@@ -58,11 +64,20 @@ struct BodyWeightView: View {
                         .foregroundColor(.gray)
                     
                     HStack(alignment: .lastTextBaseline) {
-                        Text(String(format: "%.1f", inputWeight))
+                        TextField("Weight", text: $weightText)
+                            .keyboardType(.decimalPad)
+                            .onChange(of: weightText) { oldValue, newValue in
+                                if let val = Double(newValue) {
+                                    inputWeight = val
+                                }
+                            }
                             .font(.system(size: 40))
                             .fontWeight(.light)
                             .foregroundColor(.white)
-                        Text("kg")
+                            .multilineTextAlignment(.center)
+                            .frame(width: 120)
+                        
+                        Text(weightUnit.unitLabel)
                             .font(.title3)
                             .fontWeight(.light)
                             .foregroundColor(.gray)
@@ -70,7 +85,10 @@ struct BodyWeightView: View {
                     
                     HStack(spacing: 24) {
                         Button(action: {
-                            if inputWeight > 0.5 { inputWeight -= 0.5 }
+                            if inputWeight > weightUnit.bodyWeightStep { 
+                                inputWeight -= weightUnit.bodyWeightStep 
+                                weightText = formatDisplayWeight(inputWeight)
+                            }
                         }) {
                             Image(systemName: "minus")
                                 .font(.system(size: 20, weight: .light))
@@ -81,7 +99,8 @@ struct BodyWeightView: View {
                         }
                         
                         Button(action: {
-                            inputWeight += 0.5
+                            inputWeight += weightUnit.bodyWeightStep
+                            weightText = formatDisplayWeight(inputWeight)
                         }) {
                             Image(systemName: "plus")
                                 .font(.system(size: 20, weight: .light))
@@ -93,7 +112,8 @@ struct BodyWeightView: View {
                     }
                     
                     Button(action: {
-                        let newEntry = BodyWeightEntry(weight: inputWeight, unit: "kg", date: .now)
+                        let storedWeight = weightUnit.toKg(inputWeight)
+                        let newEntry = BodyWeightEntry(weight: storedWeight, unit: "kg", date: .now)
                         modelContext.insert(newEntry)
                         try? modelContext.save()
                     }) {
@@ -191,11 +211,15 @@ struct BodyWeightView: View {
                     let firstWeight = filteredEntries.first?.weight ?? current
                     let change = current - firstWeight
                     
-                    StatItem(label: "Current", value: String(format: "%.1f", current))
+                    let displayCurrent = weightUnit.displayWeight(current)
+                    let displayLowest = weightUnit.displayWeight(lowest)
+                    let displayChange = weightUnit.displayWeight(change)
+                    
+                    StatItem(label: "Current", value: "\(String(format: "%.1f", displayCurrent)) \(weightUnit.unitLabel)")
                     Spacer()
-                    StatItem(label: "Lowest", value: String(format: "%.1f", lowest))
+                    StatItem(label: "Lowest", value: "\(String(format: "%.1f", displayLowest)) \(weightUnit.unitLabel)")
                     Spacer()
-                    StatItemChange(label: "Change", change: change)
+                    StatItemChange(label: "Change", change: displayChange, unitLabel: weightUnit.unitLabel)
                 }
                 .padding(.top, 8)
                 
@@ -219,7 +243,7 @@ struct BodyWeightView: View {
                                     .foregroundColor(.gray)
                             }
                             Spacer()
-                            Text(String(format: "%.1f kg", entry.weight))
+                            Text(weightUnit.formatWeight(entry.weight))
                                 .font(.body)
                                 .fontWeight(.light)
                                 .foregroundColor(.gray)
@@ -243,7 +267,10 @@ struct BodyWeightView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let latest = entries.first {
-                inputWeight = latest.weight
+                inputWeight = weightUnit.displayWeight(latest.weight)
+                weightText = formatDisplayWeight(inputWeight)
+            } else {
+                weightText = formatDisplayWeight(inputWeight)
             }
         }
     }
@@ -269,6 +296,7 @@ struct StatItem: View {
 struct StatItemChange: View {
     let label: String
     let change: Double
+    let unitLabel: String
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -279,7 +307,7 @@ struct StatItemChange: View {
             HStack(spacing: 4) {
                 let arrow = change > 0 ? "↑" : change < 0 ? "↓" : "→"
                 let color: Color = change > 0 ? .red.opacity(0.7) : change < 0 ? .green.opacity(0.7) : .gray
-                Text("\(arrow) \(String(format: "%.1f", abs(change))) kg")
+                Text("\(arrow) \(String(format: "%.1f", abs(change))) \(unitLabel)")
                     .font(.body)
                     .fontWeight(.light)
                     .foregroundColor(color)

@@ -5,6 +5,7 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @StateObject private var healthKitManager = HealthKitManager.shared
+    @StateObject private var weightUnit = WeightUnitManager.shared
     
     @Query private var userStats: [UserStats]
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }) private var completedSessions: [WorkoutSession]
@@ -190,20 +191,21 @@ struct ProfileView: View {
                             .fontWeight(.light)
                             .foregroundStyle(.white)
                         
-                        HStack {
-                            Text("Weight Units")
-                                .font(.body)
-                                .fontWeight(.light)
-                                .foregroundStyle(.white)
-                            Spacer()
-                            Text("Kilograms (kg)")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Weight Unit")
                                 .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(paleBlue)
+                                .fontWeight(.light)
+                                .foregroundStyle(Color.gray)
+                            
+                            Picker("Unit", selection: $weightUnit.unit) {
+                                Text("kg").tag(WeightUnitManager.WeightUnit.kg)
+                                Text("lb").tag(WeightUnitManager.WeightUnit.lb)
+                            }
+                            .pickerStyle(.segmented)
                         }
                         .padding(16)
                         .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                 }
                 .padding(20)

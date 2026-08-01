@@ -8,6 +8,8 @@ struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
+    @StateObject private var weightUnit = WeightUnitManager.shared
+    
     @State private var elapsedTime: Double = 0
     @State private var timer: Timer?
     @State private var weightInputs: [UUID: Double] = [:]
@@ -234,7 +236,7 @@ struct ActiveWorkoutView: View {
                 Spacer()
                 if machine.equipmentType.lowercased() == "barbell" {
                     Button(action: {
-                        calculatorTargetWeight = weightInputs[machine.id] ?? entry.defaultWeight
+                        calculatorTargetWeight = weightInputs[machine.id] ?? weightUnit.displayWeight(entry.defaultWeight)
                         showPlateCalculator = true
                     }) {
                         HStack(spacing: 4) {
@@ -252,7 +254,7 @@ struct ActiveWorkoutView: View {
             }
             
             if let best = previousBest(for: machine.id) {
-                Text("Previous Best: \(formatWeight(best.weight)) kg × \(best.reps)")
+                Text("Previous Best: \(weightUnit.formatNumber(weightUnit.displayWeight(best.weight))) \(weightUnit.unitLabel) × \(best.reps)")
                     .font(.caption)
                     .fontWeight(.light)
                     .foregroundColor(.gray)
@@ -268,7 +270,7 @@ struct ActiveWorkoutView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Spacer()
-                            Text("\(formatWeight(log.weight)) kg × \(log.reps)")
+                            Text("\(weightUnit.formatNumber(weightUnit.displayWeight(log.weight))) \(weightUnit.unitLabel) × \(log.reps)")
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
@@ -311,12 +313,13 @@ struct ActiveWorkoutView: View {
                         Button {
                             // Accept Overload
                             acceptedOverloads[machine.id] = true
-                            weightInputs[machine.id] = rec.recommendedWeight
-                            weightStrings[machine.id] = formatWeight(rec.recommendedWeight)
+                            let displayRec = weightUnit.displayWeight(rec.recommendedWeight)
+                            weightInputs[machine.id] = displayRec
+                            weightStrings[machine.id] = weightUnit.formatNumber(displayRec)
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: isAccepted ? "checkmark.circle.fill" : "circle")
-                                Text("Accept \(formatWeight(rec.recommendedWeight)) kg")
+                                Text("Accept \(weightUnit.formatNumber(weightUnit.displayWeight(rec.recommendedWeight))) \(weightUnit.unitLabel)")
                             }
                             .font(.caption)
                             .fontWeight(.medium)
@@ -334,12 +337,13 @@ struct ActiveWorkoutView: View {
                         Button {
                             // Decline / Revert to original
                             acceptedOverloads[machine.id] = false
-                            weightInputs[machine.id] = rec.previousWeight
-                            weightStrings[machine.id] = formatWeight(rec.previousWeight)
+                            let displayPrev = weightUnit.displayWeight(rec.previousWeight)
+                            weightInputs[machine.id] = displayPrev
+                            weightStrings[machine.id] = weightUnit.formatNumber(displayPrev)
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: !isAccepted ? "arrow.uturn.backward.circle.fill" : "arrow.uturn.backward")
-                                Text("Keep \(formatWeight(rec.previousWeight)) kg")
+                                Text("Keep \(weightUnit.formatNumber(weightUnit.displayWeight(rec.previousWeight))) \(weightUnit.unitLabel)")
                             }
                             .font(.caption)
                             .fontWeight(.medium)
@@ -389,7 +393,7 @@ struct ActiveWorkoutView: View {
                             }
                         }
                     ),
-                    step: incrementStep(for: machine.equipmentType)
+                    step: weightUnit.stepSize(for: machine.equipmentType)
                 )
                 
                 Text("×")
@@ -421,13 +425,7 @@ struct ActiveWorkoutView: View {
     }
     
     private func incrementStep(for equipmentType: String) -> Double {
-        switch equipmentType.lowercased() {
-        case "barbell": return 5.0
-        case "dumbbell": return 2.5
-        case "cable": return 2.5
-        case "machine": return 5.0
-        default: return 2.5
-        }
+        return weightUnit.stepSize(for: equipmentType)
     }
     
     private var header: some View {
@@ -476,7 +474,7 @@ struct ActiveWorkoutView: View {
                 let cur = value.wrappedValue
                 if cur >= step {
                     value.wrappedValue = cur - step
-                    textValue.wrappedValue = formatWeight(cur - step)
+                    textValue.wrappedValue = weightUnit.formatNumber(cur - step)
                 } else if cur > 0 {
                     value.wrappedValue = 0
                     textValue.wrappedValue = "0"
@@ -499,7 +497,7 @@ struct ActiveWorkoutView: View {
                     .foregroundColor(.white)
                     .frame(width: 44)
                 
-                Text("kg")
+                Text(weightUnit.unitLabel)
                     .font(.caption)
                     .foregroundColor(.gray)
             }
@@ -507,7 +505,7 @@ struct ActiveWorkoutView: View {
             Button(action: {
                 let cur = value.wrappedValue
                 value.wrappedValue = cur + step
-                textValue.wrappedValue = formatWeight(cur + step)
+                textValue.wrappedValue = weightUnit.formatNumber(cur + step)
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 12))
@@ -565,9 +563,10 @@ struct ActiveWorkoutView: View {
                     completedSessions: completedSessions
                 )
                 
-                let initialWeight = rec.isOverloadTriggered ? rec.recommendedWeight : (rec.previousWeight > 0 ? rec.previousWeight : (entry.defaultWeight > 0 ? entry.defaultWeight : 20.0))
-                weightInputs[machine.id] = initialWeight
-                weightStrings[machine.id] = formatWeight(initialWeight)
+                let initialWeightKg = rec.isOverloadTriggered ? rec.recommendedWeight : (rec.previousWeight > 0 ? rec.previousWeight : (entry.defaultWeight > 0 ? entry.defaultWeight : 20.0))
+                let displayWeight = weightUnit.displayWeight(initialWeightKg)
+                weightInputs[machine.id] = displayWeight
+                weightStrings[machine.id] = weightUnit.formatNumber(displayWeight)
                 repInputs[machine.id] = entry.defaultReps
                 acceptedOverloads[machine.id] = rec.isOverloadTriggered
             }
@@ -584,13 +583,14 @@ struct ActiveWorkoutView: View {
     }
 
     private func logSet(for entry: SplitMachineEntry, machine: GymMachine, loggedSetsCount: Int) {
-        let weight = weightInputs[machine.id] ?? entry.defaultWeight
+        let displayWeight = weightInputs[machine.id] ?? weightUnit.displayWeight(entry.defaultWeight)
+        let weightInKg = weightUnit.toKg(displayWeight)
         let reps = repInputs[machine.id] ?? entry.defaultReps
         
         let newSet = SetLog(
             setNumber: loggedSetsCount + 1,
             reps: reps,
-            weight: weight,
+            weight: weightInKg,
             machineName: machine.name,
             machineId: machine.id,
             equipmentType: machine.equipmentType
