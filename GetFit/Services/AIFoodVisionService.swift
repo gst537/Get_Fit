@@ -57,7 +57,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Google Gemini Vision API (Tries 2.5-flash, 2.0-flash, 1.5-flash)
+    // MARK: - Google Gemini Vision API (Tries exact working models in v1beta & v1)
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 1024)
@@ -71,30 +71,33 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         let base64Image = jpegData.base64EncodedString()
         
-        let modelsToTry = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash"
+        let endpointsToTry = [
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent",
+            "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
         ]
         
         let promptText = """
         You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
-        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
+        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Kothu Parotta, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
         You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
         JSON Structure:
         {
-          "plateTitle": "Summary Title of Plate (e.g., Dosa, Sambar & Eggs Breakfast Plate)",
+          "plateTitle": "Summary Title of Plate (e.g., Kothu Parotta / Dosa & Curry Plate)",
           "items": [
             {
-              "name": "Exact Item Name with Portion (e.g., Crispy Masala Dosa (2 pcs))",
-              "calories": 240,
-              "protein": 6,
-              "carbs": 48,
-              "fats": 5,
-              "icon": "🥞"
+              "name": "Exact Item Name with Portion (e.g., Chicken Kothu Parotta (1 portion))",
+              "calories": 420,
+              "protein": 24,
+              "carbs": 45,
+              "fats": 16,
+              "icon": "🥘"
             }
           ]
         }
@@ -127,8 +130,8 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         var lastErrorMessage = "Could not connect to Gemini API."
         
-        for modelName in modelsToTry {
-            guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(modelName):generateContent?key=\(apiKey)") else { continue }
+        for baseURLString in endpointsToTry {
+            guard let url = URL(string: "\(baseURLString)?key=\(apiKey)") else { continue }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
