@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ExerciseDetailSheet: View {
     let exercise: GymMachine
@@ -8,6 +9,11 @@ struct ExerciseDetailSheet: View {
     @State private var isEditingImage = false
     @State private var imageURLInput = ""
     @State private var showInAppSafari = false
+    
+    // Photo Library & Camera State
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var showCameraPicker = false
+    @State private var loadedUIImage: UIImage? = nil
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
 
@@ -160,7 +166,7 @@ struct ExerciseDetailSheet: View {
                     }
                 }
                 
-                // Section 5: Photo & Form Diagram Section
+                // Section 5: Photo Library & Camera Setup Photo Section
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Posture & Setup Photo")
@@ -170,36 +176,30 @@ struct ExerciseDetailSheet: View {
                         
                         Spacer()
                         
-                        Button(isEditingImage ? "Save" : (exercise.imageURL == nil || exercise.imageURL?.isEmpty == true) ? "+ Add Photo" : "Edit Photo") {
-                            if isEditingImage {
-                                exercise.imageURL = imageURLInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if exercise.imageURL != nil && exercise.imageURL?.isEmpty == false {
+                            Button("Remove Photo") {
+                                exercise.imageURL = nil
+                                loadedUIImage = nil
                                 try? modelContext.save()
-                                isEditingImage = false
-                            } else {
-                                imageURLInput = exercise.imageURL ?? ""
-                                isEditingImage = true
                             }
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.red.opacity(0.8))
                         }
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(paleBlue)
                     }
                     
-                    if isEditingImage {
-                        VStack(alignment: .leading, spacing: 8) {
-                            TextField("Paste image URL (e.g. https://...)", text: $imageURLInput)
-                                .font(.body)
-                                .padding(12)
-                                .background(Color(UIColor.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                            
-                            Text("Enter web image link or machine setup diagram URL")
-                                .font(.caption2)
-                                .foregroundStyle(Color.gray)
-                        }
-                    } else if let imgStr = exercise.imageURL, !imgStr.isEmpty, let url = URL(string: imgStr) {
+                    // Display Current Image (Local File or Web URL)
+                    if let loadedUIImage {
+                        Image(uiImage: loadedUIImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity, maxHeight: 220)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(paleBlue.opacity(0.3), lineWidth: 0.8)
+                            )
+                    } else if let imgStr = exercise.imageURL, !imgStr.isEmpty, imgStr.hasPrefix("http"), let url = URL(string: imgStr) {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .empty:
@@ -213,34 +213,105 @@ struct ExerciseDetailSheet: View {
                                     .frame(maxWidth: .infinity, maxHeight: 220)
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
                             case .failure:
-                                HStack {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(Color.gray.opacity(0.6))
-                                    Text("Failed to load image. Tap 'Edit Photo' to update link.")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.gray)
-                                }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .matteBlack(cornerRadius: 12, accentColor: paleBlue)
+                                Text("Failed to load web photo.")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.gray)
                             @unknown default:
                                 EmptyView()
                             }
                         }
                     } else {
-                        HStack {
-                            Image(systemName: "photo.badge.plus")
-                                .font(.system(size: 20))
-                                .foregroundStyle(paleBlue.opacity(0.6))
-                            Text("No photo added yet. Tap '+ Add Photo' to attach a setup diagram.")
-                                .font(.caption)
-                                .fontWeight(.light)
-                                .foregroundStyle(Color.gray)
+                        // Empty State Photo Picker Box
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(paleBlue)
+                                Text("Attach Exercise Photo or Form Diagram")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.white)
+                            }
+                            
+                            HStack(spacing: 12) {
+                                // Photo Library Picker Button
+                                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "photo.on.rectangle")
+                                            .font(.caption)
+                                        Text("Photo Library")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                    }
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(paleBlue)
+                                    .clipShape(Capsule())
+                                }
+                                
+                                // Camera Button
+                                Button {
+                                    showCameraPicker = true
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "camera")
+                                            .font(.caption)
+                                        Text("Take Photo")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                    }
+                                    .foregroundStyle(paleBlue)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(paleBlue.opacity(0.15))
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(paleBlue.opacity(0.4), lineWidth: 0.8))
+                                }
+                            }
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .matteBlack(cornerRadius: 12, accentColor: paleBlue)
+                        .padding(20)
+                        .frame(maxWidth: .infinity)
+                        .matteBlack(cornerRadius: 14, accentColor: paleBlue)
+                    }
+                    
+                    // Replace/Change Photo Button when image exists
+                    if loadedUIImage != nil || (exercise.imageURL != nil && exercise.imageURL?.isEmpty == false) {
+                        HStack(spacing: 12) {
+                            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.caption)
+                                    Text("Change Photo")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(paleBlue.opacity(0.12))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                            }
+                            
+                            Button {
+                                showCameraPicker = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "camera")
+                                        .font(.caption)
+                                    Text("Retake Photo")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(paleBlue.opacity(0.12))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                            }
+                        }
                     }
                 }
                 
@@ -272,12 +343,52 @@ struct ExerciseDetailSheet: View {
         .onAppear {
             videoURLInput = exercise.videoURL ?? ""
             imageURLInput = exercise.imageURL ?? ""
+            loadLocalImage()
+        }
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    saveAndApplyImage(image)
+                }
+            }
+        }
+        .sheet(isPresented: $showCameraPicker) {
+            CameraPicker { capturedImage in
+                saveAndApplyImage(capturedImage)
+            }
         }
         .sheet(isPresented: $showInAppSafari) {
             if let videoURL = exercise.videoURL, let url = URL(string: videoURL) {
                 SafariView(url: url)
                     .ignoresSafeArea()
             }
+        }
+    }
+    
+    // MARK: - Image Saving & Loading Helpers
+    
+    private func saveAndApplyImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let filename = "exercise_\(exercise.id.uuidString).jpg"
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = docs.appendingPathComponent(filename)
+        
+        do {
+            try data.write(to: fileURL)
+            exercise.imageURL = fileURL.path
+            try? modelContext.save()
+            loadedUIImage = image
+        } catch {
+            print("Failed to save exercise photo: \(error)")
+        }
+    }
+    
+    private func loadLocalImage() {
+        guard let path = exercise.imageURL, !path.isEmpty else { return }
+        if FileManager.default.fileExists(atPath: path), let img = UIImage(contentsOfFile: path) {
+            loadedUIImage = img
         }
     }
     

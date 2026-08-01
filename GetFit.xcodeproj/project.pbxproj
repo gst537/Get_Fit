@@ -22,6 +22,7 @@
 		43FF9EBBB191804EA8719EC0 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E09DA9200ADB177EBE69D35 /* RestTimerAttributes.swift */; };
 		4518F814439684FC1230255E /* EditSetsRepsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B2C036496CF07B27EEE31B /* EditSetsRepsSheet.swift */; };
 		4674A36B62C13B8F626C6D25 /* ProgressiveOverloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1899C627C5E21B46659D1117 /* ProgressiveOverloadService.swift */; };
+		50FF05D21B0B2E7DE28F56F2 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852AB613D490D95A64E409CD /* CameraPicker.swift */; };
 		51F71AC40FB1DEEE715D7A0C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6565581985F7DB4B57FE26AF /* ContentView.swift */; };
 		52F40DEB86D78EFF1DD78020 /* PlateCalculatorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77CB33CE5B8E0559732C9CF /* PlateCalculatorSheet.swift */; };
 		5DD30BA3051748E9639753D4 /* ProgressionChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */; };
@@ -66,6 +67,7 @@
 		67AED06FB77D686A413F5CF0 /* RestTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerView.swift; sourceTree = "<group>"; };
 		77860A9C14FE08F151BCF34A /* RestTimerActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerActivityManager.swift; sourceTree = "<group>"; };
 		790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionTrackerView.swift; sourceTree = "<group>"; };
+		852AB613D490D95A64E409CD /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
 		8700C75705BC2D6B0ABAFBBE /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		891DF35282B68DCED2DB5A0D /* YouTubePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerView.swift; sourceTree = "<group>"; };
 		89BD98BD7346629574622C48 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 				A49A76C5856BF70C988E394D /* AddExerciseSheet.swift */,
 				284DFA568114DA9747774975 /* AddFoodSheet.swift */,
 				15888ED4181530646D032A1A /* BodyWeightView.swift */,
+				852AB613D490D95A64E409CD /* CameraPicker.swift */,
 				5F329746B73EF52C2451695B /* CardioTrackerView.swift */,
 				6565581985F7DB4B57FE26AF /* ContentView.swift */,
 				CDD6AD6C5D4C8C93F0C4F29A /* CreateExerciseSheet.swift */,
@@ -268,6 +271,7 @@
 				2A4CF4B712A6F550FB1F6EEA /* AddExerciseSheet.swift in Sources */,
 				2FDF1B076EC671163B960EB8 /* AddFoodSheet.swift in Sources */,
 				F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */,
+				50FF05D21B0B2E7DE28F56F2 /* CameraPicker.swift in Sources */,
 				6774F0A6271CAE5514D84764 /* CardioTrackerView.swift in Sources */,
 				51F71AC40FB1DEEE715D7A0C /* ContentView.swift in Sources */,
 				3B027ECB5A357983847B9EE2 /* CreateExerciseSheet.swift in Sources */,
