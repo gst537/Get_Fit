@@ -38,7 +38,7 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     private init() {}
     
-    /// Main entry point: Analyzes food image using 100% Google Gemini 1.5 Flash Vision AI
+    /// Main entry point: Analyzes food image using 100% Google Gemini Vision AI
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
         guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return FoodAnalysisResult(
@@ -49,37 +49,36 @@ final class AIFoodVisionService: @unchecked Sendable {
                 totalFats: 0,
                 detectedItems: [],
                 confidence: 0.0,
-                errorMessage: "Please paste your free Google Gemini API Key above to unlock 99% accurate food recognition!"
+                errorMessage: "Please paste your free Google Gemini API Key above to unlock AI food recognition!"
             )
         }
         
-        if let geminiResult = await analyzeWithGeminiVision(image: image, apiKey: key.trimmingCharacters(in: .whitespacesAndNewlines)) {
-            return geminiResult
-        } else {
-            return FoodAnalysisResult(
-                plateTitle: "Gemini Scan Failed",
-                totalCalories: 0,
-                totalProtein: 0,
-                totalCarbs: 0,
-                totalFats: 0,
-                detectedItems: [],
-                confidence: 0.0,
-                errorMessage: "Could not reach Gemini AI API. Please check your internet connection or API Key."
-            )
-        }
+        let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Google Gemini 1.5 Flash Vision API
+    // MARK: - Google Gemini Vision API (Tries 2.5-flash, 2.0-flash, 1.5-flash)
     
-    private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult? {
+    private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 1024)
-        guard let jpegData = resized.jpegData(compressionQuality: 0.8) else { return nil }
+        guard let jpegData = resized.jpegData(compressionQuality: 0.8) else {
+            return FoodAnalysisResult(
+                plateTitle: "Image Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not process image data."
+            )
+        }
         let base64Image = jpegData.base64EncodedString()
         
-        guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(apiKey)") else { return nil }
+        let modelsToTry = [
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash"
+        ]
         
         let promptText = """
-        You are an expert nutritionist and food vision AI specializing in global, South Indian, North Indian, and international cuisines.
+        You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
         Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
@@ -117,62 +116,94 @@ final class AIFoodVisionService: @unchecked Sendable {
             ]
         ]
         
-        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody) else { return nil }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = httpBody
-        request.timeoutInterval = 20
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-            
-            if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let candidates = jsonObj["candidates"] as? [[String: Any]],
-               let firstCandidate = candidates.first,
-               let content = firstCandidate["content"] as? [String: Any],
-               let parts = content["parts"] as? [[String: Any]],
-               let textResponse = parts.first?["text"] as? String {
-                
-                // Clean response of any markdown backticks or wrappers
-                let cleanedJSON = textResponse
-                    .replacingOccurrences(of: "```json", with: "")
-                    .replacingOccurrences(of: "```", with: "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if let jsonData = cleanedJSON.data(using: .utf8) {
-                    struct GeminiPayload: Codable {
-                        let plateTitle: String
-                        let items: [DetectedFoodItem]
-                    }
-                    
-                    let decoder = JSONDecoder()
-                    if let payload = try? decoder.decode(GeminiPayload.self, from: jsonData), !payload.items.isEmpty {
-                        let totalCals = payload.items.reduce(0) { $0 + $1.calories }
-                        let totalP = payload.items.reduce(0) { $0 + $1.protein }
-                        let totalC = payload.items.reduce(0) { $0 + $1.carbs }
-                        let totalF = payload.items.reduce(0) { $0 + $1.fats }
-                        
-                        return FoodAnalysisResult(
-                            plateTitle: payload.plateTitle,
-                            totalCalories: totalCals,
-                            totalProtein: totalP,
-                            totalCarbs: totalC,
-                            totalFats: totalF,
-                            detectedItems: payload.items,
-                            confidence: 0.99,
-                            errorMessage: nil
-                        )
-                    }
-                }
-            }
-        } catch {
-            // Network or parsing error
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody) else {
+            return FoodAnalysisResult(
+                plateTitle: "Payload Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not format API request payload."
+            )
         }
         
-        return nil
+        var lastErrorMessage = "Could not connect to Gemini API."
+        
+        for modelName in modelsToTry {
+            guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(modelName):generateContent?key=\(apiKey)") else { continue }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = httpBody
+            request.timeoutInterval = 20
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+                
+                if statusCode == 200 {
+                    if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let candidates = jsonObj["candidates"] as? [[String: Any]],
+                       let firstCandidate = candidates.first,
+                       let content = firstCandidate["content"] as? [String: Any],
+                       let parts = content["parts"] as? [[String: Any]],
+                       let textResponse = parts.first?["text"] as? String {
+                        
+                        let cleanedJSON = textResponse
+                            .replacingOccurrences(of: "```json", with: "")
+                            .replacingOccurrences(of: "```", with: "")
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        
+                        if let jsonData = cleanedJSON.data(using: .utf8) {
+                            struct GeminiPayload: Codable {
+                                let plateTitle: String
+                                let items: [DetectedFoodItem]
+                            }
+                            
+                            let decoder = JSONDecoder()
+                            if let payload = try? decoder.decode(GeminiPayload.self, from: jsonData), !payload.items.isEmpty {
+                                let totalCals = payload.items.reduce(0) { $0 + $1.calories }
+                                let totalP = payload.items.reduce(0) { $0 + $1.protein }
+                                let totalC = payload.items.reduce(0) { $0 + $1.carbs }
+                                let totalF = payload.items.reduce(0) { $0 + $1.fats }
+                                
+                                return FoodAnalysisResult(
+                                    plateTitle: payload.plateTitle,
+                                    totalCalories: totalCals,
+                                    totalProtein: totalP,
+                                    totalCarbs: totalC,
+                                    totalFats: totalF,
+                                    detectedItems: payload.items,
+                                    confidence: 0.99,
+                                    errorMessage: nil
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Extract error message from API response if available
+                    if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let errorObj = jsonObj["error"] as? [String: Any],
+                       let message = errorObj["message"] as? String {
+                        lastErrorMessage = "Gemini API Error (\(statusCode)): \(message)"
+                    } else {
+                        lastErrorMessage = "Gemini API returned status code \(statusCode). Check API Key."
+                    }
+                }
+            } catch {
+                lastErrorMessage = "Network error: \(error.localizedDescription)"
+            }
+        }
+        
+        return FoodAnalysisResult(
+            plateTitle: "API Connection Error",
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbs: 0,
+            totalFats: 0,
+            detectedItems: [],
+            confidence: 0.0,
+            errorMessage: lastErrorMessage
+        )
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
