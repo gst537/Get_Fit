@@ -61,6 +61,7 @@ struct AddFoodSheet: View {
     @State private var showCameraPicker = false
     @State private var isScanningWithAI = false
     @State private var aiSuccessMessage: String? = nil
+    @State private var aiErrorMessage: String? = nil
     @State private var detectedItems: [DetectedFoodItem] = []
     
     // Gemini API Key state
@@ -225,7 +226,7 @@ struct AddFoodSheet: View {
                     .font(.caption)
                     .foregroundStyle(paleBlue)
                 
-                Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Google Gemini Vision AI Active (99% Accuracy)" : "Enable Gemini Vision AI for 99% Accuracy")
+                Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Google Gemini Vision AI Active" : "Paste Free Gemini Key for AI Scanning")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(.white)
@@ -261,6 +262,7 @@ struct AddFoodSheet: View {
                         Button("Save") {
                             let cleanKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
                             AIFoodVisionService.shared.savedAPIKey = cleanKey.isEmpty ? nil : cleanKey
+                            aiErrorMessage = nil
                             withAnimation {
                                 showKeySettings = false
                             }
@@ -386,6 +388,7 @@ struct AddFoodSheet: View {
                         selectedUIImage = nil
                         selectedItem = nil
                         aiSuccessMessage = nil
+                        aiErrorMessage = nil
                         detectedItems = []
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -461,7 +464,7 @@ struct AddFoodSheet: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .tint(paleBlue)
-                    Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Gemini Vision AI scanning plate items..." : "AI scanning plate items & calculating calories...")
+                    Text("Google Gemini Vision AI scanning plate items...")
                         .font(.caption)
                         .foregroundStyle(paleBlue)
                 }
@@ -482,6 +485,19 @@ struct AddFoodSheet: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.green.opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else if let err = aiErrorMessage {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color.orange)
+                    Text(err)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity)
+                .background(Color.orange.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }
@@ -489,19 +505,25 @@ struct AddFoodSheet: View {
     private func scanMealWithAI(_ image: UIImage) {
         isScanningWithAI = true
         aiSuccessMessage = nil
+        aiErrorMessage = nil
         detectedItems = []
         
         Task {
             let result = await AIFoodVisionService.shared.analyzeFoodImage(image)
             
             isScanningWithAI = false
-            foodName = result.plateTitle
-            caloriesText = "\(result.totalCalories)"
-            proteinText = "\(result.totalProtein)"
-            carbsText = "\(result.totalCarbs)"
-            fatsText = "\(result.totalFats)"
-            detectedItems = result.detectedItems
-            aiSuccessMessage = "Identified '\(result.plateTitle)' (\(result.totalCalories) kcal)"
+            if let errorMsg = result.errorMessage {
+                aiErrorMessage = errorMsg
+                showKeySettings = true
+            } else {
+                foodName = result.plateTitle
+                caloriesText = "\(result.totalCalories)"
+                proteinText = "\(result.totalProtein)"
+                carbsText = "\(result.totalCarbs)"
+                fatsText = "\(result.totalFats)"
+                detectedItems = result.detectedItems
+                aiSuccessMessage = "Gemini identified '\(result.plateTitle)' (\(result.totalCalories) kcal)"
+            }
         }
     }
     

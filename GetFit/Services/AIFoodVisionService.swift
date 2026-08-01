@@ -1,6 +1,5 @@
 import Foundation
 import UIKit
-import Vision
 
 struct DetectedFoodItem: Identifiable, Sendable, Codable {
     var id = UUID()
@@ -24,6 +23,7 @@ struct FoodAnalysisResult: Sendable {
     let totalFats: Int
     let detectedItems: [DetectedFoodItem]
     let confidence: Double
+    let errorMessage: String?
 }
 
 final class AIFoodVisionService: @unchecked Sendable {
@@ -38,19 +38,38 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     private init() {}
     
+    /// Main entry point: Analyzes food image using 100% Google Gemini 1.5 Flash Vision AI
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
-        // If Gemini API Key is available, use Google Gemini Vision 1.5 Flash API for 99% accuracy
-        if let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            if let geminiResult = await analyzeWithGeminiVision(image: image, apiKey: key.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                return geminiResult
-            }
+        guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return FoodAnalysisResult(
+                plateTitle: "Gemini API Key Required",
+                totalCalories: 0,
+                totalProtein: 0,
+                totalCarbs: 0,
+                totalFats: 0,
+                detectedItems: [],
+                confidence: 0.0,
+                errorMessage: "Please paste your free Google Gemini API Key above to unlock 99% accurate food recognition!"
+            )
         }
         
-        // On-device South Indian & Indian Food Engine fallback
-        return await analyzeOnDeviceSouthIndian(image: image)
+        if let geminiResult = await analyzeWithGeminiVision(image: image, apiKey: key.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return geminiResult
+        } else {
+            return FoodAnalysisResult(
+                plateTitle: "Gemini Scan Failed",
+                totalCalories: 0,
+                totalProtein: 0,
+                totalCarbs: 0,
+                totalFats: 0,
+                detectedItems: [],
+                confidence: 0.0,
+                errorMessage: "Could not reach Gemini AI API. Please check your internet connection or API Key."
+            )
+        }
     }
     
-    // MARK: - Google Gemini 1.5 Flash Vision Integration
+    // MARK: - Google Gemini 1.5 Flash Vision API
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult? {
         let resized = image.resizedForVision(maxDimension: 1024)
@@ -60,13 +79,18 @@ final class AIFoodVisionService: @unchecked Sendable {
         guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(apiKey)") else { return nil }
         
         let promptText = """
-        Analyze this meal photo carefully. You must return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra conversational text.
-        Structure:
+        You are an expert nutritionist and food vision AI specializing in global, South Indian, North Indian, and international cuisines.
+        Analyze this meal photo carefully.
+        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
+        Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
+        
+        You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
+        JSON Structure:
         {
-          "plateTitle": "Name of full plate dish (e.g. Dosa, Sambar & Eggs Plate)",
+          "plateTitle": "Summary Title of Plate (e.g., Dosa, Sambar & Eggs Breakfast Plate)",
           "items": [
             {
-              "name": "Specific Food Component Name (e.g. Crispy Masala Dosa (2 pcs))",
+              "name": "Exact Item Name with Portion (e.g., Crispy Masala Dosa (2 pcs))",
               "calories": 240,
               "protein": 6,
               "carbs": 48,
@@ -75,7 +99,6 @@ final class AIFoodVisionService: @unchecked Sendable {
             }
           ]
         }
-        Identify all specific items (such as Dosa, Idli, Sambar, Coconut Chutney, Eggs, Filter Coffee, Biryani, Roti, Rice, Curries). Estimate individual calories & macros accurately.
         """
         
         let requestBody: [String: Any] = [
@@ -100,7 +123,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = httpBody
-        request.timeoutInterval = 15
+        request.timeoutInterval = 20
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -113,7 +136,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                let parts = content["parts"] as? [[String: Any]],
                let textResponse = parts.first?["text"] as? String {
                 
-                // Clean response of any markdown backticks
+                // Clean response of any markdown backticks or wrappers
                 let cleanedJSON = textResponse
                     .replacingOccurrences(of: "```json", with: "")
                     .replacingOccurrences(of: "```", with: "")
@@ -139,151 +162,17 @@ final class AIFoodVisionService: @unchecked Sendable {
                             totalCarbs: totalC,
                             totalFats: totalF,
                             detectedItems: payload.items,
-                            confidence: 0.98
+                            confidence: 0.99,
+                            errorMessage: nil
                         )
                     }
                 }
             }
         } catch {
-            // Ignore API network error and fallback to on-device
+            // Network or parsing error
         }
         
         return nil
-    }
-    
-    // MARK: - On-Device South Indian Classification Fallback
-    
-    private func analyzeOnDeviceSouthIndian(image: UIImage) async -> FoodAnalysisResult {
-        let prepImage = image.resizedForVision(maxDimension: 1024)
-        guard let cgImage = prepImage.cgImage else {
-            return genericMealFallback()
-        }
-        
-        return await Task.detached(priority: .userInitiated) {
-            let request = VNClassifyImageRequest()
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            
-            var rawTags: [String] = []
-            var topConfidence: Double = 0.85
-            
-            do {
-                try handler.perform([request])
-                if let results = request.results as? [VNClassificationObservation] {
-                    let filtered = results.filter { $0.confidence > 0.03 }
-                    rawTags = filtered.map { $0.identifier.lowercased() }
-                    if let first = filtered.first {
-                        topConfidence = max(0.80, Double(first.confidence))
-                    }
-                }
-            } catch {
-                // Ignore Vision error
-            }
-            
-            let tagsJoined = rawTags.joined(separator: " ")
-            
-            let hasDosaTag = tagsJoined.contains("dosa") || tagsJoined.contains("crepe") || tagsJoined.contains("pancake") || tagsJoined.contains("flatbread") || tagsJoined.contains("tortilla") || tagsJoined.contains("wrap")
-            let hasIdliTag = tagsJoined.contains("idli") || tagsJoined.contains("steamed") || tagsJoined.contains("bun") || tagsJoined.contains("dumpling")
-            let hasEggTag = tagsJoined.contains("egg") || tagsJoined.contains("omelet")
-            let hasCoffeeTag = tagsJoined.contains("coffee") || tagsJoined.contains("tea") || tagsJoined.contains("cup") || tagsJoined.contains("mug") || tagsJoined.contains("espresso") || tagsJoined.contains("beverage")
-            let hasBiryaniTag = tagsJoined.contains("biryani") || tagsJoined.contains("pulao") || tagsJoined.contains("pilaf")
-            let hasCurryTag = tagsJoined.contains("curry") || tagsJoined.contains("dal") || tagsJoined.contains("stew") || tagsJoined.contains("gravy") || tagsJoined.contains("sauce") || tagsJoined.contains("soup")
-            let hasRotiTag = tagsJoined.contains("roti") || tagsJoined.contains("chapati") || tagsJoined.contains("naan") || tagsJoined.contains("paratha")
-            let hasRiceTag = tagsJoined.contains("rice") || tagsJoined.contains("grain")
-            
-            var items: [DetectedFoodItem] = []
-            
-            if hasDosaTag {
-                items.append(DetectedFoodItem(name: "Crispy Dosa (2 pcs)", calories: 240, protein: 6, carbs: 48, fats: 5, icon: "🥞"))
-                items.append(DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"))
-                if hasEggTag {
-                    items.append(DetectedFoodItem(name: "Boiled / Fried Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"))
-                }
-                if hasCoffeeTag {
-                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
-                }
-                return self.buildResult(title: hasEggTag ? "Dosa & Eggs South Indian Plate" : "Crispy Dosa & Sambar Plate", items: items, confidence: topConfidence)
-            }
-            
-            if hasIdliTag && (hasCurryTag || tagsJoined.contains("rice")) {
-                items.append(DetectedFoodItem(name: "Steamed Idlis (3 pcs)", calories: 180, protein: 6, carbs: 39, fats: 1, icon: "🍡"))
-                items.append(DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲"))
-                if hasCoffeeTag {
-                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
-                }
-                return self.buildResult(title: "Idli Sambar & Chutney Plate", items: items, confidence: topConfidence)
-            }
-            
-            if hasBiryaniTag {
-                items.append(DetectedFoodItem(name: "Chicken Biryani Portion", calories: 520, protein: 34, carbs: 65, fats: 16, icon: "🍛"))
-                items.append(DetectedFoodItem(name: "Onion Cucumber Raita", calories: 80, protein: 3, carbs: 6, fats: 4, icon: "🍧"))
-                if hasEggTag {
-                    items.append(DetectedFoodItem(name: "Boiled Egg (1 pc)", calories: 70, protein: 6, carbs: 1, fats: 5, icon: "🥚"))
-                }
-                return self.buildResult(title: "Chicken Biryani & Raita Plate", items: items, confidence: topConfidence)
-            }
-            
-            if hasRotiTag || (hasCurryTag && !hasRiceTag) {
-                items.append(DetectedFoodItem(name: "Whole Wheat Roti / Chapati (2 pcs)", calories: 180, protein: 6, carbs: 36, fats: 2, icon: "🫓"))
-                items.append(DetectedFoodItem(name: "Paneer / Chicken Curry (1 bowl)", calories: 280, protein: 22, carbs: 12, fats: 16, icon: "🍲"))
-                if hasEggTag {
-                    items.append(DetectedFoodItem(name: "Egg Bhurji / Omelet", calories: 160, protein: 14, carbs: 3, fats: 11, icon: "🍳"))
-                }
-                return self.buildResult(title: "Roti & Curry Meal", items: items, confidence: topConfidence)
-            }
-            
-            if hasRiceTag || hasCurryTag {
-                items.append(DetectedFoodItem(name: "Steamed Rice Bowl (180g)", calories: 230, protein: 5, carbs: 50, fats: 1, icon: "🍚"))
-                items.append(DetectedFoodItem(name: "Sambar / Dal Stew", calories: 140, protein: 8, carbs: 22, fats: 3, icon: "🍲"))
-                if hasEggTag {
-                    items.append(DetectedFoodItem(name: "Egg Fry / Boiled Egg", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"))
-                }
-                return self.buildResult(title: "Rice & Sambar Meal Plate", items: items, confidence: topConfidence)
-            }
-            
-            if hasEggTag || hasCoffeeTag {
-                items.append(DetectedFoodItem(name: "Scrambled / Boiled Eggs (2 pcs)", calories: 160, protein: 14, carbs: 2, fats: 11, icon: "🥚"))
-                items.append(DetectedFoodItem(name: "Toast / Paratha (2 pcs)", calories: 180, protein: 6, carbs: 32, fats: 3, icon: "🍞"))
-                if hasCoffeeTag {
-                    items.append(DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕"))
-                }
-                return self.buildResult(title: "Egg & Coffee Breakfast Plate", items: items, confidence: topConfidence)
-            }
-            
-            return self.genericMealFallback()
-        }.value
-    }
-    
-    private func buildResult(title: String, items: [DetectedFoodItem], confidence: Double) -> FoodAnalysisResult {
-        let totalCals = items.reduce(0) { $0 + $1.calories }
-        let totalP = items.reduce(0) { $0 + $1.protein }
-        let totalC = items.reduce(0) { $0 + $1.carbs }
-        let totalF = items.reduce(0) { $0 + $1.fats }
-        
-        return FoodAnalysisResult(
-            plateTitle: title,
-            totalCalories: totalCals,
-            totalProtein: totalP,
-            totalCarbs: totalC,
-            totalFats: totalF,
-            detectedItems: items,
-            confidence: confidence
-        )
-    }
-    
-    private func genericMealFallback() -> FoodAnalysisResult {
-        let items = [
-            DetectedFoodItem(name: "Scanned Meal Plate (Estimated Portion)", calories: 450, protein: 30, carbs: 48, fats: 14, icon: "🍱")
-        ]
-        
-        return FoodAnalysisResult(
-            plateTitle: "Scanned Meal Plate",
-            totalCalories: 450,
-            totalProtein: 30,
-            totalCarbs: 48,
-            totalFats: 14,
-            detectedItems: items,
-            confidence: 0.75
-        )
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
