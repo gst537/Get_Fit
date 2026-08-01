@@ -23,9 +23,11 @@ final class ProgressiveOverloadService: @unchecked Sendable {
         equipmentType: String = "Barbell",
         category: String = "Chest",
         defaultWeight: Double = 0.0,
-        defaultReps: Int = 10,
+        defaultReps: Int = 12,
         completedSessions: [WorkoutSession]
     ) -> ProgressiveOverloadRecommendation {
+        
+        let targetRepsCap = defaultReps > 0 ? defaultReps : 12
         
         // Filter completed sessions that contain set logs for this exercise
         let relevantSessions = completedSessions
@@ -49,7 +51,7 @@ final class ProgressiveOverloadService: @unchecked Sendable {
                 previousWeight: baseWeight,
                 recommendedWeight: baseWeight,
                 weightDelta: 0.0,
-                targetReps: defaultReps,
+                targetReps: targetRepsCap,
                 reason: "First session baseline recorded.",
                 isOverloadTriggered: false,
                 isDeloadTriggered: false
@@ -64,27 +66,27 @@ final class ProgressiveOverloadService: @unchecked Sendable {
         let isLowerBody = lowerBodyCategories.contains { category.lowercased().contains($0) || exerciseName.lowercased().contains($0) }
         let increment = isLowerBody ? 5.0 : 2.5
         
-        // Rule 1: Double Progression - If all sets hit >= defaultReps (e.g. 10 reps)
-        if minRepsHit >= defaultReps {
+        // Rule 1: Double Progression - If all sets hit >= 12 reps (or targetRepsCap)
+        if minRepsHit >= targetRepsCap {
             let newWeight = previousWeight + increment
             return ProgressiveOverloadRecommendation(
                 exerciseName: exerciseName,
                 previousWeight: previousWeight,
                 recommendedWeight: newWeight,
                 weightDelta: increment,
-                targetReps: defaultReps,
-                reason: "Hit target \(defaultReps) reps on all sets! Ready for +\(String(format: "%.1f", increment)) kg overload.",
+                targetReps: targetRepsCap,
+                reason: "Hit \(targetRepsCap)/\(targetRepsCap) reps on all sets! Ready for +\(String(format: "%.1f", increment)) kg overload.",
                 isOverloadTriggered: true,
                 isDeloadTriggered: false
             )
         }
         
-        // Rule 2: Check for 2 consecutive failed sessions (stagnation guard -> -10% deload)
+        // Rule 2: Check for 2 consecutive struggling sessions (< 8 reps hit)
         if historyLogs.count >= 2 {
             let prevSessionLogs = historyLogs[1]
             let prevMinReps = prevSessionLogs.map { $0.reps }.min() ?? 0
             
-            if minRepsHit < (defaultReps - 2) && prevMinReps < (defaultReps - 2) {
+            if minRepsHit < 8 && prevMinReps < 8 {
                 let deloadWeight = max(0.0, (previousWeight * 0.90).roundedToNearestHalf())
                 let delta = previousWeight - deloadWeight
                 return ProgressiveOverloadRecommendation(
@@ -92,22 +94,22 @@ final class ProgressiveOverloadService: @unchecked Sendable {
                     previousWeight: previousWeight,
                     recommendedWeight: deloadWeight,
                     weightDelta: -delta,
-                    targetReps: defaultReps,
-                    reason: "Missed target reps for 2 workouts. Auto-deloading -10% to reset form.",
+                    targetReps: targetRepsCap,
+                    reason: "Hit under 8 reps for 2 workouts. Auto-resetting -10% weight to rebuild form.",
                     isOverloadTriggered: false,
                     isDeloadTriggered: true
                 )
             }
         }
         
-        // Rule 3: Maintenance / Working towards target reps
+        // Rule 3: Working Range (8-12 reps) - Keep current weight & build back up to 12 reps
         return ProgressiveOverloadRecommendation(
             exerciseName: exerciseName,
             previousWeight: previousWeight,
             recommendedWeight: previousWeight,
             weightDelta: 0.0,
-            targetReps: defaultReps,
-            reason: "Current target: \(previousWeight) kg. Hit all \(defaultReps) reps to unlock +\(String(format: "%.1f", increment)) kg.",
+            targetReps: targetRepsCap,
+            reason: "Current Target: \(previousWeight) kg. Build up from \(minRepsHit) to \(targetRepsCap) reps to unlock +\(String(format: "%.1f", increment)) kg.",
             isOverloadTriggered: false,
             isDeloadTriggered: false
         )
