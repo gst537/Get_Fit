@@ -42,6 +42,18 @@ struct CameraView: UIViewControllerRepresentable {
     }
 }
 
+struct QuickMealPreset: Identifiable {
+    let id = UUID()
+    let name: String
+    let calories: Int
+    let protein: Int
+    let carbs: Int
+    let fats: Int
+    let icon: String
+    let category: String
+    let items: [DetectedFoodItem]
+}
+
 struct AddFoodSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -71,6 +83,72 @@ struct AddFoodSheet: View {
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     
+    // ⚡ 1-Tap Quick Meal Presets
+    let quickPresets: [QuickMealPreset] = [
+        QuickMealPreset(
+            name: "Crispy Dosa, Sambar & Chutney",
+            calories: 380, protein: 11, carbs: 63, fats: 14, icon: "🥞", category: "Breakfast",
+            items: [
+                DetectedFoodItem(name: "Crispy Dosa (2 pcs)", calories: 240, protein: 6, carbs: 48, fats: 5, icon: "🥞"),
+                DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 140, protein: 5, carbs: 15, fats: 9, icon: "🍲")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Steamed Idli, Sambar & Chutney",
+            calories: 340, protein: 11, carbs: 54, fats: 10, icon: "🍡", category: "Breakfast",
+            items: [
+                DetectedFoodItem(name: "Steamed Idli (3 pcs)", calories: 180, protein: 6, carbs: 39, fats: 1, icon: "🍡"),
+                DetectedFoodItem(name: "Sambar & Coconut Chutney", calories: 160, protein: 5, carbs: 15, fats: 9, icon: "🍲")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Eggs, Toast & Filter Coffee",
+            calories: 380, protein: 19, carbs: 32, fats: 16, icon: "🍳", category: "Breakfast",
+            items: [
+                DetectedFoodItem(name: "Fried / Boiled Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚"),
+                DetectedFoodItem(name: "Toast / Paratha (2 pcs)", calories: 160, protein: 4, carbs: 21, fats: 3, icon: "🍞"),
+                DetectedFoodItem(name: "South Indian Filter Coffee", calories: 80, protein: 3, carbs: 10, fats: 3, icon: "☕")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Chicken Biryani Portion",
+            calories: 650, protein: 38, carbs: 75, fats: 20, icon: "🍛", category: "Lunch",
+            items: [
+                DetectedFoodItem(name: "Chicken Biryani Portion", calories: 570, protein: 35, carbs: 69, fats: 16, icon: "🍛"),
+                DetectedFoodItem(name: "Onion Cucumber Raita", calories: 80, protein: 3, carbs: 6, fats: 4, icon: "🍧")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Whole Wheat Roti & Curry Bowl",
+            calories: 420, protein: 18, carbs: 58, fats: 14, icon: "🫓", category: "Dinner",
+            items: [
+                DetectedFoodItem(name: "Whole Wheat Roti (2 pcs)", calories: 180, protein: 6, carbs: 36, fats: 2, icon: "🫓"),
+                DetectedFoodItem(name: "Chicken / Paneer Curry (1 bowl)", calories: 240, protein: 12, carbs: 22, fats: 12, icon: "🍲")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Curd Rice & Pickle Bowl",
+            calories: 320, protein: 8, carbs: 48, fats: 11, icon: "🍚", category: "Lunch",
+            items: [
+                DetectedFoodItem(name: "South Indian Curd Rice Bowl", calories: 320, protein: 8, carbs: 48, fats: 11, icon: "🍚")
+            ]
+        ),
+        QuickMealPreset(
+            name: "Chana & Vegetable Sundal Salad",
+            calories: 280, protein: 14, carbs: 38, fats: 6, icon: "🥗", category: "Snack",
+            items: [
+                DetectedFoodItem(name: "Spicy Chana & Veggie Sundal", calories: 280, protein: 14, carbs: 38, fats: 6, icon: "🥗")
+            ]
+        ),
+        QuickMealPreset(
+            name: "South Indian Filter Coffee",
+            calories: 90, protein: 3, carbs: 12, fats: 3, icon: "☕", category: "Snack",
+            items: [
+                DetectedFoodItem(name: "Hot Filter Coffee (1 cup)", calories: 90, protein: 3, carbs: 12, fats: 3, icon: "☕")
+            ]
+        )
+    ]
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -89,6 +167,49 @@ struct AddFoodSheet: View {
                     }
                     .font(.body)
                     .foregroundStyle(paleBlue)
+                }
+                
+                // ⚡ 1-Tap Quick Presets Carousel
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("⚡ 1-Tap Instant Meal Presets")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(paleBlue)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(quickPresets) { preset in
+                                Button {
+                                    applyPreset(preset)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text(preset.icon)
+                                            .font(.title3)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(preset.name)
+                                                .font(.caption)
+                                                .fontWeight(.medium)
+                                                .foregroundStyle(.white)
+                                                .lineLimit(1)
+                                            
+                                            Text("\(preset.calories) kcal")
+                                                .font(.caption2)
+                                                .foregroundStyle(paleBlue)
+                                        }
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .background(Color(UIColor.secondarySystemBackground))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(paleBlue.opacity(0.2), lineWidth: 1)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 // Gemini API Key Banner / Settings Toggle
@@ -217,6 +338,18 @@ struct AddFoodSheet: View {
         }
     }
     
+    private func applyPreset(_ preset: QuickMealPreset) {
+        foodName = preset.name
+        caloriesText = "\(preset.calories)"
+        proteinText = "\(preset.protein)"
+        carbsText = "\(preset.carbs)"
+        fatsText = "\(preset.fats)"
+        selectedMealType = preset.category
+        detectedItems = preset.items
+        aiSuccessMessage = "Applied preset '\(preset.name)'"
+        aiErrorMessage = nil
+    }
+    
     // MARK: - Gemini Vision AI Key Bar
     
     private var geminiKeyBar: some View {
@@ -226,7 +359,7 @@ struct AddFoodSheet: View {
                     .font(.caption)
                     .foregroundStyle(paleBlue)
                 
-                Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Google Gemini Vision AI Active" : "Paste Free Gemini Key for AI Scanning")
+                Text(AIFoodVisionService.shared.savedAPIKey != nil ? "Google Gemini Vision AI Active" : "Paste Free Gemini Key for AI Photo Scanning")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(.white)

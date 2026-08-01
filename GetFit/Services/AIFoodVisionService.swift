@@ -57,11 +57,12 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Google Gemini Vision API
+    // MARK: - Ultra-Fast Google Gemini Vision API (512px Compressed Image)
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
-        let resized = image.resizedForVision(maxDimension: 1024)
-        guard let jpegData = resized.jpegData(compressionQuality: 0.8) else {
+        // Ultra-fast 512px downscaling & 0.4 JPEG compression (creates tiny ~35KB payload for sub-second uploads)
+        let resized = image.resizedForVision(maxDimension: 512)
+        guard let jpegData = resized.jpegData(compressionQuality: 0.4) else {
             return FoodAnalysisResult(
                 plateTitle: "Image Error",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
@@ -137,7 +138,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             request.httpBody = httpBody
-            request.timeoutInterval = 20
+            request.timeoutInterval = 30
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -209,8 +210,8 @@ final class AIFoodVisionService: @unchecked Sendable {
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
-        let prepImage = image.resizedForVision(maxDimension: 1200)
-        guard let data = prepImage.jpegData(compressionQuality: 0.8) else { return nil }
+        let prepImage = image.resizedForVision(maxDimension: 800)
+        guard let data = prepImage.jpegData(compressionQuality: 0.7) else { return nil }
         let fileManager = FileManager.default
         guard let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         
