@@ -253,7 +253,6 @@ struct DashboardView: View {
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
             .glassmorphic(cornerRadius: 18)
-            .shimmerGlow()
         }
     }
     
