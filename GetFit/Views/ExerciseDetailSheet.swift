@@ -9,7 +9,7 @@ struct ExerciseDetailSheet: View {
     @State private var imageURLInput = ""
     @State private var showInAppSafari = false
     
-    let iceBlue = Color(red: 0.55, green: 0.88, blue: 1.00)
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
 
     var body: some View {
         ScrollView {
@@ -23,31 +23,32 @@ struct ExerciseDetailSheet: View {
                     
                     HStack(spacing: 8) {
                         Text(exercise.category.uppercased())
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 10, weight: .bold))
                             .tracking(1.0)
-                            .foregroundStyle(.black)
+                            .foregroundStyle(paleBlue)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(iceBlue)
+                            .background(paleBlue.opacity(0.12))
                             .clipShape(Capsule())
+                            .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
                         
                         HStack(spacing: 6) {
                             Image(systemName: iconForEquipment(exercise.equipmentType))
                                 .font(.system(size: 12))
-                                .foregroundStyle(iceBlue)
+                                .foregroundStyle(paleBlue)
                             Text(exercise.equipmentType)
                                 .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(Color.white.opacity(0.8))
+                                .fontWeight(.regular)
+                                .foregroundStyle(Color.gray)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.08))
+                        .background(Color.white.opacity(0.06))
                         .clipShape(Capsule())
                     }
                 }
                 
-                // Section 2: Body Part Activation & Colorful Step-by-Step Form Guide
+                // Section 2: Body Part Activation & Step-by-Step Form Guide
                 BodyPartActivationCard(
                     machineName: exercise.name,
                     targetMuscles: exercise.targetMuscles,
@@ -91,7 +92,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(iceBlue)
+                        .foregroundStyle(paleBlue)
                     }
                     
                     if isEditingVideo {
@@ -115,11 +116,11 @@ struct ExerciseDetailSheet: View {
                             HStack(spacing: 16) {
                                 ZStack {
                                     Circle()
-                                        .fill(iceBlue.opacity(0.15))
+                                        .fill(paleBlue.opacity(0.12))
                                         .frame(width: 44, height: 44)
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 16))
-                                        .foregroundStyle(iceBlue)
+                                        .foregroundStyle(paleBlue)
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -141,13 +142,13 @@ struct ExerciseDetailSheet: View {
                                     .foregroundStyle(Color.gray.opacity(0.5))
                             }
                             .padding(16)
-                            .liquidGlass(cornerRadius: 14)
+                            .matteBlack(cornerRadius: 14, accentColor: paleBlue)
                         }
                     } else {
                         HStack {
                             Image(systemName: "play.rectangle")
                                 .font(.system(size: 20))
-                                .foregroundStyle(iceBlue.opacity(0.6))
+                                .foregroundStyle(paleBlue.opacity(0.6))
                             Text("No video added yet. Tap '+ Add Video' to attach a YouTube Short or tutorial.")
                                 .font(.caption)
                                 .fontWeight(.light)
@@ -155,7 +156,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlass(cornerRadius: 12)
+                        .matteBlack(cornerRadius: 12, accentColor: paleBlue)
                     }
                 }
                 
@@ -181,7 +182,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(iceBlue)
+                        .foregroundStyle(paleBlue)
                     }
                     
                     if isEditingImage {
@@ -204,7 +205,7 @@ struct ExerciseDetailSheet: View {
                             case .empty:
                                 ProgressView()
                                     .frame(maxWidth: .infinity, minHeight: 160)
-                                    .liquidGlass(cornerRadius: 14)
+                                    .matteBlack(cornerRadius: 14, accentColor: paleBlue)
                             case .success(let image):
                                 image
                                     .resizable()
@@ -222,7 +223,7 @@ struct ExerciseDetailSheet: View {
                                 }
                                 .padding(16)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .liquidGlass(cornerRadius: 12)
+                                .matteBlack(cornerRadius: 12, accentColor: paleBlue)
                             @unknown default:
                                 EmptyView()
                             }
@@ -231,7 +232,7 @@ struct ExerciseDetailSheet: View {
                         HStack {
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 20))
-                                .foregroundStyle(iceBlue.opacity(0.6))
+                                .foregroundStyle(paleBlue.opacity(0.6))
                             Text("No photo added yet. Tap '+ Add Photo' to attach a setup diagram.")
                                 .font(.caption)
                                 .fontWeight(.light)
@@ -239,11 +240,11 @@ struct ExerciseDetailSheet: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlass(cornerRadius: 12)
+                        .matteBlack(cornerRadius: 12, accentColor: paleBlue)
                     }
                 }
                 
-                // Section 6: View Progress Chart
+                // Section 6: View Progress Chart Button
                 NavigationLink {
                     ProgressionChartView(exercise: exercise)
                 } label: {
@@ -257,9 +258,9 @@ struct ExerciseDetailSheet: View {
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(iceBlue)
+                    .background(paleBlue)
                     .clipShape(Capsule())
-                    .shadow(color: iceBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: paleBlue.opacity(0.2), radius: 6, x: 0, y: 3)
                 }
             }
             .padding(24)
