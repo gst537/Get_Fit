@@ -38,7 +38,7 @@ extension View {
     }
 }
 
-// MARK: - Ultra-Realistic 3D Male Holographic Body Visualizer
+// MARK: - Realistic Neutral 3D Male Body Visualizer (No Neon Body, Direct Muscle Area Highlighting)
 
 struct HolographicBodyVisualizer: View {
     let targetMuscles: [String]
@@ -54,14 +54,14 @@ struct HolographicBodyVisualizer: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Front / Rear Selector Header
+            // Front / Rear View Selector
             HStack {
                 HStack(spacing: 4) {
-                    Image(systemName: "cube.transparent")
+                    Image(systemName: "figure.arms.open")
                         .font(.caption)
                         .foregroundStyle(iceBlue)
                     
-                    Text("3D Anatomical Male Model")
+                    Text("3D Athletic Male Model")
                         .font(.caption2)
                         .fontWeight(.medium)
                         .foregroundStyle(Color.gray)
@@ -99,37 +99,35 @@ struct HolographicBodyVisualizer: View {
                 .clipShape(Capsule())
             }
             
-            // Ultra-Realistic 3D Render Canvas
+            // Realistic 3D Model Canvas with Direct Muscle Area Highlighting (No Text Labels)
             ZStack {
                 // Background Tech Grid
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.04, green: 0.04, blue: 0.06))
+                    .fill(Color(red: 0.05, green: 0.05, blue: 0.07))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(iceBlue.opacity(0.20), lineWidth: 1.0)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1.0)
                     )
                 
-                // Realistic 3D Model Asset Image
+                // Realistic Neutral 3D Athletic Male Body Asset
                 if viewSelection == 0 {
                     Image("MaleBodyFront")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: 250)
-                        .shadow(color: iceBlue.opacity(0.25), radius: 12)
                 } else {
                     Image("MaleBodyBack")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: 250)
-                        .shadow(color: iceBlue.opacity(0.25), radius: 12)
                 }
                 
-                // Dynamic Glowing Muscle Target Overlay Markers
-                muscleTargetOverlay
+                // Direct Muscle Area Highlight Overlays (Pure Color Highlighting, Zero Text Overlays)
+                muscleAreaHighlightOverlays(isFrontView: viewSelection == 0)
             }
             .frame(height: 250)
             
-            // Targeted Muscle Legend Pills
+            // Muscle Legend Pills (Bottom Legend)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(targetMuscles, id: \.self) { muscle in
@@ -162,58 +160,148 @@ struct HolographicBodyVisualizer: View {
         }
     }
     
-    // MARK: - Glowing Muscle Overlay Markers
+    // MARK: - Direct Muscle Area Highlight Overlays (No Text Labels over Body)
     
-    private var muscleTargetOverlay: some View {
+    @ViewBuilder
+    private func muscleAreaHighlightOverlays(isFrontView: Bool) -> some View {
         ZStack {
             ForEach(targetMuscles, id: \.self) { muscle in
                 let color = MuscleGroupBadge.colorForMuscle(muscle)
                 
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 10, height: 10)
-                        .scaleEffect(isGlowPulsing ? 1.25 : 1.0)
-                        .shadow(color: color, radius: 8)
+                switch (muscle.lowercased(), isFrontView) {
+                // FRONT MUSCLE HIGHLIGHTS
+                case ("quads", true), ("quadriceps", true), ("legs", true):
+                    HStack(spacing: 8) {
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 22, height: 50)
+                            .shadow(color: color, radius: 10)
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 22, height: 50)
+                            .shadow(color: color, radius: 10)
+                    }
+                    .offset(y: 42)
                     
-                    Text(muscle.uppercased())
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(color.opacity(0.40))
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(color, lineWidth: 0.8))
+                case ("chest", true), ("pectorals", true):
+                    HStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 24, height: 22)
+                            .shadow(color: color, radius: 10)
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 24, height: 22)
+                            .shadow(color: color, radius: 10)
+                    }
+                    .offset(y: -44)
+                    
+                case ("core", true), ("abs", true):
+                    VStack(spacing: 3) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            HStack(spacing: 3) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                                    .frame(width: 12, height: 8)
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                                    .frame(width: 12, height: 8)
+                            }
+                        }
+                    }
+                    .shadow(color: color, radius: 8)
+                    .offset(y: -18)
+                    
+                case ("shoulders", true), ("delts", true):
+                    HStack(spacing: 50) {
+                        Circle()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 18, height: 18)
+                            .shadow(color: color, radius: 8)
+                        Circle()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 18, height: 18)
+                            .shadow(color: color, radius: 8)
+                    }
+                    .offset(y: -52)
+                    
+                case ("biceps", true), ("arms", true):
+                    HStack(spacing: 54) {
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 12, height: 26)
+                            .shadow(color: color, radius: 8)
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 12, height: 26)
+                            .shadow(color: color, radius: 8)
+                    }
+                    .offset(y: -26)
+                    
+                // REAR MUSCLE HIGHLIGHTS
+                case ("glutes", false):
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 24, height: 24)
+                            .shadow(color: color, radius: 10)
+                        Circle()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 24, height: 24)
+                            .shadow(color: color, radius: 10)
+                    }
+                    .offset(y: -5)
+                    
+                case ("back", false), ("lats", false):
+                    HStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 22, height: 32)
+                            .shadow(color: color, radius: 10)
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 22, height: 32)
+                            .shadow(color: color, radius: 10)
+                    }
+                    .offset(y: -36)
+                    
+                case ("traps", false):
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                        .frame(width: 40, height: 20)
+                        .shadow(color: color, radius: 8)
+                        .offset(y: -58)
+                    
+                case ("hamstrings", false):
+                    HStack(spacing: 8) {
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 20, height: 46)
+                            .shadow(color: color, radius: 10)
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 20, height: 46)
+                            .shadow(color: color, radius: 10)
+                    }
+                    .offset(y: 30)
+                    
+                case ("calves", false), ("calves", true):
+                    HStack(spacing: 14) {
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 14, height: 36)
+                            .shadow(color: color, radius: 8)
+                        Capsule()
+                            .fill(color.opacity(isGlowPulsing ? 0.55 : 0.40))
+                            .frame(width: 14, height: 36)
+                            .shadow(color: color, radius: 8)
+                    }
+                    .offset(y: 68)
+                    
+                default:
+                    EmptyView()
                 }
-                .offset(offsetForMuscle(muscle, isFrontView: viewSelection == 0))
             }
-        }
-    }
-    
-    private func offsetForMuscle(_ muscle: String, isFrontView: Bool) -> CGSize {
-        switch muscle.lowercased() {
-        case "quads", "quadriceps", "legs":
-            return isFrontView ? CGSize(width: 0, height: 35) : CGSize(width: 0, height: 35)
-        case "chest":
-            return isFrontView ? CGSize(width: 0, height: -45) : CGSize(width: 0, height: -45)
-        case "shoulders", "delts":
-            return isFrontView ? CGSize(width: -65, height: -55) : CGSize(width: 65, height: -55)
-        case "biceps":
-            return isFrontView ? CGSize(width: 60, height: -25) : CGSize(width: 60, height: -25)
-        case "triceps":
-            return isFrontView ? CGSize(width: -60, height: -25) : CGSize(width: -60, height: -25)
-        case "core", "abs":
-            return isFrontView ? CGSize(width: 0, height: -15) : CGSize(width: 0, height: -15)
-        case "glutes":
-            return isFrontView ? CGSize(width: 0, height: 5) : CGSize(width: 0, height: 5)
-        case "back", "lats":
-            return isFrontView ? CGSize(width: 0, height: -35) : CGSize(width: 0, height: -35)
-        case "hamstrings":
-            return isFrontView ? CGSize(width: 0, height: 45) : CGSize(width: 0, height: 45)
-        case "calves":
-            return isFrontView ? CGSize(width: 0, height: 85) : CGSize(width: 0, height: 85)
-        default:
-            return CGSize(width: 0, height: 0)
         }
     }
 }
@@ -449,7 +537,7 @@ struct BodyPartActivationCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             } else {
-                // High-Definition Holographic 3D Body Model Visualizer
+                // Realistic 3D Athletic Male Model Visualizer
                 HolographicBodyVisualizer(targetMuscles: targetMuscles)
             }
             
