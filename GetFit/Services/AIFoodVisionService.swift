@@ -38,7 +38,7 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     private init() {}
     
-    /// Main entry point: Analyzes food image using 100% Google Gemini Vision AI
+    /// Main entry point: Analyzes food image using Google Gemini Vision AI
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
         guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return FoodAnalysisResult(
@@ -54,10 +54,21 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Guard check: Warn if key doesn't start with AIzaSy
+        if !cleanKey.hasPrefix("AIzaSy") && cleanKey.count < 30 {
+            return FoodAnalysisResult(
+                plateTitle: "Invalid Key Format",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "The pasted key is a Google Cloud project ID/Token. Please copy the API Key starting with 'AIzaSy' from aistudio.google.com."
+            )
+        }
+        
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - Google Gemini Vision API (Tries exact working models in v1beta & v1)
+    // MARK: - Google Gemini Vision API
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 1024)
@@ -71,33 +82,31 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         let base64Image = jpegData.base64EncodedString()
         
-        let endpointsToTry = [
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent",
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent",
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent",
-            "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+        let modelCandidates = [
+            "gemini-1.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash-latest"
         ]
         
         let promptText = """
         You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
-        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Kothu Parotta, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
+        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Kothu Parotta, Chana Sundal, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
         You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
         JSON Structure:
         {
-          "plateTitle": "Summary Title of Plate (e.g., Kothu Parotta / Dosa & Curry Plate)",
+          "plateTitle": "Summary Title of Plate (e.g. Chana & Vegetable Salad Plate)",
           "items": [
             {
-              "name": "Exact Item Name with Portion (e.g., Chicken Kothu Parotta (1 portion))",
-              "calories": 420,
-              "protein": 24,
-              "carbs": 45,
-              "fats": 16,
-              "icon": "🥘"
+              "name": "Exact Item Name with Portion (e.g., Spicy Chana & Veggie Sundal)",
+              "calories": 240,
+              "protein": 12,
+              "carbs": 32,
+              "fats": 6,
+              "icon": "🥗"
             }
           ]
         }
@@ -130,12 +139,19 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         var lastErrorMessage = "Could not connect to Gemini API."
         
-        for baseURLString in endpointsToTry {
-            guard let url = URL(string: "\(baseURLString)?key=\(apiKey)") else { continue }
+        for model in modelCandidates {
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
+            guard let url = URL(string: urlString) else { continue }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            // Support both standard key parameter & Bearer header if custom token format is passed
+            if !apiKey.hasPrefix("AIzaSy") {
+                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            }
+            
             request.httpBody = httpBody
             request.timeoutInterval = 20
             
@@ -183,13 +199,16 @@ final class AIFoodVisionService: @unchecked Sendable {
                         }
                     }
                 } else {
-                    // Extract error message from API response if available
                     if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let errorObj = jsonObj["error"] as? [String: Any],
                        let message = errorObj["message"] as? String {
-                        lastErrorMessage = "Gemini API Error (\(statusCode)): \(message)"
+                        if message.lowercased().contains("api key not valid") || message.lowercased().contains("invalid_argument") {
+                            lastErrorMessage = "API Key Invalid. Please copy the key starting with 'AIzaSy' from aistudio.google.com"
+                        } else {
+                            lastErrorMessage = "Gemini Error (\(statusCode)): \(message)"
+                        }
                     } else {
-                        lastErrorMessage = "Gemini API returned status code \(statusCode). Check API Key."
+                        lastErrorMessage = "Gemini API returned code \(statusCode). Please verify your API Key."
                     }
                 }
             } catch {
