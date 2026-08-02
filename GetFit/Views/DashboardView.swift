@@ -43,25 +43,38 @@ struct DashboardView: View {
     }
     
     private var calculatedStreak: Int {
-        guard !completedSessions.isEmpty else { return 0 }
         let calendar = Calendar.current
+        var activityDates = Set<Date>()
+        
+        for session in completedSessions {
+            activityDates.insert(calendar.startOfDay(for: session.date))
+        }
+        for cardio in cardioLogs {
+            activityDates.insert(calendar.startOfDay(for: cardio.date))
+        }
+        
+        guard !activityDates.isEmpty else { return 0 }
+        
         var streak = 0
         var checkDate = calendar.startOfDay(for: Date())
         
-        let todayHasWorkout = completedSessions.contains { calendar.isDate($0.date, inSameDayAs: checkDate) }
-        if !todayHasWorkout {
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+        if !activityDates.contains(checkDate) {
+            guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { return 0 }
+            checkDate = prevDay
         }
         
-        while true {
-            let dayHasWorkout = completedSessions.contains { calendar.isDate($0.date, inSameDayAs: checkDate) }
-            if dayHasWorkout {
-                streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else {
-                break
-            }
+        while activityDates.contains(checkDate) {
+            streak += 1
+            guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+            checkDate = prevDay
         }
+        
+        // Sync with UserStats model
+        if let stats = stats, stats.streakCount != streak {
+            stats.streakCount = streak
+            try? modelContext.save()
+        }
+        
         return streak
     }
     
