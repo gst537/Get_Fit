@@ -7,11 +7,24 @@ struct ProfileView: View {
     @StateObject private var healthKitManager = HealthKitManager.shared
     @StateObject private var weightUnit = WeightUnitManager.shared
     
+    // User Profile Storage
+    @AppStorage("userName") private var userName: String = "Tarun"
+    @AppStorage("userAge") private var userAge: Int = 19
+    @AppStorage("userHeight") private var userHeight: Int = 170
+    @AppStorage("targetWeightKg") private var targetWeightKg: Double = 64.0
+    
     @Query private var userStats: [UserStats]
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }) private var completedSessions: [WorkoutSession]
     @Query(sort: \CardioLog.date, order: .reverse) private var cardioLogs: [CardioLog]
+    @Query(sort: \BodyWeightEntry.date, order: .reverse) private var weightEntries: [BodyWeightEntry]
+    
+    @State private var showEditProfileSheet = false
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    private var currentWeightKg: Double {
+        weightEntries.first?.weight ?? 70.0
+    }
     
     private var stats: UserStats? {
         userStats.first
@@ -29,6 +42,21 @@ struct ProfileView: View {
     
     private var streakDays: Int {
         stats?.streakCount ?? 1
+    }
+    
+    private var athleteRank: (title: String, icon: String, color: Color) {
+        let tonnes = totalTonnage / 1000.0
+        if tonnes >= 100 {
+            return ("DIAMOND ATHLETE", "diamond.fill", Color(red: 0.60, green: 0.85, blue: 1.00))
+        } else if tonnes >= 50 {
+            return ("PLATINUM ATHLETE", "crown.fill", Color(red: 0.85, green: 0.85, blue: 0.95))
+        } else if tonnes >= 10 {
+            return ("GOLD ATHLETE", "trophy.fill", Color(red: 0.95, green: 0.80, blue: 0.30))
+        } else if tonnes >= 1 {
+            return ("SILVER ATHLETE", "star.fill", Color(red: 0.75, green: 0.80, blue: 0.85))
+        } else {
+            return ("ROOKIE ATHLETE", "flame.fill", paleBlue)
+        }
     }
     
     private var todayWorkoutMinutes: Int {
@@ -64,29 +92,71 @@ struct ProfileView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     
-                    // 1. Profile Header
-                    HStack(spacing: 16) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 64))
-                            .foregroundStyle(paleBlue)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Get Fit Athlete")
-                                .font(.title2)
-                                .fontWeight(.light)
-                                .foregroundStyle(.white)
+                    // 1. Interactive Athlete Profile Card
+                    VStack(spacing: 16) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(paleBlue.opacity(0.15))
+                                    .frame(width: 60, height: 60)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(paleBlue.opacity(0.4), lineWidth: 1.0)
+                                    )
+                                
+                                Text(userName.prefix(1).uppercased())
+                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(paleBlue)
+                            }
                             
-                            Text("Consistent & Growing")
-                                .font(.subheadline)
-                                .fontWeight(.light)
-                                .foregroundStyle(Color.gray)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(userName.isEmpty ? "Get Fit Athlete" : userName)
+                                    .font(.title2)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.white)
+                                
+                                HStack(spacing: 6) {
+                                    Image(systemName: athleteRank.icon)
+                                        .font(.system(size: 10))
+                                    Text(athleteRank.title)
+                                        .font(.system(size: 9, weight: .bold))
+                                        .tracking(0.8)
+                                }
+                                .foregroundStyle(athleteRank.color)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(athleteRank.color.opacity(0.12))
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(athleteRank.color.opacity(0.35), lineWidth: 0.8)
+                                )
+                            }
+                            
+                            Spacer()
+                            
+                            Button {
+                                showEditProfileSheet = true
+                            } label: {
+                                Image(systemName: "pencil.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(paleBlue)
+                            }
                         }
                         
-                        Spacer()
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                        
+                        // Body Stats Summary Grid
+                        HStack(spacing: 12) {
+                            statItem(label: "AGE", value: "\(userAge) yrs")
+                            statItem(label: "HEIGHT", value: "\(userHeight) cm")
+                            statItem(label: "CURRENT", value: weightUnit.formatWeight(currentWeightKg))
+                            statItem(label: "TARGET", value: weightUnit.formatWeight(targetWeightKg))
+                        }
                     }
-                    .padding(20)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .padding(18)
+                    .matteBlack(cornerRadius: 20, accentColor: paleBlue)
                     
                     // 2. Kokonut Activity Rings Card
                     VStack(alignment: .leading, spacing: 12) {
@@ -128,8 +198,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
                             
                             // Workouts Completed
                             VStack(alignment: .leading, spacing: 8) {
@@ -145,8 +214,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
                             
                             // Total Cardio Time
                             VStack(alignment: .leading, spacing: 8) {
@@ -158,12 +226,11 @@ struct ProfileView: View {
                                 Text("\(Int(totalCardioMinutes)) min")
                                     .font(.title2)
                                     .fontWeight(.light)
-                                    .foregroundStyle(Color.green.opacity(0.8))
+                                    .foregroundStyle(Color(red: 0.55, green: 0.82, blue: 0.68))
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
                             
                             // Current Streak
                             VStack(alignment: .leading, spacing: 8) {
@@ -175,12 +242,11 @@ struct ProfileView: View {
                                 Text("\(streakDays) Days")
                                     .font(.title2)
                                     .fontWeight(.light)
-                                    .foregroundStyle(Color.orange.opacity(0.8))
+                                    .foregroundStyle(Color(red: 0.92, green: 0.70, blue: 0.50))
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
                         }
                     }
                     
@@ -204,8 +270,7 @@ struct ProfileView: View {
                             .pickerStyle(.segmented)
                         }
                         .padding(16)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .matteBlack(cornerRadius: 14, accentColor: paleBlue)
                     }
                 }
                 .padding(20)
@@ -219,7 +284,31 @@ struct ProfileView: View {
                         .foregroundColor(paleBlue)
                 }
             }
+            .sheet(isPresented: $showEditProfileSheet) {
+                EditProfileSheet(
+                    name: $userName,
+                    age: $userAge,
+                    height: $userHeight,
+                    targetWeight: $targetWeightKg
+                )
+            }
         }
+    }
+    
+    private func statItem(label: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(Color.gray)
+            
+            Text(value)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
     
     private func syncAppleHealth() {
@@ -249,8 +338,90 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - Edit Profile Sheet
+
+struct EditProfileSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var name: String
+    @Binding var age: Int
+    @Binding var height: Int
+    @Binding var targetWeight: Double
+    
+    @State private var inputName: String = ""
+    @State private var inputAgeStr: String = ""
+    @State private var inputHeightStr: String = ""
+    @State private var inputTargetWeightStr: String = ""
+    
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Personal Info") {
+                    HStack {
+                        Text("Name")
+                        Spacer()
+                        TextField("Your Name", text: $inputName)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Age")
+                        Spacer()
+                        TextField("Age", text: $inputAgeStr)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Height (cm)")
+                        Spacer()
+                        TextField("Height in cm", text: $inputHeightStr)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                
+                Section("Body Recomp Target") {
+                    HStack {
+                        Text("Target Weight (kg)")
+                        Spacer()
+                        TextField("Target Weight", text: $inputTargetWeightStr)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Edit Athlete Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        name = inputName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if let a = Int(inputAgeStr) { age = a }
+                        if let h = Int(inputHeightStr) { height = h }
+                        if let w = Double(inputTargetWeightStr) { targetWeight = w }
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .foregroundStyle(paleBlue)
+                }
+            }
+            .onAppear {
+                inputName = name
+                inputAgeStr = "\(age)"
+                inputHeightStr = "\(height)"
+                inputTargetWeightStr = String(format: "%.1f", targetWeight)
+            }
+        }
+    }
+}
+
 #Preview {
     ProfileView()
-        .modelContainer(for: [UserStats.self, WorkoutSession.self, CardioLog.self], inMemory: true)
+        .modelContainer(for: [UserStats.self, WorkoutSession.self, CardioLog.self, BodyWeightEntry.self], inMemory: true)
         .preferredColorScheme(.dark)
 }
