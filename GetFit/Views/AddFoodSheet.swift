@@ -100,7 +100,7 @@ struct AddFoodSheet: View {
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
-                // Individual Plate Item Breakdown Card (Edit individual item name/calories/portion without affecting other items)
+                // Individual Plate Item Breakdown Card with Independent Per-Item Quantity Steppers [-] 1.0x [+]
                 if !detectedItems.isEmpty {
                     detectedItemsBreakdownCard
                 }
@@ -228,7 +228,7 @@ struct AddFoodSheet: View {
         }
     }
     
-    // MARK: - Per-Item Breakdown Card
+    // MARK: - Per-Item Breakdown Card with Independent Stepper per Item
     
     private var detectedItemsBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -239,7 +239,7 @@ struct AddFoodSheet: View {
                     .fontWeight(.medium)
                     .foregroundStyle(paleBlue)
                 Spacer()
-                Text("Tap pencil to edit individual item portion/calories")
+                Text("Adjust each item's quantity independently")
                     .font(.system(size: 9))
                     .foregroundStyle(Color.gray)
             }
@@ -268,62 +268,101 @@ struct AddFoodSheet: View {
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // List of Items — EDIT OR REMOVE INDIVIDUAL ITEMS WITHOUT ALTERING THE OTHERS
-            VStack(spacing: 8) {
+            // List of Items — EACH ITEM HAS ITS OWN INDEPENDENT QUANTITY STEPPER [-] Qty [+]
+            VStack(spacing: 10) {
                 ForEach(detectedItems) { item in
-                    HStack(spacing: 10) {
-                        Text(item.icon)
-                            .font(.title3)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(.subheadline)
-                                .fontWeight(.regular)
-                                .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            Text(item.icon)
+                                .font(.title3)
                             
-                            HStack(spacing: 6) {
-                                Text("P: \(item.protein)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(paleBlue)
-                                Text("C: \(item.carbs)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
-                                Text("F: \(item.fats)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.regular)
+                                    .foregroundStyle(.white)
+                                
+                                HStack(spacing: 6) {
+                                    Text("P: \(item.protein)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(paleBlue)
+                                    Text("C: \(item.carbs)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
+                                    Text("F: \(item.fats)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // Edit Item Pencil
+                            Button {
+                                itemToEdit = item
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 10))
+                                    Text("\(item.calories) kcal")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(paleBlue.opacity(0.15))
+                                .clipShape(Capsule())
+                            }
+                            
+                            // Delete Item Trash
+                            Button {
+                                detectedItems.removeAll { $0.id == item.id }
+                                recalculateTotalsFromDetectedItems()
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.red.opacity(0.85))
+                                    .padding(6)
+                                    .background(Color.red.opacity(0.12))
+                                    .clipShape(Circle())
                             }
                         }
                         
-                        Spacer()
-                        
-                        // Edit Item Pencil — Modify THIS item's name/quantity/calories specifically!
-                        Button {
-                            itemToEdit = item
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 10))
-                                Text("\(item.calories) kcal")
-                                    .font(.system(size: 11, weight: .semibold))
+                        // INDEPENDENT QUANTITY STEPPER FOR THIS SPECIFIC ITEM
+                        HStack {
+                            Text("Quantity:")
+                                .font(.caption2)
+                                .foregroundStyle(Color.gray)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 8) {
+                                Button {
+                                    adjustItemQuantity(item, delta: -0.5)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(paleBlue)
+                                }
+                                
+                                Text(String(format: "%.1fx", item.quantity))
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 36)
+                                
+                                Button {
+                                    adjustItemQuantity(item, delta: 0.5)
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(paleBlue)
+                                }
                             }
-                            .foregroundStyle(paleBlue)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(paleBlue.opacity(0.15))
+                            .background(Color.white.opacity(0.06))
                             .clipShape(Capsule())
-                        }
-                        
-                        // Delete Item Trash
-                        Button {
-                            detectedItems.removeAll { $0.id == item.id }
-                            recalculateTotalsFromDetectedItems()
-                        } label: {
-                            Image(systemName: "trash")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.red.opacity(0.85))
-                                .padding(6)
-                                .background(Color.red.opacity(0.12))
-                                .clipShape(Circle())
                         }
                     }
                     .padding(10)
@@ -335,6 +374,23 @@ struct AddFoodSheet: View {
         .padding(14)
         .background(Color(UIColor.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    
+    // MARK: - Adjust ONLY the selected item's quantity
+    
+    private func adjustItemQuantity(_ item: DetectedFoodItem, delta: Double) {
+        guard let idx = detectedItems.firstIndex(where: { $0.id == item.id }) else { return }
+        let currentQty = detectedItems[idx].quantity
+        let newQty = max(0.5, currentQty + delta)
+        guard currentQty != newQty else { return }
+        
+        detectedItems[idx].quantity = newQty
+        detectedItems[idx].calories = max(1, Int(round(Double(detectedItems[idx].baseCalories) * newQty)))
+        detectedItems[idx].protein = max(0, Int(round(Double(detectedItems[idx].baseProtein) * newQty)))
+        detectedItems[idx].carbs = max(0, Int(round(Double(detectedItems[idx].baseCarbs) * newQty)))
+        detectedItems[idx].fats = max(0, Int(round(Double(detectedItems[idx].baseFats) * newQty)))
+        
+        recalculateTotalsFromDetectedItems()
     }
     
     private func recalculateTotalsFromDetectedItems() {

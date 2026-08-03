@@ -9,12 +9,17 @@ struct DetectedFoodItem: Identifiable, Sendable, Codable {
     var carbs: Int
     var fats: Int
     var icon: String
+    var quantity: Double = 1.0
+    var baseCalories: Int
+    var baseProtein: Int
+    var baseCarbs: Int
+    var baseFats: Int
     
     enum CodingKeys: String, CodingKey {
-        case name, calories, protein, carbs, fats, icon
+        case name, calories, protein, carbs, fats, icon, quantity, baseCalories, baseProtein, baseCarbs, baseFats
     }
     
-    init(id: UUID = UUID(), name: String, calories: Int, protein: Int, carbs: Int, fats: Int, icon: String) {
+    init(id: UUID = UUID(), name: String, calories: Int, protein: Int, carbs: Int, fats: Int, icon: String, quantity: Double = 1.0) {
         self.id = id
         self.name = name
         self.calories = calories
@@ -22,6 +27,13 @@ struct DetectedFoodItem: Identifiable, Sendable, Codable {
         self.carbs = carbs
         self.fats = fats
         self.icon = icon
+        self.quantity = quantity
+        
+        let qty = quantity > 0 ? quantity : 1.0
+        self.baseCalories = max(1, Int(round(Double(calories) / qty)))
+        self.baseProtein = max(0, Int(round(Double(protein) / qty)))
+        self.baseCarbs = max(0, Int(round(Double(carbs) / qty)))
+        self.baseFats = max(0, Int(round(Double(fats) / qty)))
     }
 }
 
@@ -83,7 +95,8 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         let modelCandidates = [
             "gemini-1.5-flash",
-            "gemini-1.5-pro"
+            "gemini-1.5-pro",
+            "gemini-2.0-flash"
         ]
         
         let promptText = """
@@ -103,7 +116,8 @@ final class AIFoodVisionService: @unchecked Sendable {
               "protein": 6,
               "carbs": 48,
               "fats": 6,
-              "icon": "🥞"
+              "icon": "🥞",
+              "quantity": 2.0
             },
             {
               "name": "Filter Coffee (1 cup)",
@@ -111,7 +125,8 @@ final class AIFoodVisionService: @unchecked Sendable {
               "protein": 2,
               "carbs": 12,
               "fats": 3,
-              "icon": "☕"
+              "icon": "☕",
+              "quantity": 1.0
             }
           ]
         }
@@ -142,16 +157,18 @@ final class AIFoodVisionService: @unchecked Sendable {
             )
         }
         
+        let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encodedKey = cleanKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cleanKey
         var lastErrorMessage = "Could not connect to Gemini API."
         
         for model in modelCandidates {
-            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent"
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(encodedKey)"
             guard let url = URL(string: urlString) else { continue }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
+            request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = httpBody
             request.timeoutInterval = 25
             
@@ -173,17 +190,39 @@ final class AIFoodVisionService: @unchecked Sendable {
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                         
                         if let jsonData = cleanedJSON.data(using: .utf8) {
+                            struct GeminiPayloadItem: Codable {
+                                let name: String
+                                let calories: Int
+                                let protein: Int
+                                let carbs: Int
+                                let fats: Int
+                                let icon: String
+                                let quantity: Double?
+                            }
+                            
                             struct GeminiPayload: Codable {
                                 let plateTitle: String
-                                let items: [DetectedFoodItem]
+                                let items: [GeminiPayloadItem]
                             }
                             
                             let decoder = JSONDecoder()
                             if let payload = try? decoder.decode(GeminiPayload.self, from: jsonData), !payload.items.isEmpty {
-                                let totalCals = payload.items.reduce(0) { $0 + $1.calories }
-                                let totalP = payload.items.reduce(0) { $0 + $1.protein }
-                                let totalC = payload.items.reduce(0) { $0 + $1.carbs }
-                                let totalF = payload.items.reduce(0) { $0 + $1.fats }
+                                let convertedItems = payload.items.map { item in
+                                    DetectedFoodItem(
+                                        name: item.name,
+                                        calories: item.calories,
+                                        protein: item.protein,
+                                        carbs: item.carbs,
+                                        fats: item.fats,
+                                        icon: item.icon,
+                                        quantity: item.quantity ?? 1.0
+                                    )
+                                }
+                                
+                                let totalCals = convertedItems.reduce(0) { $0 + $1.calories }
+                                let totalP = convertedItems.reduce(0) { $0 + $1.protein }
+                                let totalC = convertedItems.reduce(0) { $0 + $1.carbs }
+                                let totalF = convertedItems.reduce(0) { $0 + $1.fats }
                                 
                                 return FoodAnalysisResult(
                                     plateTitle: payload.plateTitle,
@@ -191,7 +230,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                                     totalProtein: totalP,
                                     totalCarbs: totalC,
                                     totalFats: totalF,
-                                    detectedItems: payload.items,
+                                    detectedItems: convertedItems,
                                     confidence: 0.99,
                                     errorMessage: nil
                                 )
@@ -204,7 +243,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                        let message = errorObj["message"] as? String {
                         lastErrorMessage = "Gemini Error (\(statusCode)): \(message)"
                     } else {
-                        lastErrorMessage = "Gemini API returned code \(statusCode). Please verify your API Key."
+                        lastErrorMessage = "Gemini API returned code \(statusCode)."
                     }
                 }
             } catch {
