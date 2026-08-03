@@ -63,6 +63,7 @@ struct AddFoodSheet: View {
     @State private var aiSuccessMessage: String? = nil
     @State private var aiErrorMessage: String? = nil
     @State private var detectedItems: [DetectedFoodItem] = []
+    @State private var itemToEdit: DetectedFoodItem? = nil
     
     // Gemini API Key state
     @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
@@ -91,14 +92,13 @@ struct AddFoodSheet: View {
                     .foregroundStyle(paleBlue)
                 }
                 
-
                 // Gemini API Key Banner / Settings Toggle
                 geminiKeyBar
                 
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
-                // Detected Items Breakdown Card (Shows how total calories are reached)
+                // Detected Items Breakdown Card (Editable & Removable items)
                 if !detectedItems.isEmpty {
                     detectedItemsBreakdownCard
                 }
@@ -216,6 +216,11 @@ struct AddFoodSheet: View {
                 scanMealWithAI(capturedImage)
             }
         }
+        .sheet(item: $itemToEdit) { item in
+            EditDetectedItemSheet(item: item) { updated in
+                updateDetectedItem(updated)
+            }
+        }
     }
     
     // MARK: - Gemini Vision AI Key Bar
@@ -295,8 +300,8 @@ struct AddFoodSheet: View {
                     .fontWeight(.medium)
                     .foregroundStyle(paleBlue)
                 Spacer()
-                Text("\(detectedItems.count) Items")
-                    .font(.caption2)
+                Text("\(detectedItems.count) Items • Tap pencil to edit or trash to remove")
+                    .font(.system(size: 9))
                     .foregroundStyle(Color.gray)
             }
             
@@ -324,10 +329,10 @@ struct AddFoodSheet: View {
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Individual Food Items List
+            // Individual Food Items List with Edit & Delete Controls
             VStack(spacing: 8) {
                 ForEach(detectedItems) { item in
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         Text(item.icon)
                             .font(.title3)
                         
@@ -352,15 +357,35 @@ struct AddFoodSheet: View {
                         
                         Spacer()
                         
-                        // Per-Item Calorie Badge
-                        Text("\(item.calories) kcal")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                        // Per-Item Calorie Badge & Edit Trigger
+                        Button {
+                            itemToEdit = item
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 10))
+                                Text("\(item.calories) kcal")
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
                             .foregroundStyle(paleBlue)
-                            .padding(.horizontal, 10)
+                            .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color(UIColor.tertiarySystemBackground))
+                            .background(paleBlue.opacity(0.15))
                             .clipShape(Capsule())
+                            .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                        }
+                        
+                        // Trash / Remove Button
+                        Button {
+                            removeDetectedItem(item)
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.red.opacity(0.85))
+                                .padding(6)
+                                .background(Color.red.opacity(0.12))
+                                .clipShape(Circle())
+                        }
                     }
                     .padding(10)
                     .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
@@ -498,7 +523,40 @@ struct AddFoodSheet: View {
                 .padding(10)
                 .frame(maxWidth: .infinity)
                 .background(Color.orange.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
+        }
+    }
+    
+    // MARK: - Item Recalculation Helpers
+    
+    private func removeDetectedItem(_ item: DetectedFoodItem) {
+        detectedItems.removeAll { $0.id == item.id }
+        recalculateTotalsFromDetectedItems()
+    }
+    
+    private func updateDetectedItem(_ updatedItem: DetectedFoodItem) {
+        if let idx = detectedItems.firstIndex(where: { $0.id == updatedItem.id }) {
+            detectedItems[idx] = updatedItem
+            recalculateTotalsFromDetectedItems()
+        }
+    }
+    
+    private func recalculateTotalsFromDetectedItems() {
+        let totalCals = detectedItems.reduce(0) { $0 + $1.calories }
+        let totalP = detectedItems.reduce(0) { $0 + $1.protein }
+        let totalC = detectedItems.reduce(0) { $0 + $1.carbs }
+        let totalF = detectedItems.reduce(0) { $0 + $1.fats }
+        
+        caloriesText = "\(totalCals)"
+        proteinText = "\(totalP)"
+        carbsText = "\(totalC)"
+        fatsText = "\(totalF)"
+        
+        if detectedItems.isEmpty {
+            aiSuccessMessage = nil
+        } else {
+            aiSuccessMessage = "Recalculated totals: \(totalCals) kcal"
         }
     }
     
@@ -578,6 +636,95 @@ struct AddFoodSheet: View {
         modelContext.insert(newMeal)
         try? modelContext.save()
         dismiss()
+    }
+}
+
+// MARK: - Edit Individual Detected Food Item Sheet
+
+struct EditDetectedItemSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var item: DetectedFoodItem
+    var onSave: (DetectedFoodItem) -> Void
+    
+    @State private var nameInput: String = ""
+    @State private var caloriesInput: String = ""
+    @State private var proteinInput: String = ""
+    @State private var carbsInput: String = ""
+    @State private var fatsInput: String = ""
+    
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Item Name & Portion") {
+                    TextField("e.g. 1 Dosa, 2 Boiled Eggs", text: $nameInput)
+                }
+                
+                Section("Calories & Macros") {
+                    HStack {
+                        Text("Calories (kcal)")
+                        Spacer()
+                        TextField("0", text: $caloriesInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Protein (g)")
+                        Spacer()
+                        TextField("0", text: $proteinInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Carbs (g)")
+                        Spacer()
+                        TextField("0", text: $carbsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Fats (g)")
+                        Spacer()
+                        TextField("0", text: $fatsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Edit Item & Calories")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        updated.name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        updated.calories = Int(caloriesInput) ?? item.calories
+                        updated.protein = Int(proteinInput) ?? item.protein
+                        updated.carbs = Int(carbsInput) ?? item.carbs
+                        updated.fats = Int(fatsInput) ?? item.fats
+                        onSave(updated)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .foregroundStyle(paleBlue)
+                }
+            }
+            .onAppear {
+                nameInput = item.name
+                caloriesInput = "\(item.calories)"
+                proteinInput = "\(item.protein)"
+                carbsInput = "\(item.carbs)"
+                fatsInput = "\(item.fats)"
+            }
+        }
+        .presentationDetents([.height(340)])
     }
 }
 

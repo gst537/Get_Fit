@@ -3,12 +3,12 @@ import UIKit
 
 struct DetectedFoodItem: Identifiable, Sendable, Codable {
     var id = UUID()
-    let name: String
-    let calories: Int
-    let protein: Int
-    let carbs: Int
-    let fats: Int
-    let icon: String
+    var name: String
+    var calories: Int
+    var protein: Int
+    var carbs: Int
+    var fats: Int
+    var icon: String
     
     enum CodingKeys: String, CodingKey {
         case name, calories, protein, carbs, fats, icon
