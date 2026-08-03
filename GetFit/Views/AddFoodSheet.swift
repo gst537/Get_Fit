@@ -2,6 +2,54 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 
+// MARK: - Native Apple System UIPasteControl Button (iOS 16+ Zero-Permission Clipboard Access)
+struct SystemPasteButton: UIViewRepresentable {
+    var onPaste: (String) -> Void
+    
+    func makeUIView(context: Context) -> UIPasteControl {
+        let config = UIPasteControl.Configuration()
+        config.displayMode = .labelOnly
+        config.cornerStyle = .capsule
+        let button = UIPasteControl(configuration: config)
+        button.target = context.coordinator
+        return button
+    }
+    
+    func updateUIView(_ uiView: UIPasteControl, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIPasteConfigurationSupporting {
+        var parent: SystemPasteButton
+        var pasteConfiguration: UIPasteConfiguration?
+        
+        init(_ parent: SystemPasteButton) {
+            self.parent = parent
+            self.pasteConfiguration = UIPasteConfiguration(forAccepting: NSString.self)
+        }
+        
+        func canPaste(_ itemProviders: [NSItemProvider]) -> Bool {
+            return itemProviders.contains { $0.canLoadObject(ofClass: NSString.self) }
+        }
+        
+        func paste(itemProviders: [NSItemProvider]) {
+            for provider in itemProviders {
+                if provider.canLoadObject(ofClass: NSString.self) {
+                    _ = provider.loadObject(ofClass: NSString.self) { [weak self] (string, _) in
+                        if let text = string as? String {
+                            DispatchQueue.main.async {
+                                self?.parent.onPaste(text.trimmingCharacters(in: .whitespacesAndNewlines))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Native Camera View Wrapper
 struct CameraView: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
@@ -486,28 +534,33 @@ struct AddFoodSheet: View {
                                 .background(Color(UIColor.tertiarySystemBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             
-                            // 📋 One-tap Clipboard Paste Button
+                            // Native Apple System UIPasteControl Button (Direct Permission-Free Paste)
+                            SystemPasteButton { pastedText in
+                                geminiKeyInput = pastedText
+                                AIFoodVisionService.shared.savedAPIKey = pastedText
+                                aiErrorMessage = nil
+                            }
+                            .frame(width: 70, height: 34)
+                        }
+                        
+                        // Fallback manual paste button in case system clipboard has pending text
+                        HStack {
                             Button {
-                                if let copiedText = UIPasteboard.general.string {
+                                if let copiedText = UIPasteboard.general.string, !copiedText.isEmpty {
                                     geminiKeyInput = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
                                 }
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: "doc.on.clipboard")
                                         .font(.caption2)
-                                    Text("Paste")
+                                    Text("Clipboard Paste")
                                         .font(.caption2)
-                                        .fontWeight(.semibold)
                                 }
                                 .foregroundStyle(paleBlue)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(paleBlue.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
-                        }
-                        
-                        HStack {
+                            
+                            Spacer()
+                            
                             if AIFoodVisionService.shared.savedAPIKey != nil {
                                 Button("Clear Key") {
                                     geminiKeyInput = ""
@@ -516,9 +569,8 @@ struct AddFoodSheet: View {
                                 }
                                 .font(.caption2)
                                 .foregroundStyle(Color.red.opacity(0.8))
+                                .padding(.trailing, 8)
                             }
-                            
-                            Spacer()
                             
                             Button("Save Key") {
                                 let cleanKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
