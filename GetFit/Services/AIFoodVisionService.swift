@@ -68,10 +68,148 @@ final class AIFoodVisionService: @unchecked Sendable {
                 plateTitle: "API Key Required",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Please paste your free Google Gemini API Key to enable AI food scanning."
+                errorMessage: "Please paste your free Groq or Gemini API Key to enable AI food scanning."
             )
         }
-        return await callGeminiVision(image: image, apiKey: key.trimmingCharacters(in: .whitespacesAndNewlines))
+        
+        let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleanKey.hasPrefix("gsk_") {
+            // Groq Vision API (14,400 free calls/day)
+            return await callGroqVision(image: image, apiKey: cleanKey)
+        } else {
+            // Google Gemini Vision API
+            return await callGeminiVision(image: image, apiKey: cleanKey)
+        }
+    }
+    
+    // MARK: - Groq Vision API (14,400 Free Requests/Day — console.groq.com)
+    
+    private func callGroqVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
+        let resized = image.resizedForVision(maxDimension: 512)
+        guard let jpegData = resized.jpegData(compressionQuality: 0.4) else {
+            return FoodAnalysisResult(
+                plateTitle: "Image Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not process image data."
+            )
+        }
+        let base64Image = jpegData.base64EncodedString()
+        let dataURL = "data:image/jpeg;base64,\(base64Image)"
+        
+        let promptText = """
+        You are an expert nutritionist and food vision AI.
+        Analyze this meal photo carefully.
+        Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice).
+        Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
+        
+        Return ONLY valid raw JSON with NO markdown formatting, NO ```json backticks.
+        {
+          "plateTitle": "Summary Title (e.g. Dosa & Coffee Breakfast)",
+          "items": [
+            {
+              "name": "Crispy Dosa",
+              "calories": 120,
+              "protein": 3,
+              "carbs": 24,
+              "fats": 3,
+              "icon": "🥞",
+              "quantity": 2.0
+            }
+          ]
+        }
+        """
+        
+        let requestBody: [String: Any] = [
+            "model": "llama-3.2-11b-vision-preview",
+            "messages": [
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": promptText],
+                        ["type": "image_url", "image_url": ["url": dataURL]]
+                    ]
+                ]
+            ],
+            "temperature": 0.2,
+            "response_format": ["type": "json_object"]
+        ]
+        
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
+              let url = URL(string: "https://api.groq.com/openai/v1/chat/completions") else {
+            return FoodAnalysisResult(
+                plateTitle: "Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not format Groq API request."
+            )
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = httpBody
+        request.timeoutInterval = 20
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+            
+            if statusCode == 200 {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let choices = json["choices"] as? [[String: Any]],
+                   let first = choices.first,
+                   let message = first["message"] as? [String: Any],
+                   let content = message["content"] as? String {
+                    if let result = parseJSONString(content) {
+                        return result
+                    }
+                }
+            } else if statusCode == 429 {
+                return FoodAnalysisResult(
+                    plateTitle: "Rate Limited",
+                    totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                    detectedItems: [], confidence: 0.0,
+                    errorMessage: "Groq daily quota limit reached (429). Please wait a bit."
+                )
+            } else {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let err = json["error"] as? [String: Any],
+                   let msg = err["message"] as? String {
+                    return FoodAnalysisResult(
+                        plateTitle: "Groq Error",
+                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                        detectedItems: [], confidence: 0.0,
+                        errorMessage: "Groq (\(statusCode)): \(msg)"
+                    )
+                }
+            }
+        } catch {
+            return FoodAnalysisResult(
+                plateTitle: "Network Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Groq network error: \(error.localizedDescription)"
+            )
+        }
+        
+        return FoodAnalysisResult(
+            plateTitle: "Error",
+            totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+            detectedItems: [], confidence: 0.0,
+            errorMessage: "Could not parse Groq AI vision response."
+        )
+    }
+    
+    private func parseJSONString(_ text: String) -> FoodAnalysisResult? {
+        let cleaned = text
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard let jsonData = cleaned.data(using: .utf8) else { return nil }
+        return parseGeminiResponse(jsonData)
     }
     
     // MARK: - Gemini Vision API Call
