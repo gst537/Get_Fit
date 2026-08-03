@@ -457,7 +457,7 @@ struct AddFoodSheet: View {
                 
                 Spacer()
                 
-                Button(showKeySettings ? "Done" : (AIFoodVisionService.shared.savedAPIKey != nil ? "Key Saved ✓" : "+ Add Free Key")) {
+                Button(showKeySettings ? "Hide" : (AIFoodVisionService.shared.savedAPIKey != nil ? "Edit Key" : "+ Add Free Key")) {
                     withAnimation {
                         showKeySettings.toggle()
                     }
@@ -470,34 +470,72 @@ struct AddFoodSheet: View {
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            if showKeySettings {
+            if showKeySettings || AIFoodVisionService.shared.savedAPIKey == nil {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Paste Free Google Gemini API Key (aistudio.google.com):")
+                    Text("Paste Free Google Gemini API Key (from aistudio.google.com):")
                         .font(.caption2)
                         .foregroundStyle(Color.gray)
                     
-                    HStack {
-                        SecureField("AIzaSy...", text: $geminiKeyInput)
-                            .font(.caption)
-                            .padding(8)
-                            .background(Color(UIColor.tertiarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        
-                        Button("Save") {
-                            let cleanKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                            AIFoodVisionService.shared.savedAPIKey = cleanKey.isEmpty ? nil : cleanKey
-                            aiErrorMessage = nil
-                            withAnimation {
-                                showKeySettings = false
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            TextField("AIzaSy...", text: $geminiKeyInput)
+                                .font(.caption)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .padding(10)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            
+                            // 📋 One-tap Clipboard Paste Button
+                            Button {
+                                if let copiedText = UIPasteboard.general.string {
+                                    geminiKeyInput = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "doc.on.clipboard")
+                                        .font(.caption2)
+                                    Text("Paste")
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(paleBlue.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                         }
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(paleBlue)
-                        .clipShape(Capsule())
+                        
+                        HStack {
+                            if AIFoodVisionService.shared.savedAPIKey != nil {
+                                Button("Clear Key") {
+                                    geminiKeyInput = ""
+                                    AIFoodVisionService.shared.savedAPIKey = nil
+                                    aiErrorMessage = nil
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(Color.red.opacity(0.8))
+                            }
+                            
+                            Spacer()
+                            
+                            Button("Save Key") {
+                                let cleanKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                AIFoodVisionService.shared.savedAPIKey = cleanKey.isEmpty ? nil : cleanKey
+                                aiErrorMessage = nil
+                                withAnimation {
+                                    showKeySettings = false
+                                }
+                            }
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(paleBlue)
+                            .clipShape(Capsule())
+                        }
                     }
                 }
                 .padding(10)
