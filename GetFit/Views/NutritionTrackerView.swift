@@ -313,7 +313,7 @@ struct NutritionTrackerView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(categoryMeals) { meal in
-                        VStack(spacing: 0) {
+                        VStack(spacing: 6) {
                             HStack(spacing: 12) {
                                 if let path = meal.imagePath, let uiImg = AIFoodVisionService.shared.loadMealImage(from: path) {
                                     Button {
@@ -359,14 +359,14 @@ struct NutritionTrackerView: View {
                                     .fontWeight(.medium)
                                     .foregroundStyle(.white)
                                 
-                                // Pencil Button to EDIT already posted meal!
+                                // Pencil Button to EDIT already posted meal
                                 Button {
                                     mealToEdit = meal
                                 } label: {
                                     Image(systemName: "pencil")
                                         .font(.system(size: 12))
                                         .foregroundStyle(paleBlue)
-                                        .padding(.leading, 6)
+                                        .padding(.leading, 4)
                                 }
                                 
                                 // Trash Button to DELETE posted meal
@@ -376,15 +376,51 @@ struct NutritionTrackerView: View {
                                     Image(systemName: "trash")
                                         .font(.system(size: 12))
                                         .foregroundStyle(Color.red.opacity(0.85))
-                                        .padding(.leading, 6)
+                                        .padding(.leading, 2)
                                 }
                             }
-                            .padding(.vertical, 10)
                             
-                            if meal.id != categoryMeals.last?.id {
-                                Divider()
-                                    .background(Color.gray.opacity(0.2))
+                            // INLINE +/- QUANTITY STEPPER for this individual item
+                            HStack {
+                                Text("Qty:")
+                                    .font(.caption2).foregroundStyle(Color.gray)
+                                
+                                Spacer()
+                                
+                                HStack(spacing: 10) {
+                                    Button {
+                                        adjustLoggedMealQty(meal, delta: -1)
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(meal.calories <= getBaseCalories(meal) ? Color.gray.opacity(0.4) : paleBlue)
+                                    }
+                                    .disabled(meal.calories <= getBaseCalories(meal))
+                                    
+                                    Text("\(getCurrentQty(meal))")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 24)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Button {
+                                        adjustLoggedMealQty(meal, delta: 1)
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(paleBlue)
+                                    }
+                                }
+                                .padding(.horizontal, 8).padding(.vertical, 2)
+                                .background(Color.white.opacity(0.06))
+                                .clipShape(Capsule())
                             }
+                        }
+                        .padding(.vertical, 8)
+                        
+                        if meal.id != categoryMeals.last?.id {
+                            Divider()
+                                .background(Color.gray.opacity(0.2))
                         }
                     }
                 }
@@ -392,6 +428,63 @@ struct NutritionTrackerView: View {
         }
         .padding(16)
         .glassmorphic(cornerRadius: 18)
+    }
+    
+    // MARK: - Logged Meal Quantity Helpers
+    
+    /// Get the base per-unit calories (stored calories / current quantity)
+    private func getBaseCalories(_ meal: MealLog) -> Int {
+        // We assume base = the smallest meaningful unit
+        // Since we don't store base separately, use calories as-is for qty=1
+        return max(1, meal.calories / max(1, getCurrentQty(meal)))
+    }
+    
+    /// Infer current quantity from the meal name if it contains a number, otherwise 1
+    private func getCurrentQty(_ meal: MealLog) -> Int {
+        return max(1, meal.calories / max(1, getStoredBaseCalories(meal)))
+    }
+    
+    /// Get base calories per unit — stored in UserDefaults keyed by meal ID
+    private func getStoredBaseCalories(_ meal: MealLog) -> Int {
+        let key = "mealBase_\(meal.id.uuidString)"
+        let stored = UserDefaults.standard.integer(forKey: key)
+        if stored > 0 { return stored }
+        // First time — set current calories as base (qty=1)
+        UserDefaults.standard.set(meal.calories, forKey: key)
+        return meal.calories
+    }
+    
+    private func getStoredBaseMacro(_ meal: MealLog, macro: String) -> Int {
+        let key = "mealBase\(macro)_\(meal.id.uuidString)"
+        let stored = UserDefaults.standard.integer(forKey: key)
+        if stored > 0 { return stored }
+        let val: Int
+        switch macro {
+        case "P": val = meal.proteinGrams
+        case "C": val = meal.carbsGrams
+        case "F": val = meal.fatsGrams
+        default: val = 0
+        }
+        UserDefaults.standard.set(val, forKey: key)
+        return val
+    }
+    
+    /// Adjust quantity of a single logged meal by delta (+1 or -1)
+    private func adjustLoggedMealQty(_ meal: MealLog, delta: Int) {
+        let baseCal = getStoredBaseCalories(meal)
+        let baseP = getStoredBaseMacro(meal, macro: "P")
+        let baseC = getStoredBaseMacro(meal, macro: "C")
+        let baseF = getStoredBaseMacro(meal, macro: "F")
+        
+        let currentQty = max(1, meal.calories / max(1, baseCal))
+        let newQty = max(1, currentQty + delta)
+        
+        meal.calories = baseCal * newQty
+        meal.proteinGrams = baseP * newQty
+        meal.carbsGrams = baseC * newQty
+        meal.fatsGrams = baseF * newQty
+        
+        try? modelContext.save()
     }
     
     private func deleteMeal(_ meal: MealLog) {
