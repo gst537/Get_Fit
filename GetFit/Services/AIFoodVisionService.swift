@@ -95,14 +95,13 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         let modelCandidates = [
             "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash-exp"
+            "gemini-1.5-pro"
         ]
         
         let promptText = """
         You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
-        Identify every specific food item on the plate (e.g. Masala Dosa, Sambar, Kothu Parotta, Chana Sundal, Coconut Chutney, Fried Eggs, Filter Coffee, Chicken Biryani, Roti, Dal, Rice).
+        Identify every specific food item on the plate (e.g. Biryani Portion, Raita, Masala Dosa, Sambar, Chicken Curry, Chapathi, Dal, Rice, Boiled Egg, Salad).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
         You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
@@ -269,18 +268,20 @@ final class AIFoodVisionService: @unchecked Sendable {
             )
         }
         
+        let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encodedKey = cleanKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cleanKey
         var lastErrorMessage = "Failed to connect to Gemini API."
         
         for model in modelCandidates {
-            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(encodedKey)"
             guard let url = URL(string: urlString) else { continue }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
+            request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = jsonData
-            request.timeoutInterval = 12.0
+            request.timeoutInterval = 15.0
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -296,43 +297,19 @@ final class AIFoodVisionService: @unchecked Sendable {
                        let firstPart = parts.first,
                        let jsonText = firstPart["text"] as? String {
                         
-                        let cleanJsonText = jsonText
-                            .replacingOccurrences(of: "```json", with: "")
-                            .replacingOccurrences(of: "```", with: "")
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        
-                        if let innerData = cleanJsonText.data(using: .utf8),
-                           let parsedDict = try? JSONSerialization.jsonObject(with: innerData) as? [String: Any] {
-                            
-                            let plateTitle = parsedDict["plateTitle"] as? String ?? "Custom Meal Plate"
-                            
-                            var items: [DetectedFoodItem] = []
-                            if let itemsArray = parsedDict["items"] as? [[String: Any]] {
-                                for itemDict in itemsArray {
-                                    let name = itemDict["name"] as? String ?? "Food Item"
-                                    let cals = itemDict["calories"] as? Int ?? 0
-                                    let p = itemDict["protein"] as? Int ?? 0
-                                    let c = itemDict["carbs"] as? Int ?? 0
-                                    let f = itemDict["fats"] as? Int ?? 0
-                                    let icon = itemDict["icon"] as? String ?? "🍲"
-                                    let qty = itemDict["quantity"] as? Double ?? 1.0
-                                    
-                                    items.append(DetectedFoodItem(name: name, calories: cals, protein: p, carbs: c, fats: f, icon: icon, quantity: qty))
-                                }
-                            }
-                            
-                            let totalCals = items.reduce(0) { $0 + $1.calories }
-                            let totalP = items.reduce(0) { $0 + $1.protein }
-                            let totalC = items.reduce(0) { $0 + $1.carbs }
-                            let totalF = items.reduce(0) { $0 + $1.fats }
+                        if let parsed = parseGeminiJsonText(jsonText) {
+                            let totalCals = parsed.items.reduce(0) { $0 + $1.calories }
+                            let totalP = parsed.items.reduce(0) { $0 + $1.protein }
+                            let totalC = parsed.items.reduce(0) { $0 + $1.carbs }
+                            let totalF = parsed.items.reduce(0) { $0 + $1.fats }
                             
                             return FoodAnalysisResult(
-                                plateTitle: plateTitle,
+                                plateTitle: parsed.title,
                                 totalCalories: totalCals,
                                 totalProtein: totalP,
                                 totalCarbs: totalC,
                                 totalFats: totalF,
-                                detectedItems: items,
+                                detectedItems: parsed.items,
                                 confidence: 0.99,
                                 errorMessage: nil
                             )
@@ -362,6 +339,42 @@ final class AIFoodVisionService: @unchecked Sendable {
             confidence: 0.0,
             errorMessage: lastErrorMessage
         )
+    }
+    
+    private func parseGeminiJsonText(_ text: String) -> (title: String, items: [DetectedFoodItem])? {
+        var cleaned = text
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if let firstBrace = cleaned.firstIndex(of: "{"),
+           let lastBrace = cleaned.lastIndex(of: "}") {
+            cleaned = String(cleaned[firstBrace...lastBrace])
+        }
+        
+        guard let data = cleaned.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        
+        let title = dict["plateTitle"] as? String ?? dict["title"] as? String ?? "Custom Meal Plate"
+        var items: [DetectedFoodItem] = []
+        
+        if let itemsArray = dict["items"] as? [[String: Any]] {
+            for itemDict in itemsArray {
+                let name = itemDict["name"] as? String ?? "Food Item"
+                let cals = itemDict["calories"] as? Int ?? 0
+                let p = itemDict["protein"] as? Int ?? 0
+                let c = itemDict["carbs"] as? Int ?? 0
+                let f = itemDict["fats"] as? Int ?? 0
+                let icon = itemDict["icon"] as? String ?? "🍲"
+                let qty = itemDict["quantity"] as? Double ?? 1.0
+                
+                items.append(DetectedFoodItem(name: name, calories: cals, protein: p, carbs: c, fats: f, icon: icon, quantity: qty))
+            }
+        }
+        
+        return (title, items)
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
