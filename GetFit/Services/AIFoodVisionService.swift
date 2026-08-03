@@ -136,8 +136,13 @@ final class AIFoodVisionService: @unchecked Sendable {
             )
         }
         
-        // Try models in order — stop on first success or 429
-        let models = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        // Models to try in sequence — each model family has its own separate 15 RPM quota pool in Google AI Studio
+        let models = [
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemini-2.0-flash-lite"
+        ]
         let encodedKey = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? apiKey
         var lastError = "Could not connect to Gemini API."
         
@@ -149,7 +154,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = httpBody
-            request.timeoutInterval = 25
+            request.timeoutInterval = 20
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -157,21 +162,14 @@ final class AIFoodVisionService: @unchecked Sendable {
                 
                 if statusCode == 200 {
                     if let result = parseGeminiResponse(data) {
-                        return result // Success — return immediately
+                        return result // Success!
                     }
-                    // Parse failed, try next model
-                    lastError = "Could not parse Gemini response for model \(model)."
-                    continue
+                    lastError = "Could not parse response from \(model)."
                 } else if statusCode == 429 {
-                    // Rate limited — don't try more models, just return error
-                    return FoodAnalysisResult(
-                        plateTitle: "Rate Limited",
-                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                        detectedItems: [], confidence: 0.0,
-                        errorMessage: "Gemini free quota exceeded (429). Wait ~60 seconds and try again, or generate a new free key at aistudio.google.com"
-                    )
+                    // Rate limit hit for THIS model — try the NEXT model in the list (different quota bucket)
+                    lastError = "Model \(model) hit rate limit (429). Trying fallback model..."
+                    continue
                 } else {
-                    // Extract error message from response
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let err = json["error"] as? [String: Any],
                        let msg = err["message"] as? String {
@@ -181,7 +179,25 @@ final class AIFoodVisionService: @unchecked Sendable {
                     }
                 }
             } catch {
-                lastError = "Network error: \(error.localizedDescription)"
+                lastError = "Network error (\(model)): \(error.localizedDescription)"
+            }
+        }
+        
+        // If all models hit 429 or failed, wait 2 seconds and attempt 1 last retry on gemini-1.5-flash
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        
+        let retryUrlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(encodedKey)"
+        if let retryUrl = URL(string: retryUrlString) {
+            var request = URLRequest(url: retryUrl)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = httpBody
+            request.timeoutInterval = 20
+            
+            if let (data, response) = try? await URLSession.shared.data(for: request),
+               ((response as? HTTPURLResponse)?.statusCode ?? 500) == 200,
+               let result = parseGeminiResponse(data) {
+                return result
             }
         }
         
