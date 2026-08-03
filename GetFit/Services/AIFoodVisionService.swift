@@ -93,10 +93,10 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         let base64Image = jpegData.base64EncodedString()
         
+        // Single fast primary model to avoid burning rate limits
         let modelCandidates = [
             "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash"
+            "gemini-1.5-pro"
         ]
         
         let promptText = """
@@ -170,7 +170,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = httpBody
-            request.timeoutInterval = 25
+            request.timeoutInterval = 20
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -224,6 +224,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                                 let totalC = convertedItems.reduce(0) { $0 + $1.carbs }
                                 let totalF = convertedItems.reduce(0) { $0 + $1.fats }
                                 
+                                // Success! Return immediately and break out of loop
                                 return FoodAnalysisResult(
                                     plateTitle: payload.plateTitle,
                                     totalCalories: totalCals,
@@ -237,6 +238,13 @@ final class AIFoodVisionService: @unchecked Sendable {
                             }
                         }
                     }
+                } else if statusCode == 429 {
+                    return FoodAnalysisResult(
+                        plateTitle: "Rate Limit Exceeded",
+                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                        detectedItems: [], confidence: 0.0,
+                        errorMessage: "Google Gemini Free Quota limit reached (429). Please wait 30 seconds or paste a new free key from aistudio.google.com"
+                    )
                 } else {
                     if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let errorObj = jsonObj["error"] as? [String: Any],

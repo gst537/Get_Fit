@@ -58,6 +58,7 @@ struct AddFoodSheet: View {
     // Per-item breakdown state
     @State private var detectedItems: [DetectedFoodItem] = []
     @State private var itemToEdit: DetectedFoodItem? = nil
+    @State private var showAddItemSheet = false
     
     // Photo & AI Recognition state
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -100,10 +101,8 @@ struct AddFoodSheet: View {
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
-                // Individual Plate Item Breakdown Card with Independent Per-Item Quantity Steppers [-] 1.0x [+]
-                if !detectedItems.isEmpty {
-                    detectedItemsBreakdownCard
-                }
+                // Individual Plate Item Breakdown Card
+                detectedItemsBreakdownCard
                 
                 // Meal Type Category Picker
                 VStack(alignment: .leading, spacing: 8) {
@@ -218,6 +217,12 @@ struct AddFoodSheet: View {
                 scanMealWithAI(capturedImage)
             }
         }
+        .sheet(isPresented: $showAddItemSheet) {
+            AddNewItemSheet { newItem in
+                detectedItems.append(newItem)
+                recalculateTotalsFromDetectedItems()
+            }
+        }
         .sheet(item: $itemToEdit) { item in
             EditDetectedItemSheet(item: item) { updated in
                 if let idx = detectedItems.firstIndex(where: { $0.id == updated.id }) {
@@ -228,7 +233,7 @@ struct AddFoodSheet: View {
         }
     }
     
-    // MARK: - Per-Item Breakdown Card with Independent Stepper per Item
+    // MARK: - Per-Item Breakdown Card with Independent Steppers
     
     private var detectedItemsBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -239,135 +244,156 @@ struct AddFoodSheet: View {
                     .fontWeight(.medium)
                     .foregroundStyle(paleBlue)
                 Spacer()
-                Text("Adjust each item's quantity independently")
-                    .font(.system(size: 9))
-                    .foregroundStyle(Color.gray)
-            }
-            
-            // Sum Banner Equation
-            let totalCalsCalculated = detectedItems.reduce(0) { $0 + $1.calories }
-            let equationString = detectedItems.map { "\($0.calories)" }.joined(separator: " + ")
-            
-            HStack(spacing: 8) {
-                Image(systemName: "calculator")
-                    .font(.caption)
-                    .foregroundStyle(paleBlue)
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Total Meal Calculation:")
-                        .font(.caption2)
-                        .foregroundStyle(Color.gray)
-                    Text("\(equationString) = \(totalCalsCalculated) kcal")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.white)
+                Button {
+                    showAddItemSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 10))
+                        Text("Add Item")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(paleBlue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(paleBlue.opacity(0.15))
+                    .clipShape(Capsule())
                 }
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(paleBlue.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // List of Items — EACH ITEM HAS ITS OWN INDEPENDENT QUANTITY STEPPER [-] Qty [+]
-            VStack(spacing: 10) {
-                ForEach(detectedItems) { item in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 10) {
-                            Text(item.icon)
-                                .font(.title3)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.regular)
-                                    .foregroundStyle(.white)
+            if detectedItems.isEmpty {
+                Text("No individual items added yet. Tap '+ Add Item' or scan a photo.")
+                    .font(.caption2)
+                    .foregroundStyle(Color.gray)
+                    .padding(.vertical, 4)
+            } else {
+                // Sum Banner Equation
+                let totalCalsCalculated = detectedItems.reduce(0) { $0 + $1.calories }
+                let equationString = detectedItems.map { "\($0.calories)" }.joined(separator: " + ")
+                
+                HStack(spacing: 8) {
+                    Image(systemName: "calculator")
+                        .font(.caption)
+                        .foregroundStyle(paleBlue)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Total Meal Calculation:")
+                            .font(.caption2)
+                            .foregroundStyle(Color.gray)
+                        Text("\(equationString) = \(totalCalsCalculated) kcal")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(paleBlue.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                
+                // List of Items — EACH ITEM HAS ITS OWN INDEPENDENT QUANTITY STEPPER [-] Qty [+]
+                VStack(spacing: 10) {
+                    ForEach(detectedItems) { item in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 10) {
+                                Text(item.icon)
+                                    .font(.title3)
                                 
-                                HStack(spacing: 6) {
-                                    Text("P: \(item.protein)g")
-                                        .font(.caption2)
-                                        .foregroundStyle(paleBlue)
-                                    Text("C: \(item.carbs)g")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
-                                    Text("F: \(item.fats)g")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.name)
+                                        .font(.subheadline)
+                                        .fontWeight(.regular)
+                                        .foregroundStyle(.white)
+                                    
+                                    HStack(spacing: 6) {
+                                        Text("P: \(item.protein)g")
+                                            .font(.caption2)
+                                            .foregroundStyle(paleBlue)
+                                        Text("C: \(item.carbs)g")
+                                            .font(.caption2)
+                                            .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
+                                        Text("F: \(item.fats)g")
+                                            .font(.caption2)
+                                            .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                // Edit Item Pencil
+                                Button {
+                                    itemToEdit = item
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 10))
+                                        Text("\(item.calories) kcal")
+                                            .font(.system(size: 11, weight: .semibold))
+                                    }
+                                    .foregroundStyle(paleBlue)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(paleBlue.opacity(0.15))
+                                    .clipShape(Capsule())
+                                }
+                                
+                                // Delete Item Trash
+                                Button {
+                                    detectedItems.removeAll { $0.id == item.id }
+                                    recalculateTotalsFromDetectedItems()
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(Color.red.opacity(0.85))
+                                        .padding(6)
+                                        .background(Color.red.opacity(0.12))
+                                        .clipShape(Circle())
                                 }
                             }
                             
-                            Spacer()
-                            
-                            // Edit Item Pencil
-                            Button {
-                                itemToEdit = item
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "pencil")
-                                        .font(.system(size: 10))
-                                    Text("\(item.calories) kcal")
-                                        .font(.system(size: 11, weight: .semibold))
+                            // INDEPENDENT QUANTITY STEPPER FOR THIS SPECIFIC ITEM
+                            HStack {
+                                Text("Quantity for \(item.name):")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.gray)
+                                
+                                Spacer()
+                                
+                                HStack(spacing: 8) {
+                                    Button {
+                                        adjustItemQuantity(item, delta: -0.5)
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(paleBlue)
+                                    }
+                                    
+                                    Text(String(format: "%.1fx", item.quantity))
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.white)
+                                        .frame(width: 36)
+                                    
+                                    Button {
+                                        adjustItemQuantity(item, delta: 0.5)
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(paleBlue)
+                                    }
                                 }
-                                .foregroundStyle(paleBlue)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(paleBlue.opacity(0.15))
+                                .background(Color.white.opacity(0.06))
                                 .clipShape(Capsule())
                             }
-                            
-                            // Delete Item Trash
-                            Button {
-                                detectedItems.removeAll { $0.id == item.id }
-                                recalculateTotalsFromDetectedItems()
-                            } label: {
-                                Image(systemName: "trash")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color.red.opacity(0.85))
-                                    .padding(6)
-                                    .background(Color.red.opacity(0.12))
-                                    .clipShape(Circle())
-                            }
                         }
-                        
-                        // INDEPENDENT QUANTITY STEPPER FOR THIS SPECIFIC ITEM
-                        HStack {
-                            Text("Quantity:")
-                                .font(.caption2)
-                                .foregroundStyle(Color.gray)
-                            
-                            Spacer()
-                            
-                            HStack(spacing: 8) {
-                                Button {
-                                    adjustItemQuantity(item, delta: -0.5)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(paleBlue)
-                                }
-                                
-                                Text(String(format: "%.1fx", item.quantity))
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.white)
-                                    .frame(width: 36)
-                                
-                                Button {
-                                    adjustItemQuantity(item, delta: 0.5)
-                                } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(paleBlue)
-                                }
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(Capsule())
-                        }
+                        .padding(10)
+                        .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .padding(10)
-                    .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
         }
@@ -403,6 +429,10 @@ struct AddFoodSheet: View {
         proteinText = "\(totalP)"
         carbsText = "\(totalC)"
         fatsText = "\(totalF)"
+        
+        if foodName.isEmpty && !detectedItems.isEmpty {
+            foodName = detectedItems.map { $0.name }.joined(separator: ", ")
+        }
         
         if detectedItems.isEmpty {
             aiSuccessMessage = nil
@@ -698,6 +728,98 @@ struct AddFoodSheet: View {
         
         try? modelContext.save()
         dismiss()
+    }
+}
+
+// MARK: - Add New Item Modal
+
+struct AddNewItemSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var onAdd: (DetectedFoodItem) -> Void
+    
+    @State private var nameInput: String = ""
+    @State private var caloriesInput: String = "150"
+    @State private var proteinInput: String = "5"
+    @State private var carbsInput: String = "20"
+    @State private var fatsInput: String = "3"
+    @State private var iconInput: String = "🥞"
+    
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Item Name & Emoji") {
+                    HStack {
+                        TextField("Emoji Icon", text: $iconInput)
+                            .frame(width: 44)
+                        TextField("e.g. Crispy Dosa, Filter Coffee", text: $nameInput)
+                    }
+                }
+                
+                Section("Calories & Macros") {
+                    HStack {
+                        Text("Calories (kcal)")
+                        Spacer()
+                        TextField("150", text: $caloriesInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Protein (g)")
+                        Spacer()
+                        TextField("5", text: $proteinInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Carbs (g)")
+                        Spacer()
+                        TextField("20", text: $carbsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Fats (g)")
+                        Spacer()
+                        TextField("3", text: $fatsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Add Plate Item")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        let name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !name.isEmpty else { return }
+                        
+                        let item = DetectedFoodItem(
+                            name: name,
+                            calories: Int(caloriesInput) ?? 150,
+                            protein: Int(proteinInput) ?? 5,
+                            carbs: Int(carbsInput) ?? 20,
+                            fats: Int(fatsInput) ?? 3,
+                            icon: iconInput.isEmpty ? "🍲" : iconInput,
+                            quantity: 1.0
+                        )
+                        onAdd(item)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .foregroundStyle(paleBlue)
+                }
+            }
+        }
+        .presentationDetents([.height(340)])
     }
 }
 
