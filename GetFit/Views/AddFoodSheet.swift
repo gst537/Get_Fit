@@ -22,6 +22,9 @@ struct PasteFriendlyTextField: UIViewRepresentable {
         tf.leftViewMode = .always
         tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
         tf.rightViewMode = .always
+        tf.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tf.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        tf.clipsToBounds = true
         tf.delegate = context.coordinator
         tf.addTarget(context.coordinator, action: #selector(Coordinator.textChanged(_:)), for: .editingChanged)
         return tf

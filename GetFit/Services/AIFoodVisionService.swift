@@ -127,76 +127,73 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         """
         
-        let requestBody: [String: Any] = [
-            "model": "google/gemini-flash-1.5:free",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": [
-                        ["type": "text", "text": promptText],
-                        ["type": "image_url", "image_url": ["url": dataURL]]
+        let openRouterModels = [
+            "google/gemini-2.0-flash-exp:free",
+            "meta-llama/llama-3.2-11b-vision-instruct:free",
+            "qwen/qwen-2.5-vl-72b-instruct:free"
+        ]
+        
+        var lastORError = "Could not connect to OpenRouter API."
+        
+        for model in openRouterModels {
+            let requestBody: [String: Any] = [
+                "model": model,
+                "messages": [
+                    [
+                        "role": "user",
+                        "content": [
+                            ["type": "text", "text": promptText],
+                            ["type": "image_url", "image_url": ["url": dataURL]]
+                        ]
                     ]
                 ]
             ]
-        ]
-        
-        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
-              let url = URL(string: "https://openrouter.ai/api/v1/chat/completions") else {
-            return FoodAnalysisResult(
-                plateTitle: "Error",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Could not format OpenRouter API request."
-            )
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.httpBody = httpBody
-        request.timeoutInterval = 25
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
             
-            if statusCode == 200 {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let choices = json["choices"] as? [[String: Any]],
-                   let first = choices.first,
-                   let message = first["message"] as? [String: Any],
-                   let content = message["content"] as? String {
-                    if let result = parseJSONString(content) {
-                        return result
+            guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
+                  let url = URL(string: "https://openrouter.ai/api/v1/chat/completions") else {
+                continue
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.httpBody = httpBody
+            request.timeoutInterval = 25
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+                
+                if statusCode == 200 {
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let choices = json["choices"] as? [[String: Any]],
+                       let first = choices.first,
+                       let message = first["message"] as? [String: Any],
+                       let content = message["content"] as? String {
+                        if let result = parseJSONString(content) {
+                            return result
+                        }
+                    }
+                } else {
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let err = json["error"] as? [String: Any],
+                       let msg = err["message"] as? String {
+                        lastORError = "OpenRouter (\(statusCode)): \(msg)"
+                    } else {
+                        lastORError = "OpenRouter returned code \(statusCode)."
                     }
                 }
-            } else {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let err = json["error"] as? [String: Any],
-                   let msg = err["message"] as? String {
-                    return FoodAnalysisResult(
-                        plateTitle: "OpenRouter Error",
-                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                        detectedItems: [], confidence: 0.0,
-                        errorMessage: "OpenRouter (\(statusCode)): \(msg)"
-                    )
-                }
+            } catch {
+                lastORError = "Network error: \(error.localizedDescription)"
             }
-        } catch {
-            return FoodAnalysisResult(
-                plateTitle: "Network Error",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Network error: \(error.localizedDescription)"
-            )
         }
         
         return FoodAnalysisResult(
             plateTitle: "Error",
             totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
             detectedItems: [], confidence: 0.0,
-            errorMessage: "Could not parse OpenRouter response."
+            errorMessage: lastORError
         )
     }
     
