@@ -209,74 +209,79 @@ struct AddFoodSheet: View {
     
     private var apiKeySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Status bar
+            // Status bar — shows current state
             HStack {
                 Image(systemName: "sparkles")
                     .font(.caption).foregroundStyle(paleBlue)
-                Text(AIFoodVisionService.shared.savedAPIKey != nil
-                     ? "Google Gemini Vision AI Active"
-                     : "Add Gemini API Key for AI Scanning")
-                    .font(.caption).fontWeight(.medium).foregroundStyle(.white)
-                Spacer()
-                Button(showKeySettings ? "Done" : (AIFoodVisionService.shared.savedAPIKey != nil ? "Edit Key" : "+ Add Key")) {
-                    withAnimation { showKeySettings.toggle() }
+                
+                if let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty {
+                    Text("✅ Gemini AI Active — Key: \(String(key.prefix(8)))•••")
+                        .font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                } else {
+                    Text("Add Gemini API Key for AI Scanning")
+                        .font(.caption).fontWeight(.medium).foregroundStyle(.white)
                 }
-                .font(.caption2).fontWeight(.medium).foregroundStyle(paleBlue)
+                
+                Spacer()
+                
+                if AIFoodVisionService.shared.savedAPIKey != nil {
+                    Button("Change Key") {
+                        withAnimation { showKeySettings.toggle() }
+                    }
+                    .font(.caption2).fontWeight(.medium).foregroundStyle(paleBlue)
+                }
             }
             .padding(10)
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Expandable key input
+            // Key entry — no TextField, just tap-to-paste buttons
             if showKeySettings || AIFoodVisionService.shared.savedAPIKey == nil {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Paste Free Google Gemini API Key (aistudio.google.com):")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Step 1: Copy your free API key from aistudio.google.com\nStep 2: Come back here and tap the button below")
                         .font(.caption2).foregroundStyle(Color.gray)
                     
-                    // Plain TextField — supports native iOS long-press > Paste
-                    TextField("Paste your API key here...", text: $geminiKeyInput)
-                        .font(.system(.caption, design: .monospaced))
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .padding(12)
-                        .background(Color(UIColor.tertiarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    
-                    HStack(spacing: 12) {
-                        // SwiftUI native PasteButton — always works, no permissions needed
-                        PasteButton(payloadType: String.self) { strings in
-                            if let text = strings.first {
-                                let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                geminiKeyInput = clean
-                                AIFoodVisionService.shared.savedAPIKey = clean
-                                aiErrorMessage = nil
-                                withAnimation { showKeySettings = false }
+                    // PRIMARY: One-tap clipboard paste — reads UIPasteboard directly
+                    Button {
+                        if let text = UIPasteboard.general.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                            geminiKeyInput = clean
+                            AIFoodVisionService.shared.savedAPIKey = clean
+                            aiErrorMessage = nil
+                            withAnimation { showKeySettings = false }
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "doc.on.clipboard.fill")
+                                .font(.system(size: 18))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("📋 Tap to Paste API Key from Clipboard")
+                                    .font(.subheadline).fontWeight(.semibold)
+                                Text("Copy your key first, then tap here")
+                                    .font(.caption2).opacity(0.7)
                             }
                         }
-                        .labelStyle(.titleOnly)
-                        .tint(paleBlue)
-                        .buttonBorderShape(.capsule)
-                        
-                        Spacer()
-                        
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(paleBlue.opacity(0.25))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(paleBlue.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    
+                    HStack {
                         if AIFoodVisionService.shared.savedAPIKey != nil {
-                            Button("Clear") {
+                            Button("🗑️ Clear Key") {
                                 geminiKeyInput = ""
                                 AIFoodVisionService.shared.savedAPIKey = nil
                                 aiErrorMessage = nil
                             }
                             .font(.caption2).foregroundStyle(Color.red.opacity(0.8))
                         }
-                        
-                        Button("Save") {
-                            let clean = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                            AIFoodVisionService.shared.savedAPIKey = clean.isEmpty ? nil : clean
-                            aiErrorMessage = nil
-                            withAnimation { showKeySettings = false }
-                        }
-                        .font(.caption).fontWeight(.bold).foregroundStyle(.black)
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(paleBlue).clipShape(Capsule())
+                        Spacer()
                     }
                 }
                 .padding(12)
