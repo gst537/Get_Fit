@@ -79,10 +79,9 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await modifyWithGeminiText(instruction: instruction, currentItems: currentItems, apiKey: cleanKey)
     }
     
-    // MARK: - Ultra-Fast Google Gemini Vision API (x-goog-api-key Authentication)
+    // MARK: - Google Gemini Vision API
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
-        // Ultra-fast 512px downscaling & 0.4 JPEG compression
         let resized = image.resizedForVision(maxDimension: 512)
         guard let jpegData = resized.jpegData(compressionQuality: 0.4) else {
             return FoodAnalysisResult(
@@ -95,9 +94,9 @@ final class AIFoodVisionService: @unchecked Sendable {
         let base64Image = jpegData.base64EncodedString()
         
         let modelCandidates = [
-            "gemini-3.6-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-3.1-pro"
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash-exp"
         ]
         
         let promptText = """
@@ -194,7 +193,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             ]
         ]
         
-        let candidates = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+        let candidates = ["gemini-1.5-flash", "gemini-1.5-pro"]
         let result = await executeGeminiRequest(payload: payload, apiKey: apiKey, modelCandidates: candidates)
         if result.detectedItems.isEmpty && result.errorMessage != nil {
             return fallbackModifyMealLocally(instruction: instruction, currentItems: currentItems)
@@ -281,7 +280,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = jsonData
-            request.timeoutInterval = 10.0
+            request.timeoutInterval = 12.0
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -289,10 +288,21 @@ final class AIFoodVisionService: @unchecked Sendable {
                 
                 let statusCode = httpResp.statusCode
                 if statusCode == 200 {
-                    if let rawJson = String(data: data, encoding: .utf8) {
-                        let extractedJsonStr = extractJsonFromResponse(rawJson)
-                        if let jsonBytes = extractedJsonStr.data(using: .utf8),
-                           let parsedDict = try? JSONSerialization.jsonObject(with: jsonBytes) as? [String: Any] {
+                    if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let candidates = jsonObj["candidates"] as? [[String: Any]],
+                       let firstCandidate = candidates.first,
+                       let content = firstCandidate["content"] as? [String: Any],
+                       let parts = content["parts"] as? [[String: Any]],
+                       let firstPart = parts.first,
+                       let jsonText = firstPart["text"] as? String {
+                        
+                        let cleanJsonText = jsonText
+                            .replacingOccurrences(of: "```json", with: "")
+                            .replacingOccurrences(of: "```", with: "")
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        
+                        if let innerData = cleanJsonText.data(using: .utf8),
+                           let parsedDict = try? JSONSerialization.jsonObject(with: innerData) as? [String: Any] {
                             
                             let plateTitle = parsedDict["plateTitle"] as? String ?? "Custom Meal Plate"
                             
@@ -352,21 +362,6 @@ final class AIFoodVisionService: @unchecked Sendable {
             confidence: 0.0,
             errorMessage: lastErrorMessage
         )
-    }
-    
-    private func extractJsonFromResponse(_ rawText: String) -> String {
-        if let jsonStart = rawText.range(of: "{\"plateTitle\""),
-           let jsonEnd = rawText.range(of: "]", options: .backwards) {
-            let extracted = String(rawText[jsonStart.lowerBound...jsonEnd.upperBound]) + "}"
-            return extracted
-        }
-        
-        let pattern = #"\{[\s\S]*"plateTitle"[\s\S]*\}"#
-        if let range = rawText.range(of: pattern, options: .regularExpression) {
-            return String(rawText[range])
-        }
-        
-        return rawText
     }
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
