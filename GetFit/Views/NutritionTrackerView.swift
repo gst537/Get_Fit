@@ -47,8 +47,12 @@ struct NutritionTrackerView: View {
         todayMeals.reduce(0) { $0 + $1.fatsGrams }
     }
     
+    private var isCalorieOverGoal: Bool {
+        totalConsumedCalories > activeGoal.targetCalories
+    }
+    
     private var remainingCalories: Int {
-        max(0, activeGoal.targetCalories - totalConsumedCalories)
+        activeGoal.targetCalories - totalConsumedCalories
     }
     
     var body: some View {
@@ -132,23 +136,36 @@ struct NutritionTrackerView: View {
             }
             
             let progress = min(1.0, Double(totalConsumedCalories) / Double(max(1, activeGoal.targetCalories)))
+            let ringGradients = isCalorieOverGoal
+                ? [Color(red: 1.00, green: 0.45, blue: 0.45), Color(red: 1.00, green: 0.25, blue: 0.25)]
+                : [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)]
             
             ZStack {
                 AnimatedRingView(
                     progress: progress,
                     lineWidth: 12,
-                    gradient: [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)],
+                    gradient: ringGradients,
                     size: 140
                 )
                 
                 VStack(spacing: 2) {
-                    Text("\(remainingCalories)")
-                        .font(.system(size: 32, weight: .light, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text("kcal left")
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(paleBlue)
+                    if isCalorieOverGoal {
+                        Text("+\(abs(remainingCalories))")
+                            .font(.system(size: 32, weight: .light, design: .rounded))
+                            .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
+                        Text("kcal over goal")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
+                    } else {
+                        Text("\(remainingCalories)")
+                            .font(.system(size: 32, weight: .light, design: .rounded))
+                            .foregroundStyle(.white)
+                        Text("kcal left")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(paleBlue)
+                    }
                 }
             }
             
@@ -343,7 +360,7 @@ struct NutritionTrackerView: View {
                                 } label: {
                                     Image(systemName: "trash")
                                         .font(.system(size: 12))
-                                        .foregroundStyle(Color.gray.opacity(0.5))
+                                        .foregroundStyle(Color.red.opacity(0.85))
                                         .padding(.leading, 8)
                                 }
                             }
