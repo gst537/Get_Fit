@@ -65,6 +65,10 @@ struct AddFoodSheet: View {
     @State private var detectedItems: [DetectedFoodItem] = []
     @State private var itemToEdit: DetectedFoodItem? = nil
     
+    // AI Chatbot Assistant State
+    @State private var aiAssistantPrompt: String = ""
+    @State private var isAssistantProcessing = false
+    
     // Gemini API Key state
     @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
     @State private var showKeySettings = false
@@ -98,9 +102,12 @@ struct AddFoodSheet: View {
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
-                // Detected Items Breakdown Card (Editable & Removable items)
+                // Detected Items Breakdown Card (Editable & Removable items + Quantity Steppers)
                 if !detectedItems.isEmpty {
                     detectedItemsBreakdownCard
+                    
+                    // 🤖 AI Meal Assistant / Swap Command Bar
+                    aiMealAssistantBar
                 }
                 
                 // Meal Type Category Picker
@@ -289,7 +296,7 @@ struct AddFoodSheet: View {
         }
     }
     
-    // MARK: - Detected Items Breakdown & Calorie Equation Card
+    // MARK: - Detected Items Breakdown & Quantity Stepper Card
     
     private var detectedItemsBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -300,7 +307,7 @@ struct AddFoodSheet: View {
                     .fontWeight(.medium)
                     .foregroundStyle(paleBlue)
                 Spacer()
-                Text("\(detectedItems.count) Items • Tap pencil to edit or trash to remove")
+                Text("\(detectedItems.count) Items")
                     .font(.system(size: 9))
                     .foregroundStyle(Color.gray)
             }
@@ -329,62 +336,105 @@ struct AddFoodSheet: View {
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Individual Food Items List with Edit & Delete Controls
-            VStack(spacing: 8) {
+            // Individual Food Items List with Quantity Stepper [-] Qty [+] & Trash Controls
+            VStack(spacing: 10) {
                 ForEach(detectedItems) { item in
-                    HStack(spacing: 10) {
-                        Text(item.icon)
-                            .font(.title3)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            Text(item.icon)
+                                .font(.title3)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.regular)
+                                    .foregroundStyle(.white)
+                                
+                                HStack(spacing: 6) {
+                                    Text("P: \(item.protein)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(paleBlue)
+                                    Text("C: \(item.carbs)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
+                                    Text("F: \(item.fats)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // Per-Item Calorie Badge & Edit Trigger
+                            Button {
+                                itemToEdit = item
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 10))
+                                    Text("\(item.calories) kcal")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(paleBlue.opacity(0.15))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                            }
+                            
+                            // Trash / Remove Button
+                            Button {
+                                removeDetectedItem(item)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.red.opacity(0.85))
+                                    .padding(6)
+                                    .background(Color.red.opacity(0.12))
+                                    .clipShape(Circle())
+                            }
+                        }
                         
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(.subheadline)
-                                .fontWeight(.regular)
-                                .foregroundStyle(.white)
+                        // Portion / Quantity Stepper Bar [-] 1.0x [+]
+                        HStack {
+                            Text("Portion Qty:")
+                                .font(.caption2)
+                                .foregroundStyle(Color.gray)
                             
                             HStack(spacing: 6) {
-                                Text("P: \(item.protein)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(paleBlue)
-                                Text("C: \(item.carbs)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
-                                Text("F: \(item.fats)g")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                Button {
+                                    adjustItemQuantity(item, delta: -0.5)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(paleBlue)
+                                }
+                                
+                                Text(String(format: "%.1fx", item.quantity))
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 36)
+                                
+                                Button {
+                                    adjustItemQuantity(item, delta: 0.5)
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(paleBlue)
+                                }
                             }
-                        }
-                        
-                        Spacer()
-                        
-                        // Per-Item Calorie Badge & Edit Trigger
-                        Button {
-                            itemToEdit = item
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 10))
-                                Text("\(item.calories) kcal")
-                                    .font(.system(size: 11, weight: .semibold))
-                            }
-                            .foregroundStyle(paleBlue)
                             .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(paleBlue.opacity(0.15))
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.06))
                             .clipShape(Capsule())
-                            .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
-                        }
-                        
-                        // Trash / Remove Button
-                        Button {
-                            removeDetectedItem(item)
-                        } label: {
-                            Image(systemName: "trash")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.red.opacity(0.85))
-                                .padding(6)
-                                .background(Color.red.opacity(0.12))
-                                .clipShape(Circle())
+                            
+                            Spacer()
+                            
+                            Text("Auto-scaled")
+                                .font(.system(size: 9))
+                                .foregroundStyle(Color.gray.opacity(0.6))
                         }
                     }
                     .padding(10)
@@ -396,6 +446,90 @@ struct AddFoodSheet: View {
         .padding(14)
         .background(Color(UIColor.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    
+    // MARK: - 🤖 AI Meal Assistant / Swap Command Bar
+    
+    private var aiMealAssistantBar: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .font(.caption)
+                    .foregroundStyle(paleBlue)
+                
+                Text("🤖 AI Meal Assistant & Swap Command")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                if isAssistantProcessing {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                }
+            }
+            
+            HStack(spacing: 8) {
+                TextField("e.g. 'remove dosa and add 2 chapathi' or '1 dosa'", text: $aiAssistantPrompt)
+                    .font(.caption)
+                    .padding(10)
+                    .background(Color(UIColor.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                
+                Button {
+                    executeAIAssistantCommand(aiAssistantPrompt)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paperplane.fill")
+                            .font(.caption2)
+                        Text("Apply")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(paleBlue)
+                    .clipShape(Capsule())
+                    .opacity(aiAssistantPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
+                }
+                .disabled(aiAssistantPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAssistantProcessing)
+            }
+            
+            // Quick Suggestion Command Pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    suggestionPill("💡 Make 1 Dosa instead of 2", prompt: "make it 1 dosa instead of 2")
+                    suggestionPill("💡 Swap Dosa for 2 Chapathi", prompt: "remove dosa and add 2 chapathi")
+                    suggestionPill("💡 Half Rice Portion", prompt: "reduce rice to half portion")
+                    suggestionPill("💡 Add 2 Boiled Eggs", prompt: "add 2 boiled eggs")
+                }
+            }
+        }
+        .padding(14)
+        .background(paleBlue.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(paleBlue.opacity(0.25), lineWidth: 0.8)
+        )
+    }
+    
+    private func suggestionPill(_ title: String, prompt: String) -> some View {
+        Button {
+            aiAssistantPrompt = prompt
+            executeAIAssistantCommand(prompt)
+        } label: {
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(paleBlue)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(paleBlue.opacity(0.12))
+                .clipShape(Capsule())
+        }
     }
     
     // MARK: - Photo & AI Scanner UI
@@ -528,7 +662,23 @@ struct AddFoodSheet: View {
         }
     }
     
-    // MARK: - Item Recalculation Helpers
+    // MARK: - Quantity & Item Recalculation Helpers
+    
+    private func adjustItemQuantity(_ item: DetectedFoodItem, delta: Double) {
+        guard let idx = detectedItems.firstIndex(where: { $0.id == item.id }) else { return }
+        let oldQty = detectedItems[idx].quantity
+        let newQty = max(0.5, oldQty + delta)
+        guard oldQty != newQty else { return }
+        
+        let ratio = newQty / oldQty
+        detectedItems[idx].quantity = newQty
+        detectedItems[idx].calories = max(1, Int(Double(detectedItems[idx].calories) * ratio))
+        detectedItems[idx].protein = max(0, Int(Double(detectedItems[idx].protein) * ratio))
+        detectedItems[idx].carbs = max(0, Int(Double(detectedItems[idx].carbs) * ratio))
+        detectedItems[idx].fats = max(0, Int(Double(detectedItems[idx].fats) * ratio))
+        
+        recalculateTotalsFromDetectedItems()
+    }
     
     private func removeDetectedItem(_ item: DetectedFoodItem) {
         detectedItems.removeAll { $0.id == item.id }
@@ -539,6 +689,24 @@ struct AddFoodSheet: View {
         if let idx = detectedItems.firstIndex(where: { $0.id == updatedItem.id }) {
             detectedItems[idx] = updatedItem
             recalculateTotalsFromDetectedItems()
+        }
+    }
+    
+    private func executeAIAssistantCommand(_ prompt: String) {
+        let cleanPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanPrompt.isEmpty, !detectedItems.isEmpty else { return }
+        
+        isAssistantProcessing = true
+        Task {
+            let result = await AIFoodVisionService.shared.modifyMealWithAI(instruction: cleanPrompt, currentItems: detectedItems)
+            isAssistantProcessing = false
+            
+            if !result.detectedItems.isEmpty {
+                foodName = result.plateTitle
+                detectedItems = result.detectedItems
+                recalculateTotalsFromDetectedItems()
+                aiAssistantPrompt = ""
+            }
         }
     }
     
