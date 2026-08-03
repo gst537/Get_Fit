@@ -10,6 +10,7 @@ struct NutritionTrackerView: View {
     @State private var selectedCategoryForAdd = "Breakfast"
     @State private var showEditGoalSheet = false
     @State private var selectedMealPhoto: UIImage? = nil
+    @State private var mealToEdit: MealLog? = nil
     
     let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
     let warmGold = Color(red: 0.95, green: 0.75, blue: 0.40)
@@ -78,6 +79,9 @@ struct NutritionTrackerView: View {
         }
         .sheet(isPresented: $showEditGoalSheet) {
             EditNutritionGoalSheet(goal: activeGoal)
+        }
+        .sheet(item: $mealToEdit) { meal in
+            EditLoggedMealSheet(meal: meal)
         }
         .sheet(item: Binding<IdentifiableImage?>(
             get: { selectedMealPhoto.map { IdentifiableImage(image: $0) } },
@@ -355,13 +359,24 @@ struct NutritionTrackerView: View {
                                     .fontWeight(.medium)
                                     .foregroundStyle(.white)
                                 
+                                // Pencil Button to EDIT already posted meal!
+                                Button {
+                                    mealToEdit = meal
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(paleBlue)
+                                        .padding(.leading, 6)
+                                }
+                                
+                                // Trash Button to DELETE posted meal
                                 Button {
                                     deleteMeal(meal)
                                 } label: {
                                     Image(systemName: "trash")
                                         .font(.system(size: 12))
                                         .foregroundStyle(Color.red.opacity(0.85))
-                                        .padding(.leading, 8)
+                                        .padding(.leading, 6)
                                 }
                             }
                             .padding(.vertical, 10)
@@ -382,6 +397,157 @@ struct NutritionTrackerView: View {
     private func deleteMeal(_ meal: MealLog) {
         modelContext.delete(meal)
         try? modelContext.save()
+    }
+}
+
+// MARK: - Edit Already Logged Meal Sheet (Modify Name, Calories, Portion, Macros)
+
+struct EditLoggedMealSheet: View {
+    let meal: MealLog
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var nameInput: String = ""
+    @State private var caloriesInput: String = ""
+    @State private var proteinInput: String = ""
+    @State private var carbsInput: String = ""
+    @State private var fatsInput: String = ""
+    @State private var quantityMultiplier: Double = 1.0
+    
+    @State private var baseCalories: Double = 0.0
+    @State private var baseProtein: Double = 0.0
+    @State private var baseCarbs: Double = 0.0
+    @State private var baseFats: Double = 0.0
+    
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Dish Name & Category") {
+                    TextField("Dish Name", text: $nameInput)
+                    
+                    Picker("Meal Category", selection: Binding(
+                        get: { meal.mealType },
+                        set: { meal.mealType = $0 }
+                    )) {
+                        Text("Breakfast").tag("Breakfast")
+                        Text("Lunch").tag("Lunch")
+                        Text("Dinner").tag("Dinner")
+                        Text("Snack").tag("Snack")
+                    }
+                }
+                
+                Section("Modify Portion Quantity") {
+                    HStack {
+                        Text("Portion Multiplier")
+                            .font(.subheadline)
+                        
+                        Spacer()
+                        
+                        HStack(spacing: 12) {
+                            Button {
+                                adjustQuantity(by: -0.5)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(paleBlue)
+                            }
+                            
+                            Text(String(format: "%.1fx", quantityMultiplier))
+                                .font(.body)
+                                .fontWeight(.bold)
+                                .frame(width: 44)
+                            
+                            Button {
+                                adjustQuantity(by: 0.5)
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(paleBlue)
+                            }
+                        }
+                    }
+                }
+                
+                Section("Calories & Macros") {
+                    HStack {
+                        Text("Calories (kcal)")
+                        Spacer()
+                        TextField("0", text: $caloriesInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Protein (g)")
+                        Spacer()
+                        TextField("0", text: $proteinInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Carbs (g)")
+                        Spacer()
+                        TextField("0", text: $carbsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Fats (g)")
+                        Spacer()
+                        TextField("0", text: $fatsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Modify Posted Meal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save Changes") {
+                        meal.name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        meal.calories = Int(caloriesInput) ?? meal.calories
+                        meal.proteinGrams = Int(proteinInput) ?? meal.proteinGrams
+                        meal.carbsGrams = Int(carbsInput) ?? meal.carbsGrams
+                        meal.fatsGrams = Int(fatsInput) ?? meal.fatsGrams
+                        
+                        try? modelContext.save()
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .foregroundStyle(paleBlue)
+                }
+            }
+            .onAppear {
+                nameInput = meal.name
+                caloriesInput = "\(meal.calories)"
+                proteinInput = "\(meal.proteinGrams)"
+                carbsInput = "\(meal.carbsGrams)"
+                fatsInput = "\(meal.fatsGrams)"
+                
+                baseCalories = Double(meal.calories)
+                baseProtein = Double(meal.proteinGrams)
+                baseCarbs = Double(meal.carbsGrams)
+                baseFats = Double(meal.fatsGrams)
+            }
+        }
+    }
+    
+    private func adjustQuantity(by delta: Double) {
+        let newQty = max(0.5, quantityMultiplier + delta)
+        quantityMultiplier = newQty
+        
+        caloriesInput = "\(Int(baseCalories * newQty))"
+        proteinInput = "\(Int(baseProtein * newQty))"
+        carbsInput = "\(Int(baseCarbs * newQty))"
+        fatsInput = "\(Int(baseFats * newQty))"
     }
 }
 
