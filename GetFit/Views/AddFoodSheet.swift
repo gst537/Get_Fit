@@ -2,6 +2,54 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 
+// MARK: - UIKit TextField Wrapper (guaranteed paste support on iPhone)
+struct PasteFriendlyTextField: UIViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    
+    func makeUIView(context: Context) -> UITextField {
+        let tf = UITextField()
+        tf.placeholder = placeholder
+        tf.font = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        tf.autocorrectionType = .no
+        tf.autocapitalizationType = .none
+        tf.spellCheckingType = .no
+        tf.clearButtonMode = .whileEditing
+        tf.textColor = .white
+        tf.backgroundColor = UIColor.tertiarySystemBackground
+        tf.layer.cornerRadius = 10
+        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.leftViewMode = .always
+        tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.rightViewMode = .always
+        tf.delegate = context.coordinator
+        tf.addTarget(context.coordinator, action: #selector(Coordinator.textChanged(_:)), for: .editingChanged)
+        return tf
+    }
+    
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: PasteFriendlyTextField
+        init(_ parent: PasteFriendlyTextField) { self.parent = parent }
+        
+        @objc func textChanged(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+        
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            textField.resignFirstResponder()
+            return true
+        }
+    }
+}
+
 // MARK: - Camera Wrapper
 struct CameraView: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
@@ -209,13 +257,13 @@ struct AddFoodSheet: View {
     
     private var apiKeySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Status bar — shows current state
+            // Status bar
             HStack {
                 Image(systemName: "sparkles")
                     .font(.caption).foregroundStyle(paleBlue)
                 
                 if let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty {
-                    Text("✅ Gemini AI Active — Key: \(String(key.prefix(8)))•••")
+                    Text("✅ AI Active — \(String(key.prefix(8)))•••")
                         .font(.caption).fontWeight(.medium).foregroundStyle(.white)
                 } else {
                     Text("Add Gemini API Key for AI Scanning")
@@ -235,53 +283,54 @@ struct AddFoodSheet: View {
             .background(paleBlue.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Key entry — no TextField, just tap-to-paste buttons
+            // Key input area
             if showKeySettings || AIFoodVisionService.shared.savedAPIKey == nil {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Step 1: Copy your free API key from aistudio.google.com\nStep 2: Come back here and tap the button below")
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Paste your free API key from aistudio.google.com:")
                         .font(.caption2).foregroundStyle(Color.gray)
                     
-                    // PRIMARY: One-tap clipboard paste — reads UIPasteboard directly
-                    Button {
-                        if let text = UIPasteboard.general.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                            geminiKeyInput = clean
-                            AIFoodVisionService.shared.savedAPIKey = clean
-                            aiErrorMessage = nil
-                            withAnimation { showKeySettings = false }
-                        }
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "doc.on.clipboard.fill")
-                                .font(.system(size: 18))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("📋 Tap to Paste API Key from Clipboard")
-                                    .font(.subheadline).fontWeight(.semibold)
-                                Text("Copy your key first, then tap here")
-                                    .font(.caption2).opacity(0.7)
+                    // UIKit TextField — paste ALWAYS works (long-press → Paste)
+                    PasteFriendlyTextField(text: $geminiKeyInput, placeholder: "Tap here, then long-press → Paste")
+                        .frame(height: 44)
+                    
+                    // Action buttons row
+                    HStack(spacing: 10) {
+                        // Apple system PasteButton — one tap, no permission needed
+                        PasteButton(payloadType: String.self) { strings in
+                            if let text = strings.first {
+                                let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                geminiKeyInput = clean
+                                AIFoodVisionService.shared.savedAPIKey = clean
+                                aiErrorMessage = nil
+                                withAnimation { showKeySettings = false }
                             }
                         }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
-                        .background(paleBlue.opacity(0.25))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(paleBlue.opacity(0.5), lineWidth: 1)
-                        )
-                    }
-                    
-                    HStack {
+                        .labelStyle(.titleOnly)
+                        .tint(paleBlue)
+                        .buttonBorderShape(.capsule)
+                        
+                        Spacer()
+                        
                         if AIFoodVisionService.shared.savedAPIKey != nil {
-                            Button("🗑️ Clear Key") {
+                            Button("Clear") {
                                 geminiKeyInput = ""
                                 AIFoodVisionService.shared.savedAPIKey = nil
                                 aiErrorMessage = nil
                             }
                             .font(.caption2).foregroundStyle(Color.red.opacity(0.8))
                         }
-                        Spacer()
+                        
+                        // Save button for manual typing
+                        Button("Save") {
+                            let clean = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !clean.isEmpty else { return }
+                            AIFoodVisionService.shared.savedAPIKey = clean
+                            aiErrorMessage = nil
+                            withAnimation { showKeySettings = false }
+                        }
+                        .font(.caption).fontWeight(.bold).foregroundStyle(.black)
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(paleBlue).clipShape(Capsule())
                     }
                 }
                 .padding(12)
