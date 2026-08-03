@@ -54,12 +54,10 @@ struct AddFoodSheet: View {
     @State private var proteinText = ""
     @State private var carbsText = ""
     @State private var fatsText = ""
-    @State private var portionQuantity: Double = 1.0
     
-    @State private var baseCalories: Double = 0.0
-    @State private var baseProtein: Double = 0.0
-    @State private var baseCarbs: Double = 0.0
-    @State private var baseFats: Double = 0.0
+    // Per-item breakdown state
+    @State private var detectedItems: [DetectedFoodItem] = []
+    @State private var itemToEdit: DetectedFoodItem? = nil
     
     // Photo & AI Recognition state
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -68,7 +66,6 @@ struct AddFoodSheet: View {
     @State private var isScanningWithAI = false
     @State private var aiSuccessMessage: String? = nil
     @State private var aiErrorMessage: String? = nil
-    @State private var detectedItems: [DetectedFoodItem] = []
     
     // Gemini API Key state
     @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
@@ -103,6 +100,11 @@ struct AddFoodSheet: View {
                 // Photo Picker & AI Scanner Banner
                 photoScanSection
                 
+                // Individual Item Breakdown Card with Per-Item Quantity Steppers [-] 1.0x [+]
+                if !detectedItems.isEmpty {
+                    detectedItemsBreakdownCard
+                }
+                
                 // Meal Type Category Picker
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Meal Category")
@@ -134,59 +136,16 @@ struct AddFoodSheet: View {
                         .fontWeight(.light)
                         .foregroundStyle(Color.gray)
                     
-                    TextField("e.g., 2 Chapathi & Chicken Curry", text: $foodName)
+                    TextField("e.g., Dosa & Coffee Breakfast", text: $foodName)
                         .font(.body)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
-                // Portion Quantity Stepper [-] 1.0x [+]
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Portion Quantity Multiplier")
-                        .font(.subheadline)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
-                    
-                    HStack {
-                        Text("Portion Qty:")
-                            .font(.body)
-                            .foregroundStyle(.white)
-                        
-                        Spacer()
-                        
-                        HStack(spacing: 12) {
-                            Button {
-                                adjustQuantity(by: -0.5)
-                            } label: {
-                                Image(systemName: "minus.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(paleBlue)
-                            }
-                            
-                            Text(String(format: "%.1fx", portionQuantity))
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.white)
-                                .frame(width: 50)
-                            
-                            Button {
-                                adjustQuantity(by: 0.5)
-                            } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(paleBlue)
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                
                 // Calories Field
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Total Calories (kcal)")
+                    Text("Total Meal Calories (kcal)")
                         .font(.subheadline)
                         .fontWeight(.light)
                         .foregroundStyle(Color.gray)
@@ -197,11 +156,6 @@ struct AddFoodSheet: View {
                             .font(.title3)
                             .fontWeight(.medium)
                             .foregroundStyle(.white)
-                            .onChange(of: caloriesText) { _, val in
-                                if let c = Double(val), baseCalories == 0 {
-                                    baseCalories = c
-                                }
-                            }
                         
                         Text("kcal")
                             .font(.subheadline)
@@ -264,31 +218,201 @@ struct AddFoodSheet: View {
                 scanMealWithAI(capturedImage)
             }
         }
+        .sheet(item: $itemToEdit) { item in
+            EditDetectedItemSheet(item: item) { updated in
+                if let idx = detectedItems.firstIndex(where: { $0.id == updated.id }) {
+                    detectedItems[idx] = updated
+                    recalculateTotalsFromDetectedItems()
+                }
+            }
+        }
     }
     
-    // MARK: - Quantity Adjustment
+    // MARK: - Per-Item Quantity Breakdown Card
     
-    private func adjustQuantity(by delta: Double) {
-        let newQty = max(0.5, portionQuantity + delta)
-        portionQuantity = newQty
+    private var detectedItemsBreakdownCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header
+            HStack {
+                Text("🍽️ Plate Items & Quantities")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(paleBlue)
+                Spacer()
+                Text("\(detectedItems.count) Items")
+                    .font(.system(size: 9))
+                    .foregroundStyle(Color.gray)
+            }
+            
+            // Sum Banner Equation
+            let totalCalsCalculated = detectedItems.reduce(0) { $0 + $1.calories }
+            let equationString = detectedItems.map { "\($0.calories)" }.joined(separator: " + ")
+            
+            HStack(spacing: 8) {
+                Image(systemName: "calculator")
+                    .font(.caption)
+                    .foregroundStyle(paleBlue)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Total Meal Calculation:")
+                        .font(.caption2)
+                        .foregroundStyle(Color.gray)
+                    Text("\(equationString) = \(totalCalsCalculated) kcal")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(paleBlue.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // List of Items — EACH HAS ITS OWN INDIVIDUAL QUANTITY STEPPER [-] Qty [+]
+            VStack(spacing: 10) {
+                ForEach(detectedItems) { item in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            Text(item.icon)
+                                .font(.title3)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.regular)
+                                    .foregroundStyle(.white)
+                                
+                                HStack(spacing: 6) {
+                                    Text("P: \(item.protein)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(paleBlue)
+                                    Text("C: \(item.carbs)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
+                                    Text("F: \(item.fats)g")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // Edit Item Pencil
+                            Button {
+                                itemToEdit = item
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 10))
+                                    Text("\(item.calories) kcal")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .foregroundStyle(paleBlue)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(paleBlue.opacity(0.15))
+                                .clipShape(Capsule())
+                            }
+                            
+                            // Delete Item Trash
+                            Button {
+                                detectedItems.removeAll { $0.id == item.id }
+                                recalculateTotalsFromDetectedItems()
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.red.opacity(0.85))
+                                    .padding(6)
+                                    .background(Color.red.opacity(0.12))
+                                    .clipShape(Circle())
+                            }
+                        }
+                        
+                        // INDIVIDUAL ITEM QUANTITY STEPPER [-] Qty [+]
+                        HStack {
+                            Text("Quantity for \(item.name):")
+                                .font(.caption2)
+                                .foregroundStyle(Color.gray)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 8) {
+                                Button {
+                                    adjustIndividualItemQuantity(item, delta: -0.5)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(paleBlue)
+                                }
+                                
+                                Text(String(format: "%.1fx", item.quantity))
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 36)
+                                
+                                Button {
+                                    adjustIndividualItemQuantity(item, delta: 0.5)
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(paleBlue)
+                                }
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                        }
+                    }
+                    .padding(10)
+                    .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
+        .padding(14)
+        .background(Color(UIColor.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    
+    // MARK: - Adjust ONLY the selected item's quantity
+    
+    private func adjustIndividualItemQuantity(_ item: DetectedFoodItem, delta: Double) {
+        guard let idx = detectedItems.firstIndex(where: { $0.id == item.id }) else { return }
+        let currentQty = detectedItems[idx].quantity
+        let newQty = max(0.5, currentQty + delta)
+        guard currentQty != newQty else { return }
         
-        let curCals = Double(caloriesText) ?? baseCalories
-        if baseCalories == 0 { baseCalories = curCals }
-        if baseProtein == 0 { baseProtein = Double(proteinText) ?? 0 }
-        if baseCarbs == 0 { baseCarbs = Double(carbsText) ?? 0 }
-        if baseFats == 0 { baseFats = Double(fatsText) ?? 0 }
+        let unitCals = item.unitCalories
+        let unitP = item.unitProtein
+        let unitC = item.unitCarbs
+        let unitF = item.unitFats
         
-        if baseCalories > 0 {
-            caloriesText = "\(Int(baseCalories * newQty))"
-        }
-        if baseProtein > 0 {
-            proteinText = "\(Int(baseProtein * newQty))"
-        }
-        if baseCarbs > 0 {
-            carbsText = "\(Int(baseCarbs * newQty))"
-        }
-        if baseFats > 0 {
-            fatsText = "\(Int(baseFats * newQty))"
+        detectedItems[idx].quantity = newQty
+        detectedItems[idx].calories = max(1, Int(round(unitCals * newQty)))
+        detectedItems[idx].protein = max(0, Int(round(unitP * newQty)))
+        detectedItems[idx].carbs = max(0, Int(round(unitC * newQty)))
+        detectedItems[idx].fats = max(0, Int(round(unitF * newQty)))
+        
+        recalculateTotalsFromDetectedItems()
+    }
+    
+    private func recalculateTotalsFromDetectedItems() {
+        let totalCals = detectedItems.reduce(0) { $0 + $1.calories }
+        let totalP = detectedItems.reduce(0) { $0 + $1.protein }
+        let totalC = detectedItems.reduce(0) { $0 + $1.carbs }
+        let totalF = detectedItems.reduce(0) { $0 + $1.fats }
+        
+        caloriesText = "\(totalCals)"
+        proteinText = "\(totalP)"
+        carbsText = "\(totalC)"
+        fatsText = "\(totalF)"
+        
+        if detectedItems.isEmpty {
+            aiSuccessMessage = nil
+        } else {
+            aiSuccessMessage = "Recalculated totals: \(totalCals) kcal"
         }
     }
     
@@ -507,12 +631,6 @@ struct AddFoodSheet: View {
                 proteinText = "\(result.totalProtein)"
                 carbsText = "\(result.totalCarbs)"
                 fatsText = "\(result.totalFats)"
-                
-                baseCalories = Double(result.totalCalories)
-                baseProtein = Double(result.totalProtein)
-                baseCarbs = Double(result.totalCarbs)
-                baseFats = Double(result.totalFats)
-                
                 detectedItems = result.detectedItems
                 aiSuccessMessage = "Gemini identified '\(result.plateTitle)' (\(result.totalCalories) kcal)"
             }
@@ -532,11 +650,6 @@ struct AddFoodSheet: View {
                     .font(.body)
                     .fontWeight(.medium)
                     .foregroundStyle(.white)
-                    .onChange(of: text.wrappedValue) { _, val in
-                        if title == "Protein" { baseProtein = Double(val) ?? baseProtein }
-                        if title == "Carbs" { baseCarbs = Double(val) ?? baseCarbs }
-                        if title == "Fats" { baseFats = Double(val) ?? baseFats }
-                    }
                 
                 Text("g")
                     .font(.caption2)
@@ -562,19 +675,123 @@ struct AddFoodSheet: View {
             localImagePath = AIFoodVisionService.shared.saveMealImageLocally(image)
         }
         
-        let newMeal = MealLog(
-            name: name,
-            mealType: selectedMealType,
-            calories: calories,
-            proteinGrams: protein,
-            carbsGrams: carbs,
-            fatsGrams: fats,
-            imagePath: localImagePath
-        )
+        if !detectedItems.isEmpty {
+            for item in detectedItems {
+                let mealEntry = MealLog(
+                    name: item.name,
+                    mealType: selectedMealType,
+                    calories: item.calories,
+                    proteinGrams: item.protein,
+                    carbsGrams: item.carbs,
+                    fatsGrams: item.fats,
+                    imagePath: localImagePath
+                )
+                modelContext.insert(mealEntry)
+            }
+        } else {
+            let newMeal = MealLog(
+                name: name,
+                mealType: selectedMealType,
+                calories: calories,
+                proteinGrams: protein,
+                carbsGrams: carbs,
+                fatsGrams: fats,
+                imagePath: localImagePath
+            )
+            modelContext.insert(newMeal)
+        }
         
-        modelContext.insert(newMeal)
         try? modelContext.save()
         dismiss()
+    }
+}
+
+// MARK: - Edit Individual Detected Food Item Sheet
+
+struct EditDetectedItemSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var item: DetectedFoodItem
+    var onSave: (DetectedFoodItem) -> Void
+    
+    @State private var nameInput: String = ""
+    @State private var caloriesInput: String = ""
+    @State private var proteinInput: String = ""
+    @State private var carbsInput: String = ""
+    @State private var fatsInput: String = ""
+    
+    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Item Name & Portion") {
+                    TextField("e.g. 1 Dosa, 1 Coffee", text: $nameInput)
+                }
+                
+                Section("Calories & Macros") {
+                    HStack {
+                        Text("Calories (kcal)")
+                        Spacer()
+                        TextField("0", text: $caloriesInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Protein (g)")
+                        Spacer()
+                        TextField("0", text: $proteinInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Carbs (g)")
+                        Spacer()
+                        TextField("0", text: $carbsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    HStack {
+                        Text("Fats (g)")
+                        Spacer()
+                        TextField("0", text: $fatsInput)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
+            .navigationTitle("Edit Item & Calories")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        updated.name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        updated.calories = Int(caloriesInput) ?? item.calories
+                        updated.protein = Int(proteinInput) ?? item.protein
+                        updated.carbs = Int(carbsInput) ?? item.carbs
+                        updated.fats = Int(fatsInput) ?? item.fats
+                        onSave(updated)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .foregroundStyle(paleBlue)
+                }
+            }
+            .onAppear {
+                nameInput = item.name
+                caloriesInput = "\(item.calories)"
+                proteinInput = "\(item.protein)"
+                carbsInput = "\(item.carbs)"
+                fatsInput = "\(item.fats)"
+            }
+        }
+        .presentationDetents([.height(340)])
     }
 }
 

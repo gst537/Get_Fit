@@ -11,6 +11,19 @@ struct DetectedFoodItem: Identifiable, Sendable, Codable {
     var icon: String
     var quantity: Double = 1.0
     
+    var unitCalories: Double {
+        quantity > 0 ? Double(calories) / quantity : Double(calories)
+    }
+    var unitProtein: Double {
+        quantity > 0 ? Double(protein) / quantity : Double(protein)
+    }
+    var unitCarbs: Double {
+        quantity > 0 ? Double(carbs) / quantity : Double(carbs)
+    }
+    var unitFats: Double {
+        quantity > 0 ? Double(fats) / quantity : Double(fats)
+    }
+    
     enum CodingKeys: String, CodingKey {
         case name, calories, protein, carbs, fats, icon, quantity
     }
@@ -69,16 +82,6 @@ final class AIFoodVisionService: @unchecked Sendable {
         return await analyzeWithGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    /// AI Meal Assistant Chatbot: Modifies meal items using natural language commands (e.g. "swap dosa for 2 chapathi", "remove rice", "make 1 dosa")
-    func modifyMealWithAI(instruction: String, currentItems: [DetectedFoodItem]) async -> FoodAnalysisResult {
-        guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return fallbackModifyMealLocally(instruction: instruction, currentItems: currentItems)
-        }
-        
-        let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        return await modifyWithGeminiText(instruction: instruction, currentItems: currentItems, apiKey: cleanKey)
-    }
-    
     // MARK: - Google Gemini Vision API
     
     private func analyzeWithGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
@@ -95,27 +98,37 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         let modelCandidates = [
             "gemini-1.5-flash",
-            "gemini-1.5-pro"
+            "gemini-1.5-flash-latest",
+            "gemini-2.0-flash-exp"
         ]
         
         let promptText = """
         You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
-        Identify every specific food item on the plate (e.g. Biryani Portion, Raita, Masala Dosa, Sambar, Chicken Curry, Chapathi, Dal, Rice, Boiled Egg, Salad).
+        Identify every specific food item on the plate (e.g. Masala Dosa, Filter Coffee, Sambar, Kothu Parotta, Chana Sundal, Coconut Chutney, Fried Eggs, Chicken Biryani, Roti, Dal, Rice).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
         You MUST return ONLY a raw valid JSON object with NO markdown formatting, NO ```json backticks, and NO extra text.
         JSON Structure:
         {
-          "plateTitle": "Summary Title of Plate (e.g. Chicken Biryani & Raita Plate)",
+          "plateTitle": "Summary Title of Plate (e.g. Dosa & Coffee Breakfast)",
           "items": [
             {
-              "name": "Exact Item Name with Portion (e.g., Chicken Biryani Portion)",
-              "calories": 570,
-              "protein": 35,
-              "carbs": 69,
-              "fats": 16,
-              "icon": "🍛",
+              "name": "Crispy Dosa (2 pcs)",
+              "calories": 240,
+              "protein": 6,
+              "carbs": 48,
+              "fats": 6,
+              "icon": "🥞",
+              "quantity": 2.0
+            },
+            {
+              "name": "Filter Coffee",
+              "calories": 80,
+              "protein": 2,
+              "carbs": 12,
+              "fats": 3,
+              "icon": "☕",
               "quantity": 1.0
             }
           ]
@@ -137,123 +150,11 @@ final class AIFoodVisionService: @unchecked Sendable {
                 ]
             ],
             "generationConfig": [
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
+                "temperature": 0.2
             ]
         ]
         
         return await executeGeminiRequest(payload: payload, apiKey: apiKey, modelCandidates: modelCandidates)
-    }
-    
-    // MARK: - Gemini Natural Language Meal Assistant Modifier
-    
-    private func modifyWithGeminiText(instruction: String, currentItems: [DetectedFoodItem], apiKey: String) async -> FoodAnalysisResult {
-        let itemsSummary = currentItems.map { "name: \($0.name), calories: \($0.calories), P: \($0.protein)g, C: \($0.carbs)g, F: \($0.fats)g, icon: \($0.icon)" }.joined(separator: "\n")
-        
-        let promptText = """
-        You are an expert AI meal assistant.
-        The user currently has these food items logged for their meal:
-        \(itemsSummary)
-        
-        User's requested modification: "\(instruction)"
-        Examples of modifications: "remove dosa and add 2 chapathi", "make it 1 dosa instead of 2", "swap biryani for tandoori chicken", "reduce rice portion by half".
-        
-        Apply the user's requested swaps, removals, or quantity changes. Calculate accurate calories and macros for the modified meal items.
-        
-        You MUST return ONLY a raw valid JSON object with NO markdown formatting and NO ```json backticks.
-        JSON Structure:
-        {
-          "plateTitle": "Updated Plate Title",
-          "items": [
-            {
-              "name": "Exact Item Name (e.g. Chapathi 2 pcs)",
-              "calories": 180,
-              "protein": 6,
-              "carbs": 36,
-              "fats": 2,
-              "icon": "🫓",
-              "quantity": 1.0
-            }
-          ]
-        }
-        """
-        
-        let payload: [String: Any] = [
-            "contents": [
-                [
-                    "parts": [
-                        ["text": promptText]
-                    ]
-                ]
-            ],
-            "generationConfig": [
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
-            ]
-        ]
-        
-        let candidates = ["gemini-1.5-flash", "gemini-1.5-pro"]
-        let result = await executeGeminiRequest(payload: payload, apiKey: apiKey, modelCandidates: candidates)
-        if result.detectedItems.isEmpty && result.errorMessage != nil {
-            return fallbackModifyMealLocally(instruction: instruction, currentItems: currentItems)
-        }
-        return result
-    }
-    
-    // MARK: - Offline Smart Local Rule Fallback (Works even without API key!)
-    
-    private func fallbackModifyMealLocally(instruction: String, currentItems: [DetectedFoodItem]) -> FoodAnalysisResult {
-        var updated = currentItems
-        let query = instruction.lowercased()
-        
-        if query.contains("remove") || query.contains("delete") {
-            if query.contains("dosa") {
-                updated.removeAll { $0.name.lowercased().contains("dosa") }
-            } else if query.contains("rice") {
-                updated.removeAll { $0.name.lowercased().contains("rice") }
-            } else if query.contains("chutney") {
-                updated.removeAll { $0.name.lowercased().contains("chutney") }
-            } else if query.contains("egg") {
-                updated.removeAll { $0.name.lowercased().contains("egg") }
-            }
-        }
-        
-        if query.contains("chapathi") || query.contains("chappati") || query.contains("roti") {
-            if !updated.contains(where: { $0.name.lowercased().contains("chapathi") || $0.name.lowercased().contains("roti") }) {
-                updated.append(DetectedFoodItem(name: "Whole Wheat Chapathi (2 pcs)", calories: 180, protein: 6, carbs: 36, fats: 2, icon: "🫓", quantity: 1.0))
-            }
-        }
-        
-        if query.contains("1 dosa") || query.contains("half dosa") || query.contains("reduce dosa") {
-            if let idx = updated.firstIndex(where: { $0.name.lowercased().contains("dosa") }) {
-                updated[idx].name = "Single Crispy Dosa (1 pc)"
-                updated[idx].calories = 120
-                updated[idx].protein = 3
-                updated[idx].carbs = 24
-                updated[idx].fats = 3
-                updated[idx].quantity = 0.5
-            }
-        }
-        
-        if query.contains("egg") && !updated.contains(where: { $0.name.lowercased().contains("egg") }) {
-            updated.append(DetectedFoodItem(name: "Boiled Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚", quantity: 1.0))
-        }
-        
-        let totalCals = updated.reduce(0) { $0 + $1.calories }
-        let totalP = updated.reduce(0) { $0 + $1.protein }
-        let totalC = updated.reduce(0) { $0 + $1.carbs }
-        let totalF = updated.reduce(0) { $0 + $1.fats }
-        
-        return FoodAnalysisResult(
-            plateTitle: "Updated Meal",
-            totalCalories: totalCals,
-            totalProtein: totalP,
-            totalCarbs: totalC,
-            totalFats: totalF,
-            detectedItems: updated,
-            confidence: 0.9,
-            errorMessage: nil
-        )
     }
     
     // MARK: - Execute Gemini API Request
