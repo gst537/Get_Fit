@@ -120,85 +120,81 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         """
         
-        let requestBody: [String: Any] = [
-            "model": "llama-3.2-11b-vision-preview",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": [
-                        ["type": "text", "text": promptText],
-                        ["type": "image_url", "image_url": ["url": dataURL]]
-                    ]
-                ]
-            ],
-            "temperature": 0.2,
-            "response_format": ["type": "json_object"]
+        let groqModels = [
+            "llama-3.2-11b-vision-preview",
+            "llama-3.2-90b-vision-preview"
         ]
         
-        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
-              let url = URL(string: "https://api.groq.com/openai/v1/chat/completions") else {
-            return FoodAnalysisResult(
-                plateTitle: "Error",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Could not format Groq API request."
-            )
-        }
+        var lastGroqError = "Could not connect to Groq API."
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.httpBody = httpBody
-        request.timeoutInterval = 20
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+        for model in groqModels {
+            let requestBody: [String: Any] = [
+                "model": model,
+                "messages": [
+                    [
+                        "role": "user",
+                        "content": [
+                            ["type": "text", "text": promptText],
+                            ["type": "image_url", "image_url": ["url": dataURL]]
+                        ]
+                    ]
+                ],
+                "temperature": 0.2,
+                "response_format": ["type": "json_object"]
+            ]
             
-            if statusCode == 200 {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let choices = json["choices"] as? [[String: Any]],
-                   let first = choices.first,
-                   let message = first["message"] as? [String: Any],
-                   let content = message["content"] as? String {
-                    if let result = parseJSONString(content) {
-                        return result
+            guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
+                  let url = URL(string: "https://api.groq.com/openai/v1/chat/completions") else {
+                continue
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.httpBody = httpBody
+            request.timeoutInterval = 20
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+                
+                if statusCode == 200 {
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let choices = json["choices"] as? [[String: Any]],
+                       let first = choices.first,
+                       let message = first["message"] as? [String: Any],
+                       let content = message["content"] as? String {
+                        if let result = parseJSONString(content) {
+                            return result
+                        }
                     }
-                }
-            } else if statusCode == 429 {
-                return FoodAnalysisResult(
-                    plateTitle: "Rate Limited",
-                    totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                    detectedItems: [], confidence: 0.0,
-                    errorMessage: "Groq daily quota limit reached (429). Please wait a bit."
-                )
-            } else {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let err = json["error"] as? [String: Any],
-                   let msg = err["message"] as? String {
+                } else if statusCode == 429 {
                     return FoodAnalysisResult(
-                        plateTitle: "Groq Error",
+                        plateTitle: "Rate Limited",
                         totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                         detectedItems: [], confidence: 0.0,
-                        errorMessage: "Groq (\(statusCode)): \(msg)"
+                        errorMessage: "Groq daily quota limit reached (429). Please wait 30s."
                     )
+                } else {
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let err = json["error"] as? [String: Any],
+                       let msg = err["message"] as? String {
+                        lastGroqError = "Groq (\(statusCode)): \(msg)"
+                    } else {
+                        lastGroqError = "Groq returned code \(statusCode)."
+                    }
                 }
+            } catch {
+                lastGroqError = "Groq network error: \(error.localizedDescription)"
             }
-        } catch {
-            return FoodAnalysisResult(
-                plateTitle: "Network Error",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Groq network error: \(error.localizedDescription)"
-            )
         }
         
         return FoodAnalysisResult(
-            plateTitle: "Error",
+            plateTitle: "Groq API Error",
             totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
             detectedItems: [], confidence: 0.0,
-            errorMessage: "Could not parse Groq AI vision response."
+            errorMessage: lastGroqError
         )
     }
     

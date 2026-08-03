@@ -40,7 +40,9 @@ struct PasteFriendlyTextField: UIViewRepresentable {
         init(_ parent: PasteFriendlyTextField) { self.parent = parent }
         
         @objc func textChanged(_ sender: UITextField) {
-            parent.text = sender.text ?? ""
+            let val = (sender.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            parent.text = val
+            AIFoodVisionService.shared.savedAPIKey = val.isEmpty ? nil : val
         }
         
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {
