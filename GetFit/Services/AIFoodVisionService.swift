@@ -10,7 +10,6 @@ struct DetectedFoodItem: Identifiable, Sendable, Codable {
     var fats: Int
     var icon: String
     var quantity: Double = 1.0
-    // Base values per 1 unit — used for quantity scaling
     var baseCalories: Int
     var baseProtein: Int
     var baseCarbs: Int
@@ -30,7 +29,6 @@ struct DetectedFoodItem: Identifiable, Sendable, Codable {
         self.icon = icon
         self.quantity = quantity
         
-        // Calculate per-unit base values
         let qty = quantity > 0 ? quantity : 1.0
         self.baseCalories = max(1, Int(round(Double(calories) / qty)))
         self.baseProtein = max(0, Int(round(Double(protein) / qty)))
@@ -68,23 +66,32 @@ final class AIFoodVisionService: @unchecked Sendable {
                 plateTitle: "API Key Required",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Please paste your free Groq or Gemini API Key to enable AI food scanning."
+                errorMessage: "Please paste your free Google Gemini API Key (aistudio.google.com) or OpenRouter Key (openrouter.ai) above."
             )
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleanKey.hasPrefix("gsk_") {
-            // Groq Vision API (14,400 free calls/day)
-            return await callGroqVision(image: image, apiKey: cleanKey)
+        
+        if cleanKey.hasPrefix("sk-or-") {
+            // OpenRouter Free Vision API (openrouter.ai)
+            return await callOpenRouterVision(image: image, apiKey: cleanKey)
+        } else if cleanKey.hasPrefix("gsk_") {
+            // Groq does not currently host active vision models
+            return FoodAnalysisResult(
+                plateTitle: "Groq Key Notice",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Groq has temporarily disabled vision models. Please paste a free Gemini key (aistudio.google.com) or OpenRouter key (openrouter.ai)."
+            )
         } else {
-            // Google Gemini Vision API
+            // Google Gemini Vision API (aistudio.google.com)
             return await callGeminiVision(image: image, apiKey: cleanKey)
         }
     }
     
-    // MARK: - Groq Vision API (14,400 Free Requests/Day — console.groq.com)
+    // MARK: - OpenRouter Free Vision API (openrouter.ai)
     
-    private func callGroqVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
+    private func callOpenRouterVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 512)
         guard let jpegData = resized.jpegData(compressionQuality: 0.4) else {
             return FoodAnalysisResult(
@@ -103,7 +110,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
-        Return ONLY valid raw JSON with NO markdown formatting, NO ```json backticks.
+        Return ONLY valid raw JSON with NO markdown, NO ```json backticks.
         {
           "plateTitle": "Summary Title (e.g. Dosa & Coffee Breakfast)",
           "items": [
@@ -120,96 +127,80 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         """
         
-        let groqModels = [
-            "llama-3.2-11b-vision-instruct",
-            "llama-3.2-90b-vision-instruct",
-            "llama-3.3-70b-versatile"
+        let requestBody: [String: Any] = [
+            "model": "google/gemini-flash-1.5:free",
+            "messages": [
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": promptText],
+                        ["type": "image_url", "image_url": ["url": dataURL]]
+                    ]
+                ]
+            ]
         ]
         
-        var lastGroqError = "Could not connect to Groq API."
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
+              let url = URL(string: "https://openrouter.ai/api/v1/chat/completions") else {
+            return FoodAnalysisResult(
+                plateTitle: "Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not format OpenRouter API request."
+            )
+        }
         
-        for model in groqModels {
-            let requestBody: [String: Any] = [
-                "model": model,
-                "messages": [
-                    [
-                        "role": "user",
-                        "content": [
-                            ["type": "text", "text": promptText],
-                            ["type": "image_url", "image_url": ["url": dataURL]]
-                        ]
-                    ]
-                ],
-                "temperature": 0.2,
-                "response_format": ["type": "json_object"]
-            ]
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = httpBody
+        request.timeoutInterval = 25
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
             
-            guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
-                  let url = URL(string: "https://api.groq.com/openai/v1/chat/completions") else {
-                continue
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.httpBody = httpBody
-            request.timeoutInterval = 20
-            
-            do {
-                let (data, response) = try await URLSession.shared.data(for: request)
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
-                
-                if statusCode == 200 {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let choices = json["choices"] as? [[String: Any]],
-                       let first = choices.first,
-                       let message = first["message"] as? [String: Any],
-                       let content = message["content"] as? String {
-                        if let result = parseJSONString(content) {
-                            return result
-                        }
-                    }
-                } else if statusCode == 429 {
-                    return FoodAnalysisResult(
-                        plateTitle: "Rate Limited",
-                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                        detectedItems: [], confidence: 0.0,
-                        errorMessage: "Groq daily quota limit reached (429). Please wait 30s."
-                    )
-                } else {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let err = json["error"] as? [String: Any],
-                       let msg = err["message"] as? String {
-                        lastGroqError = "Groq (\(statusCode)): \(msg)"
-                    } else {
-                        lastGroqError = "Groq returned code \(statusCode)."
+            if statusCode == 200 {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let choices = json["choices"] as? [[String: Any]],
+                   let first = choices.first,
+                   let message = first["message"] as? [String: Any],
+                   let content = message["content"] as? String {
+                    if let result = parseJSONString(content) {
+                        return result
                     }
                 }
-            } catch {
-                lastGroqError = "Groq network error: \(error.localizedDescription)"
+            } else {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let err = json["error"] as? [String: Any],
+                   let msg = err["message"] as? String {
+                    return FoodAnalysisResult(
+                        plateTitle: "OpenRouter Error",
+                        totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                        detectedItems: [], confidence: 0.0,
+                        errorMessage: "OpenRouter (\(statusCode)): \(msg)"
+                    )
+                }
             }
+        } catch {
+            return FoodAnalysisResult(
+                plateTitle: "Network Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Network error: \(error.localizedDescription)"
+            )
         }
         
         return FoodAnalysisResult(
-            plateTitle: "Groq API Error",
+            plateTitle: "Error",
             totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
             detectedItems: [], confidence: 0.0,
-            errorMessage: lastGroqError
+            errorMessage: "Could not parse OpenRouter response."
         )
     }
     
-    private func parseJSONString(_ text: String) -> FoodAnalysisResult? {
-        let cleaned = text
-            .replacingOccurrences(of: "```json", with: "")
-            .replacingOccurrences(of: "```", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard let jsonData = cleaned.data(using: .utf8) else { return nil }
-        return parseGeminiResponse(jsonData)
-    }
-    
-    // MARK: - Gemini Vision API Call
+    // MARK: - Google Gemini Vision API (Primary)
     
     private func callGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 512)
@@ -271,15 +262,10 @@ final class AIFoodVisionService: @unchecked Sendable {
             )
         }
         
-        // Models to try in sequence — each model family has its own separate 15 RPM quota pool in Google AI Studio
-        let models = [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-2.0-flash-lite"
-        ]
+        let models = ["gemini-1.5-flash", "gemini-2.0-flash"]
         let encodedKey = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? apiKey
         var lastError = "Could not connect to Gemini API."
+        var wasRateLimited = false
         
         for model in models {
             let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(encodedKey)"
@@ -289,7 +275,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = httpBody
-            request.timeoutInterval = 20
+            request.timeoutInterval = 25
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -297,43 +283,49 @@ final class AIFoodVisionService: @unchecked Sendable {
                 
                 if statusCode == 200 {
                     if let result = parseGeminiResponse(data) {
-                        return result // Success!
+                        return result
                     }
-                    lastError = "Could not parse response from \(model)."
                 } else if statusCode == 429 {
-                    // Rate limit hit for THIS model — try the NEXT model in the list (different quota bucket)
-                    lastError = "Model \(model) hit rate limit (429). Trying fallback model..."
-                    continue
+                    wasRateLimited = true
+                    lastError = "Gemini rate limit hit."
                 } else {
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let err = json["error"] as? [String: Any],
                        let msg = err["message"] as? String {
                         lastError = "Gemini (\(statusCode)): \(msg)"
                     } else {
-                        lastError = "Gemini returned HTTP \(statusCode) for \(model)."
+                        lastError = "Gemini returned HTTP \(statusCode)."
                     }
                 }
             } catch {
-                lastError = "Network error (\(model)): \(error.localizedDescription)"
+                lastError = "Network error: \(error.localizedDescription)"
             }
         }
         
-        // If all models hit 429 or failed, wait 2 seconds and attempt 1 last retry on gemini-1.5-flash
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
-        
-        let retryUrlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(encodedKey)"
-        if let retryUrl = URL(string: retryUrlString) {
-            var request = URLRequest(url: retryUrl)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = httpBody
-            request.timeoutInterval = 20
-            
-            if let (data, response) = try? await URLSession.shared.data(for: request),
-               ((response as? HTTPURLResponse)?.statusCode ?? 500) == 200,
-               let result = parseGeminiResponse(data) {
-                return result
+        // If rate limited, wait 3 seconds and retry once automatically
+        if wasRateLimited {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            let retryUrlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(encodedKey)"
+            if let retryUrl = URL(string: retryUrlString) {
+                var request = URLRequest(url: retryUrl)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = httpBody
+                request.timeoutInterval = 25
+                
+                if let (data, response) = try? await URLSession.shared.data(for: request),
+                   ((response as? HTTPURLResponse)?.statusCode ?? 500) == 200,
+                   let result = parseGeminiResponse(data) {
+                    return result
+                }
             }
+            
+            return FoodAnalysisResult(
+                plateTitle: "Rate Limited",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Gemini free rate limit (15 scans/min) temporarily reached. Please wait ~30 seconds and try again!"
+            )
         }
         
         return FoodAnalysisResult(
@@ -344,7 +336,15 @@ final class AIFoodVisionService: @unchecked Sendable {
         )
     }
     
-    // MARK: - Parse Gemini JSON Response
+    private func parseJSONString(_ text: String) -> FoodAnalysisResult? {
+        let cleaned = text
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard let jsonData = cleaned.data(using: .utf8) else { return nil }
+        return parseGeminiResponse(jsonData)
+    }
     
     private func parseGeminiResponse(_ data: Data) -> FoodAnalysisResult? {
         guard let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -356,7 +356,6 @@ final class AIFoodVisionService: @unchecked Sendable {
             return nil
         }
         
-        // Clean markdown fences if Gemini wrapped them
         let cleaned = text
             .replacingOccurrences(of: "```json", with: "")
             .replacingOccurrences(of: "```", with: "")
@@ -407,7 +406,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         )
     }
     
-    // MARK: - Image Storage
+    // MARK: - Local Image Persistence
     
     func saveMealImageLocally(_ image: UIImage) -> String? {
         let prepImage = image.resizedForVision(maxDimension: 800)
