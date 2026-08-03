@@ -121,8 +121,9 @@ final class AIFoodVisionService: @unchecked Sendable {
         """
         
         let groqModels = [
-            "llama-3.2-11b-vision-preview",
-            "llama-3.2-90b-vision-preview"
+            "llama-3.2-11b-vision-instruct",
+            "llama-3.2-90b-vision-instruct",
+            "llama-3.3-70b-versatile"
         ]
         
         var lastGroqError = "Could not connect to Groq API."
