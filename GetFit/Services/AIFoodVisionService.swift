@@ -102,7 +102,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             totalFats: totalF,
             detectedItems: presetItems,
             confidence: 0.85,
-            errorMessage: "⚡ \(reason)\nYou can adjust items and quantities using [+] and [-] below."
+            errorMessage: nil
         )
     }
     
@@ -169,8 +169,8 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         
         let models = [
-            "gemini-2.0-flash",
-            "gemini-2.0-flash-lite"
+            "gemini-flash-latest",
+            "gemini-1.5-flash-latest"
         ]
         
         let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
