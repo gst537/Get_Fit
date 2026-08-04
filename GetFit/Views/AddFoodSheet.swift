@@ -291,7 +291,7 @@ struct AddFoodSheet: View {
             // Key input area
             if showKeySettings || AIFoodVisionService.shared.savedAPIKey == nil {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Paste free Groq key (console.groq.com) or Gemini key (aistudio.google.com):")
+                    Text("Paste free Google Gemini API Key (aistudio.google.com):")
                         .font(.caption2).foregroundStyle(Color.gray)
                     
                     // UIKit TextField — paste ALWAYS works (long-press → Paste)

@@ -60,144 +60,22 @@ final class AIFoodVisionService: @unchecked Sendable {
     
     private init() {}
     
+    /// Analyzes a food image strictly using Google Gemini Vision API
     func analyzeFoodImage(_ image: UIImage) async -> FoodAnalysisResult {
         guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return FoodAnalysisResult(
                 plateTitle: "API Key Required",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Please paste your free Google Gemini API Key (aistudio.google.com) or OpenRouter Key (openrouter.ai) above."
+                errorMessage: "Please paste your free Google Gemini API Key from aistudio.google.com above."
             )
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if cleanKey.hasPrefix("sk-or-") {
-            // OpenRouter Free Vision API (openrouter.ai)
-            return await callOpenRouterVision(image: image, apiKey: cleanKey)
-        } else if cleanKey.hasPrefix("gsk_") {
-            // Groq does not currently host active vision models
-            return FoodAnalysisResult(
-                plateTitle: "Groq Key Notice",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Groq has temporarily disabled vision models. Please paste a free Gemini key (aistudio.google.com) or OpenRouter key (openrouter.ai)."
-            )
-        } else {
-            // Google Gemini Vision API (aistudio.google.com)
-            return await callGeminiVision(image: image, apiKey: cleanKey)
-        }
+        return await callGeminiVision(image: image, apiKey: cleanKey)
     }
     
-    // MARK: - OpenRouter Free Vision API (openrouter.ai)
-    
-    private func callOpenRouterVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
-        let resized = image.resizedForVision(maxDimension: 512)
-        guard let jpegData = resized.jpegData(compressionQuality: 0.4) else {
-            return FoodAnalysisResult(
-                plateTitle: "Image Error",
-                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-                detectedItems: [], confidence: 0.0,
-                errorMessage: "Could not process image data."
-            )
-        }
-        let base64Image = jpegData.base64EncodedString()
-        let dataURL = "data:image/jpeg;base64,\(base64Image)"
-        
-        let promptText = """
-        You are an expert nutritionist and food vision AI.
-        Analyze this meal photo carefully.
-        Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice).
-        Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
-        
-        Return ONLY valid raw JSON with NO markdown, NO ```json backticks.
-        {
-          "plateTitle": "Summary Title (e.g. Dosa & Coffee Breakfast)",
-          "items": [
-            {
-              "name": "Crispy Dosa",
-              "calories": 120,
-              "protein": 3,
-              "carbs": 24,
-              "fats": 3,
-              "icon": "🥞",
-              "quantity": 2.0
-            }
-          ]
-        }
-        """
-        
-        let openRouterModels = [
-            "google/gemini-2.0-flash-exp:free",
-            "meta-llama/llama-3.2-11b-vision-instruct:free",
-            "qwen/qwen-2.5-vl-72b-instruct:free"
-        ]
-        
-        var lastORError = "Could not connect to OpenRouter API."
-        
-        for model in openRouterModels {
-            let requestBody: [String: Any] = [
-                "model": model,
-                "messages": [
-                    [
-                        "role": "user",
-                        "content": [
-                            ["type": "text", "text": promptText],
-                            ["type": "image_url", "image_url": ["url": dataURL]]
-                        ]
-                    ]
-                ]
-            ]
-            
-            guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody),
-                  let url = URL(string: "https://openrouter.ai/api/v1/chat/completions") else {
-                continue
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.httpBody = httpBody
-            request.timeoutInterval = 25
-            
-            do {
-                let (data, response) = try await URLSession.shared.data(for: request)
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
-                
-                if statusCode == 200 {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let choices = json["choices"] as? [[String: Any]],
-                       let first = choices.first,
-                       let message = first["message"] as? [String: Any],
-                       let content = message["content"] as? String {
-                        if let result = parseJSONString(content) {
-                            return result
-                        }
-                    }
-                } else {
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let err = json["error"] as? [String: Any],
-                       let msg = err["message"] as? String {
-                        lastORError = "OpenRouter (\(statusCode)): \(msg)"
-                    } else {
-                        lastORError = "OpenRouter returned code \(statusCode)."
-                    }
-                }
-            } catch {
-                lastORError = "Network error: \(error.localizedDescription)"
-            }
-        }
-        
-        return FoodAnalysisResult(
-            plateTitle: "Error",
-            totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
-            detectedItems: [], confidence: 0.0,
-            errorMessage: lastORError
-        )
-    }
-    
-    // MARK: - Google Gemini Vision API (Primary)
+    // MARK: - Google Gemini Vision API (Official v1beta generateContent)
     
     private func callGeminiVision(image: UIImage, apiKey: String) async -> FoodAnalysisResult {
         let resized = image.resizedForVision(maxDimension: 512)
@@ -217,7 +95,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice, Chapati).
         Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
         
-        IMPORTANT: Return ONLY raw valid JSON with NO markdown, NO ```json, NO extra text.
+        IMPORTANT: Return ONLY raw valid JSON with NO markdown formatting, NO ```json backticks, and NO extra preamble.
         {
           "plateTitle": "Summary Title (e.g. Dosa & Coffee Breakfast)",
           "items": [
@@ -255,13 +133,20 @@ final class AIFoodVisionService: @unchecked Sendable {
                 plateTitle: "Error",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Could not format API request."
+                errorMessage: "Could not format API request payload."
             )
         }
         
-        let models = ["gemini-1.5-flash", "gemini-2.0-flash"]
-        let encodedKey = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? apiKey
-        var lastError = "Could not connect to Gemini API."
+        // Official Google Gemini Vision model candidates
+        let models = [
+            "gemini-1.5-flash",
+            "gemini-2.0-flash",
+            "gemini-2.5-flash"
+        ]
+        
+        let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encodedKey = cleanKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cleanKey
+        var lastError = "Could not connect to Google Gemini API."
         var wasRateLimited = false
         
         for model in models {
@@ -271,6 +156,7 @@ final class AIFoodVisionService: @unchecked Sendable {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = httpBody
             request.timeoutInterval = 25
             
@@ -284,12 +170,12 @@ final class AIFoodVisionService: @unchecked Sendable {
                     }
                 } else if statusCode == 429 {
                     wasRateLimited = true
-                    lastError = "Gemini rate limit hit."
+                    lastError = "Gemini API rate limit hit."
                 } else {
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let err = json["error"] as? [String: Any],
                        let msg = err["message"] as? String {
-                        lastError = "Gemini (\(statusCode)): \(msg)"
+                        lastError = "Gemini Error (\(statusCode)): \(msg)"
                     } else {
                         lastError = "Gemini returned HTTP \(statusCode)."
                     }
@@ -299,14 +185,15 @@ final class AIFoodVisionService: @unchecked Sendable {
             }
         }
         
-        // If rate limited, wait 3 seconds and retry once automatically
+        // Automatic single retry if rate limited
         if wasRateLimited {
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
             let retryUrlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(encodedKey)"
             if let retryUrl = URL(string: retryUrlString) {
                 var request = URLRequest(url: retryUrl)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
                 request.httpBody = httpBody
                 request.timeoutInterval = 25
                 
@@ -321,7 +208,7 @@ final class AIFoodVisionService: @unchecked Sendable {
                 plateTitle: "Rate Limited",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Gemini free rate limit (15 scans/min) temporarily reached. Please wait ~30 seconds and try again!"
+                errorMessage: "Google Gemini Free Quota limit reached (429). Please wait ~30 seconds and try again, or paste a new free key from aistudio.google.com"
             )
         }
         
@@ -333,15 +220,7 @@ final class AIFoodVisionService: @unchecked Sendable {
         )
     }
     
-    private func parseJSONString(_ text: String) -> FoodAnalysisResult? {
-        let cleaned = text
-            .replacingOccurrences(of: "```json", with: "")
-            .replacingOccurrences(of: "```", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard let jsonData = cleaned.data(using: .utf8) else { return nil }
-        return parseGeminiResponse(jsonData)
-    }
+    // MARK: - JSON Parser
     
     private func parseGeminiResponse(_ data: Data) -> FoodAnalysisResult? {
         guard let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
