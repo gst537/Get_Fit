@@ -137,17 +137,17 @@ final class AIFoodVisionService: @unchecked Sendable {
             )
         }
         
-        // Official Google Gemini Vision model candidates
+        // Official Google Gemini Vision model candidates (gemini-1.5-flash is 404 in v1beta)
         let models = [
-            "gemini-1.5-flash",
             "gemini-2.0-flash",
-            "gemini-2.5-flash"
+            "gemini-2.0-flash-lite"
         ]
         
         let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let encodedKey = cleanKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cleanKey
         var lastError = "Could not connect to Google Gemini API."
         var wasRateLimited = false
+        var detailedLimitMsg: String? = nil
         
         for model in models {
             let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(encodedKey)"
@@ -156,7 +156,6 @@ final class AIFoodVisionService: @unchecked Sendable {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
             request.httpBody = httpBody
             request.timeoutInterval = 25
             
@@ -170,6 +169,11 @@ final class AIFoodVisionService: @unchecked Sendable {
                     }
                 } else if statusCode == 429 {
                     wasRateLimited = true
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let err = json["error"] as? [String: Any],
+                       let msg = err["message"] as? String {
+                        detailedLimitMsg = msg
+                    }
                     lastError = "Gemini API rate limit hit."
                 } else {
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -185,30 +189,19 @@ final class AIFoodVisionService: @unchecked Sendable {
             }
         }
         
-        // Automatic single retry if rate limited
         if wasRateLimited {
-            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
-            let retryUrlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(encodedKey)"
-            if let retryUrl = URL(string: retryUrlString) {
-                var request = URLRequest(url: retryUrl)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.setValue(cleanKey, forHTTPHeaderField: "x-goog-api-key")
-                request.httpBody = httpBody
-                request.timeoutInterval = 25
-                
-                if let (data, response) = try? await URLSession.shared.data(for: request),
-                   ((response as? HTTPURLResponse)?.statusCode ?? 500) == 200,
-                   let result = parseGeminiResponse(data) {
-                    return result
-                }
+            let customErr: String
+            if let msg = detailedLimitMsg, msg.contains("limit: 0") {
+                customErr = "Google AI Studio set free limit to 0 for this key/project. To fix: Go to aistudio.google.com ➔ Click 'Create API key in NEW project' (or link a free billing account in GCP)."
+            } else {
+                customErr = "Gemini free rate limit (15 scans/min) temporarily reached. Please wait ~30 seconds and try again!"
             }
             
             return FoodAnalysisResult(
-                plateTitle: "Rate Limited",
+                plateTitle: "Quota Exceeded (429)",
                 totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
                 detectedItems: [], confidence: 0.0,
-                errorMessage: "Google Gemini Free Quota limit reached (429). Please wait ~30 seconds and try again, or paste a new free key from aistudio.google.com"
+                errorMessage: customErr
             )
         }
         
