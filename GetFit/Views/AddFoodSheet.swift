@@ -423,11 +423,20 @@ struct AddFoodSheet: View {
                 .padding(10).frame(maxWidth: .infinity)
                 .background(Color.green.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
             } else if let err = aiErrorMessage {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-                    Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
+                        Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                    }
+                    Button("🔑 Tap here to paste a new Gemini Key") {
+                        geminiKeyInput = ""
+                        AIFoodVisionService.shared.savedAPIKey = nil
+                        aiErrorMessage = nil
+                        withAnimation { showKeySettings = true }
+                    }
+                    .font(.caption2).fontWeight(.bold).foregroundStyle(paleBlue)
                 }
-                .padding(10).frame(maxWidth: .infinity)
+                .padding(10).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }

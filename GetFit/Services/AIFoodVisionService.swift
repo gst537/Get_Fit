@@ -72,6 +72,14 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleanKey.hasPrefix("AIzaSy") else {
+            return FoodAnalysisResult(
+                plateTitle: "Invalid Key Format",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "The saved key is not a Google Gemini key. Google keys always start with 'AIzaSy'. Tap 'Change Key' above and paste a key from aistudio.google.com"
+            )
+        }
         return await callGeminiVision(image: image, apiKey: cleanKey)
     }
     
