@@ -85,7 +85,7 @@ final class AIFoodVisionService: @unchecked Sendable {
     private func generateSmartLocalFallback(reason: String) -> FoodAnalysisResult {
         let presetItems = [
             DetectedFoodItem(name: "Grilled Protein / Tofu Bowl", calories: 220, protein: 18, carbs: 12, fats: 8, icon: "🥗", quantity: 1.0),
-            DetectedFoodItem(name: "Boiled Eggs (2 pcs)", calories: 140, protein: 12, carbs: 1, fats: 10, icon: "🥚", quantity: 1.0),
+            DetectedFoodItem(name: "Boiled Egg", calories: 70, protein: 6, carbs: 0, fats: 5, icon: "🥚", quantity: 2.0),
             DetectedFoodItem(name: "Fresh Garden Salad & Corn", calories: 90, protein: 3, carbs: 18, fats: 2, icon: "🌽", quantity: 1.0)
         ]
         
@@ -124,7 +124,10 @@ final class AIFoodVisionService: @unchecked Sendable {
         You are an expert nutritionist and food vision AI.
         Analyze this meal photo carefully.
         Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice, Chapati).
-        Estimate realistic portion sizes, calories, and macros (protein, carbs, fats) for each item.
+        
+        CRITICAL MULTIPLIER RULE:
+        If there are multiple of the same item (e.g. 2 dosas or 3 eggs), set `quantity` to the number of items (e.g. 2.0). 
+        However, the `calories`, `protein`, `carbs`, and `fats` you return MUST be for exactly ONE base unit. The app will multiply them. Do NOT multiply the macros yourself.
         
         IMPORTANT: Return ONLY raw valid JSON with NO markdown formatting, NO ```json backticks, and NO extra text.
         {
