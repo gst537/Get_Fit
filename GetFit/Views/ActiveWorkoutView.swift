@@ -60,7 +60,7 @@ struct ActiveWorkoutView: View {
                 .padding(.vertical, 16)
             }
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.black)
         .onAppear {
             startTimer()
             initializeInputs()
@@ -95,14 +95,14 @@ struct ActiveWorkoutView: View {
             HStack {
                 Image(systemName: "figure.run")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(MutedEarth.slateBlue)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     if let mins = loggedCardioMinutes {
                         Text("Cardio Finisher Logged ✓")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .foregroundStyle(MutedEarth.slateBlue)
                         Text("\(Int(mins)) min · \(String(format: "%.1f km", loggedCardioDistance ?? 0))")
                             .font(.caption)
                             .foregroundStyle(Color.gray)
@@ -119,13 +119,12 @@ struct ActiveWorkoutView: View {
                 
                 Spacer()
                 
-                Image(systemName: loggedCardioMinutes != nil ? "checkmark.circle.fill" : "plus.circle")
+                Image(systemName: loggedCardioMinutes != nil ? "checkmark.square.fill" : "plus.square")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(MutedEarth.slateBlue)
             }
             .padding(16)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .monochromeCard()
             .padding(.horizontal, 16)
         }
     }
@@ -159,7 +158,7 @@ struct ActiveWorkoutView: View {
                     showCardioFinisherSheet = false
                 }
                 .font(.body)
-                .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                .foregroundStyle(MutedEarth.slateBlue)
             }
             
             VStack(alignment: .leading, spacing: 8) {
@@ -175,8 +174,8 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(finisherActivity == act ? .black : Color.gray)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(finisherActivity == act ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
-                            .clipShape(Capsule())
+                            .background(finisherActivity == act ? MutedEarth.slateBlue : Color.black)
+                            .border(finisherActivity == act ? MutedEarth.slateBlue : Color.white.opacity(0.3), width: 0.5)
                             .onTapGesture {
                                 finisherActivity = act
                             }
@@ -193,8 +192,8 @@ struct ActiveWorkoutView: View {
                         .keyboardType(.numberPad)
                         .font(.title3)
                         .padding(10)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .background(Color.black)
+                        .border(Color.white.opacity(0.3), width: 0.5)
                 }
                 
                 VStack(alignment: .leading, spacing: 6) {
@@ -205,15 +204,15 @@ struct ActiveWorkoutView: View {
                         .keyboardType(.decimalPad)
                         .font(.title3)
                         .padding(10)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .background(Color.black)
+                        .border(Color.white.opacity(0.3), width: 0.5)
                 }
             }
             
             Spacer()
         }
         .padding(24)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.black)
         .presentationDetents([.medium])
     }
     
@@ -254,7 +253,7 @@ struct ActiveWorkoutView: View {
                             Text("Plates")
                         }
                         .font(.caption)
-                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundStyle(MutedEarth.slateBlue)
                     }
                     .padding(.trailing, 8)
                 }
@@ -311,8 +310,7 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .padding(12)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .monochromeCard()
             }
             
             // MARK: - Interactive Overload Banner
@@ -323,12 +321,12 @@ struct ActiveWorkoutView: View {
                     HStack(spacing: 6) {
                         Image(systemName: rec.isOverloadTriggered ? "sparkles" : "arrow.triangle.2.circlepath")
                             .font(.caption)
-                            .foregroundStyle(rec.isOverloadTriggered ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.orange)
+                            .foregroundStyle(rec.isOverloadTriggered ? MutedEarth.slateBlue : MutedEarth.terracotta)
                         
                         Text(rec.isOverloadTriggered ? "Progressive Overload Target" : "Form & Recovery Reset")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(rec.isOverloadTriggered ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.orange)
+                            .foregroundStyle(rec.isOverloadTriggered ? MutedEarth.slateBlue : MutedEarth.terracotta)
                     }
                     
                     Text(rec.reason)
@@ -344,20 +342,16 @@ struct ActiveWorkoutView: View {
                             weightStrings[machine.id] = weightUnit.formatNumber(displayRec)
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: isAccepted ? "checkmark.circle.fill" : "circle")
+                                Image(systemName: isAccepted ? "checkmark.square.fill" : "square")
                                 Text("Accept \(weightUnit.formatNumber(weightUnit.displayWeight(rec.recommendedWeight))) \(weightUnit.unitLabel)")
                             }
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(isAccepted ? .black : Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .foregroundStyle(isAccepted ? .black : MutedEarth.slateBlue)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(isAccepted ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(red: 0.68, green: 0.78, blue: 0.90), lineWidth: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .background(isAccepted ? MutedEarth.slateBlue : Color.clear)
+                            .border(isAccepted ? MutedEarth.slateBlue : MutedEarth.slateBlue.opacity(0.5), width: 1)
                         }
                         
                         Button {
@@ -368,7 +362,7 @@ struct ActiveWorkoutView: View {
                             weightStrings[machine.id] = weightUnit.formatNumber(displayPrev)
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: !isAccepted ? "arrow.uturn.backward.circle.fill" : "arrow.uturn.backward")
+                                Image(systemName: !isAccepted ? "arrow.uturn.backward.square.fill" : "arrow.uturn.backward")
                                 Text("Keep \(weightUnit.formatNumber(weightUnit.displayWeight(rec.previousWeight))) \(weightUnit.unitLabel)")
                             }
                             .font(.caption)
@@ -376,32 +370,27 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(!isAccepted ? .white : Color.gray)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(!isAccepted ? Color.gray.opacity(0.3) : Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .background(!isAccepted ? Color.white.opacity(0.1) : Color.clear)
+                            .border(Color.white.opacity(0.3), width: 1)
                         }
                     }
                 }
                 .padding(12)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .monochromeCard()
             } else {
                 HStack {
                     Image(systemName: "sparkles")
                         .font(.caption)
-                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundStyle(MutedEarth.slateBlue)
                     Text(rec.reason)
                         .font(.caption)
                         .fontWeight(.light)
-                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundStyle(MutedEarth.slateBlue)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(Color(red: 0.68, green: 0.78, blue: 0.90).opacity(0.12))
-                .clipShape(Capsule())
+                .background(MutedEarth.slateBlue.opacity(0.12))
+                .border(MutedEarth.slateBlue.opacity(0.3), width: 1)
             }
             
             HStack {
@@ -444,13 +433,12 @@ struct ActiveWorkoutView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.black)
                         .frame(width: 32, height: 32)
-                        .background(Color(red: 0.68, green: 0.78, blue: 0.90))
-                        .clipShape(Circle())
+                        .background(MutedEarth.slateBlue)
                 }
             }
         }
         .padding(16)
-        .glassmorphic(cornerRadius: 20)
+        .monochromeCard()
     }
     
     private func incrementStep(for equipmentType: String) -> Double {
@@ -478,7 +466,7 @@ struct ActiveWorkoutView: View {
                 Text(formatTime(elapsedTime))
                     .font(.caption)
                     .monospacedDigit()
-                    .foregroundColor(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundColor(MutedEarth.slateBlue)
             }
             
             Spacer()
@@ -489,12 +477,12 @@ struct ActiveWorkoutView: View {
                 Text("Finish")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundColor(MutedEarth.slateBlue)
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.secondarySystemBackground))
+        .background(Color.black)
     }
     
     private func stepperControl(value: Binding<Double>, textValue: Binding<String>, step: Double) -> some View {
@@ -513,8 +501,8 @@ struct ActiveWorkoutView: View {
                     .font(.system(size: 12))
                     .foregroundColor(.gray)
                     .frame(width: 28, height: 28)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                    .background(Color.black)
+                    .border(Color.white.opacity(0.3), width: 0.5)
             }
             
             HStack(spacing: 2) {
@@ -538,10 +526,10 @@ struct ActiveWorkoutView: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundColor(MutedEarth.slateBlue)
                     .frame(width: 28, height: 28)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                    .background(Color.black)
+                    .border(Color.white.opacity(0.3), width: 0.5)
             }
         }
     }
@@ -557,8 +545,8 @@ struct ActiveWorkoutView: View {
                     .font(.system(size: 12))
                     .foregroundColor(.gray)
                     .frame(width: 28, height: 28)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                    .background(Color.black)
+                    .border(Color.white.opacity(0.3), width: 0.5)
             }
             
             Text("\(value.wrappedValue) reps")
@@ -572,10 +560,10 @@ struct ActiveWorkoutView: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundColor(MutedEarth.slateBlue)
                     .frame(width: 28, height: 28)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                    .background(Color.black)
+                    .border(Color.white.opacity(0.3), width: 0.5)
             }
         }
     }

@@ -1,5 +1,12 @@
 import SwiftUI
 
+// MARK: - Muted Earth Palette
+public struct MutedEarth {
+    public static let slateBlue = Color(red: 0.45, green: 0.55, blue: 0.65)
+    public static let softSage = Color(red: 0.55, green: 0.65, blue: 0.55)
+    public static let terracotta = Color(red: 0.85, green: 0.45, blue: 0.35)
+}
+
 // MARK: - Monochrome Card
 
 struct MonochromeCardModifier: ViewModifier {
@@ -48,7 +55,7 @@ struct AnimatedRingView: View {
     init(progress: Double, lineWidth: CGFloat = 8, gradient: [Color] = [], size: CGFloat = 100) {
         self.progress = min(progress, 1.0)
         self.lineWidth = lineWidth
-        self.gradient = [.white, Color(white: 0.8)]
+        self.gradient = gradient.isEmpty ? [MutedEarth.slateBlue, Color(white: 0.8)] : gradient
         self.size = size
     }
     
@@ -103,11 +110,20 @@ struct MuscleGroupBadge: View {
     
     init(muscle: String, color: Color? = nil) {
         self.muscle = muscle
-        self.color = .white // Force monochrome
+        self.color = color ?? MuscleGroupBadge.colorForMuscle(muscle)
     }
     
     static func colorForMuscle(_ muscle: String) -> Color {
-        return .white
+        switch muscle.lowercased() {
+        case "quads", "legs", "glutes", "hamstrings", "calves":
+            return MutedEarth.terracotta
+        case "chest", "back", "lats", "shoulders", "delts", "traps":
+            return MutedEarth.slateBlue
+        case "biceps", "triceps", "core", "abs", "forearms":
+            return MutedEarth.softSage
+        default:
+            return MutedEarth.slateBlue
+        }
     }
     
     var body: some View {
@@ -117,7 +133,7 @@ struct MuscleGroupBadge: View {
             .foregroundStyle(Color.black)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color.white)
+            .background(color)
             .clipShape(Rectangle()) // Brutalist flat rectangle
     }
 }

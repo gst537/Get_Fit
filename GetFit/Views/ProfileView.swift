@@ -20,7 +20,7 @@ struct ProfileView: View {
     
     @State private var showEditProfileSheet = false
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let slateBlue = MutedEarth.slateBlue
     
     private var currentWeightKg: Double {
         weightEntries.first?.weight ?? 70.0
@@ -79,15 +79,15 @@ struct ProfileView: View {
     private var athleteRank: (title: String, icon: String, color: Color) {
         let tonnes = totalTonnage / 1000.0
         if tonnes >= 100 {
-            return ("DIAMOND ATHLETE", "diamond.fill", Color(red: 0.60, green: 0.85, blue: 1.00))
+            return ("DIAMOND ATHLETE", "diamond.fill", Color.white)
         } else if tonnes >= 50 {
-            return ("PLATINUM ATHLETE", "crown.fill", Color(red: 0.85, green: 0.85, blue: 0.95))
+            return ("PLATINUM ATHLETE", "crown.fill", Color.gray)
         } else if tonnes >= 10 {
-            return ("GOLD ATHLETE", "trophy.fill", Color(red: 0.95, green: 0.80, blue: 0.30))
+            return ("GOLD ATHLETE", "trophy.fill", MutedEarth.slateBlue)
         } else if tonnes >= 1 {
-            return ("SILVER ATHLETE", "star.fill", Color(red: 0.75, green: 0.80, blue: 0.85))
+            return ("SILVER ATHLETE", "star.fill", Color.gray)
         } else {
-            return ("ROOKIE ATHLETE", "flame.fill", paleBlue)
+            return ("ROOKIE ATHLETE", "flame.fill", MutedEarth.slateBlue)
         }
     }
     
@@ -128,23 +128,19 @@ struct ProfileView: View {
                     VStack(spacing: 16) {
                         HStack(spacing: 16) {
                             ZStack {
-                                Circle()
-                                    .fill(paleBlue.opacity(0.15))
+                                Rectangle()
+                                    .fill(Color.black)
                                     .frame(width: 60, height: 60)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(paleBlue.opacity(0.4), lineWidth: 1.0)
-                                    )
+                                    .border(slateBlue, width: 1.0)
                                 
                                 Text(userName.prefix(1).uppercased())
-                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(paleBlue)
+                                    .font(.system(size: 26, weight: .bold))
+                                    .foregroundStyle(slateBlue)
                             }
                             
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(userName.isEmpty ? "Get Fit Athlete" : userName)
-                                    .font(.title2)
-                                    .fontWeight(.medium)
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundStyle(.white)
                                 
                                 HStack(spacing: 6) {
@@ -157,12 +153,8 @@ struct ProfileView: View {
                                 .foregroundStyle(athleteRank.color)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(athleteRank.color.opacity(0.12))
-                                .clipShape(Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(athleteRank.color.opacity(0.35), lineWidth: 0.8)
-                                )
+                                .background(Color.black)
+                                .border(athleteRank.color, width: 1.0)
                             }
                             
                             Spacer()
@@ -170,9 +162,12 @@ struct ProfileView: View {
                             Button {
                                 showEditProfileSheet = true
                             } label: {
-                                Image(systemName: "pencil.circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundStyle(paleBlue)
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundStyle(slateBlue)
+                                    .padding(8)
+                                    .background(Color.black)
+                                    .border(slateBlue, width: 1.0)
                             }
                         }
                         
@@ -188,13 +183,12 @@ struct ProfileView: View {
                         }
                     }
                     .padding(18)
-                    .matteBlack(cornerRadius: 20, accentColor: paleBlue)
+                    .monochromeCard()
                     
                     // 2. Kokonut Activity Rings Card
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Daily Activity Rings")
-                            .font(.headline)
-                            .fontWeight(.light)
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                         
                         KokonutAppleActivityCard(
@@ -211,88 +205,77 @@ struct ProfileView: View {
                     // 3. Lifetime Stats Grid
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Lifetime Overview")
-                            .font(.headline)
-                            .fontWeight(.light)
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                         
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
                             // Total Tonnage
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Total Lifted")
-                                    .font(.caption)
-                                    .fontWeight(.light)
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color.gray)
                                 
                                 Text(formatTonnage(totalTonnage))
-                                    .font(.title2)
-                                    .fontWeight(.light)
-                                    .foregroundStyle(paleBlue)
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(slateBlue)
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
+                            .monochromeCard()
                             
                             // Workouts Completed
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Workouts Done")
-                                    .font(.caption)
-                                    .fontWeight(.light)
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color.gray)
                                 
                                 Text("\(completedSessions.count)")
-                                    .font(.title2)
-                                    .fontWeight(.light)
+                                    .font(.system(size: 18, weight: .bold))
                                     .foregroundStyle(.white)
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
+                            .monochromeCard()
                             
                             // Total Cardio Time
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Total Cardio")
-                                    .font(.caption)
-                                    .fontWeight(.light)
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color.gray)
                                 
                                 Text("\(Int(totalCardioMinutes)) min")
-                                    .font(.title2)
-                                    .fontWeight(.light)
-                                    .foregroundStyle(Color(red: 0.55, green: 0.82, blue: 0.68))
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(slateBlue)
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
+                            .monochromeCard()
                             
                             // Current Streak
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Active Streak")
-                                    .font(.caption)
-                                    .fontWeight(.light)
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color.gray)
                                 
                                 Text("\(streakDays) Days")
-                                    .font(.title2)
-                                    .fontWeight(.light)
-                                    .foregroundStyle(Color(red: 0.92, green: 0.70, blue: 0.50))
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(MutedEarth.terracotta)
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .matteBlack(cornerRadius: 16, accentColor: paleBlue)
+                            .monochromeCard()
                         }
                     }
                     
                     // 4. Preferences Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Preferences")
-                            .font(.headline)
-                            .fontWeight(.light)
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Weight Unit")
-                                .font(.subheadline)
-                                .fontWeight(.light)
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(Color.gray)
                             
                             Picker("Unit", selection: $weightUnit.unit) {
@@ -302,7 +285,7 @@ struct ProfileView: View {
                             .pickerStyle(.segmented)
                         }
                         .padding(16)
-                        .matteBlack(cornerRadius: 14, accentColor: paleBlue)
+                        .monochromeCard()
                     }
                 }
                 .padding(20)
@@ -313,7 +296,7 @@ struct ProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
-                        .foregroundColor(paleBlue)
+                        .foregroundColor(slateBlue)
                 }
             }
             .sheet(isPresented: $showEditProfileSheet) {
@@ -334,13 +317,12 @@ struct ProfileView: View {
                 .foregroundStyle(Color.gray)
             
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .monochromeCard()
     }
     
     private func syncAppleHealth() {
@@ -384,7 +366,7 @@ struct EditProfileSheet: View {
     @State private var inputHeightStr: String = ""
     @State private var inputTargetWeightStr: String = ""
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let slateBlue = MutedEarth.slateBlue
     
     var body: some View {
         NavigationStack {
@@ -439,7 +421,7 @@ struct EditProfileSheet: View {
                         dismiss()
                     }
                     .fontWeight(.bold)
-                    .foregroundStyle(paleBlue)
+                    .foregroundStyle(slateBlue)
                 }
             }
             .onAppear {

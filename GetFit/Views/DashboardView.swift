@@ -196,7 +196,7 @@ struct DashboardView: View {
                     Text("Days")
                         .font(.title2)
                         .fontWeight(.light)
-                        .foregroundStyle(Color(UIColor.secondaryLabel))
+                        .foregroundStyle(MutedEarth.slateBlue)
                 }
             }
             
@@ -583,10 +583,10 @@ struct DashboardView: View {
             Text(activeSessions.isEmpty ? "Start Workout" : "Resume Workout")
                 .font(.body)
                 .fontWeight(.medium)
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(.white)
+                .background(MutedEarth.slateBlue)
                 .clipShape(Rectangle())
         }
     }

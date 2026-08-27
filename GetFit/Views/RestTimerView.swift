@@ -21,7 +21,7 @@ struct RestTimerView: View {
 
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground)
+            Color.black
                 .ignoresSafeArea()
             
             VStack(spacing: 32) {
@@ -36,14 +36,13 @@ struct RestTimerView: View {
                     
                     Circle()
                         .trim(from: 0, to: progress)
-                        .stroke(Color(red: 0.68, green: 0.78, blue: 0.90), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(MutedEarth.slateBlue, style: StrokeStyle(lineWidth: 4, lineCap: .square))
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 1.0), value: progress)
                     
                     Text(String(format: "%d:%02d", timeRemaining / 60, timeRemaining % 60))
-                        .font(.system(size: 56))
+                        .font(.system(size: 80, weight: .black))
                         .monospacedDigit()
-                        .fontWeight(.ultraLight)
                         .foregroundColor(.white)
                 }
                 .frame(width: 200, height: 200)
@@ -59,9 +58,9 @@ struct RestTimerView: View {
                                 .font(.subheadline)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(selectedDuration == sec ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
+                                .background(selectedDuration == sec ? MutedEarth.slateBlue : Color.black)
                                 .foregroundColor(selectedDuration == sec ? .black : .gray)
-                                .clipShape(Capsule())
+                                .border(selectedDuration == sec ? MutedEarth.slateBlue : Color.white.opacity(0.3), width: 0.5)
                         }
                     }
                 }
@@ -75,7 +74,7 @@ struct RestTimerView: View {
                     Text("Skip")
                         .font(.body)
                         .fontWeight(.regular)
-                        .foregroundColor(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundColor(MutedEarth.slateBlue)
                 }
             }
         }

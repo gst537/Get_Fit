@@ -12,9 +12,9 @@ struct NutritionTrackerView: View {
     @State private var selectedMealPhoto: UIImage? = nil
     @State private var mealToEdit: MealLog? = nil
     
-    let paleBlue = Color.white
-    let warmGold = Color(white: 0.8)
-    let mintGreen = Color(white: 0.6)
+    let paleBlue = MutedEarth.slateBlue
+    let warmGold = MutedEarth.terracotta
+    let mintGreen = MutedEarth.softSage
     
     private var activeGoal: NutritionGoal {
         if let existing = nutritionGoals.first {
