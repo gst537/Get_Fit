@@ -27,6 +27,7 @@ struct MonochromeCardModifier: ViewModifier {
     }
 }
 
+@MainActor
 extension View {
     func monochromeCard(cornerRadius: CGFloat = 0) -> some View {
         self.modifier(MonochromeCardModifier(cornerRadius: cornerRadius))

@@ -135,14 +135,14 @@ struct NutritionTrackerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(paleBlue.opacity(0.15))
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
             }
             
             let progress = min(1.0, Double(totalConsumedCalories) / Double(max(1, activeGoal.targetCalories)))
             let ringGradients = isCalorieOverGoal
-                ? [Color(red: 1.00, green: 0.45, blue: 0.45), Color(red: 1.00, green: 0.25, blue: 0.25)]
-                : [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)]
+                ? [MutedEarth.terracotta, MutedEarth.terracotta]
+                : [paleBlue, paleBlue]
             
             ZStack {
                 AnimatedRingView(
@@ -155,15 +155,15 @@ struct NutritionTrackerView: View {
                 VStack(spacing: 2) {
                     if isCalorieOverGoal {
                         Text("+\(abs(remainingCalories))")
-                            .font(.system(size: 38, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
+                            .font(.system(size: 42, weight: .black))
+                            .foregroundStyle(MutedEarth.terracotta)
                         Text("kcal over goal")
                             .font(.caption2)
                             .fontWeight(.medium)
-                            .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
+                            .foregroundStyle(MutedEarth.terracotta)
                     } else {
                         Text("\(remainingCalories)")
-                            .font(.system(size: 38, weight: .heavy, design: .rounded))
+                            .font(.system(size: 42, weight: .black))
                             .foregroundStyle(.white)
                         Text("kcal left")
                             .font(.caption2)
@@ -196,7 +196,7 @@ struct NutritionTrackerView: View {
                 consumed: totalConsumedProtein,
                 target: activeGoal.targetProtein,
                 unit: "g",
-                gradient: [paleBlue, Color(red: 0.45, green: 0.65, blue: 0.95)]
+                gradient: [paleBlue, paleBlue]
             )
             
             macroRingItem(
@@ -204,7 +204,7 @@ struct NutritionTrackerView: View {
                 consumed: totalConsumedCarbs,
                 target: activeGoal.targetCarbs,
                 unit: "g",
-                gradient: [warmGold, Color(red: 0.95, green: 0.85, blue: 0.50)]
+                gradient: [warmGold, warmGold]
             )
             
             macroRingItem(
@@ -212,7 +212,7 @@ struct NutritionTrackerView: View {
                 consumed: totalConsumedFats,
                 target: activeGoal.targetFats,
                 unit: "g",
-                gradient: [mintGreen, Color(red: 0.35, green: 0.90, blue: 0.70)]
+                gradient: [mintGreen, mintGreen]
             )
         }
     }
@@ -230,7 +230,7 @@ struct NutritionTrackerView: View {
                 )
                 
                 Text("\(consumed)")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
             }
             

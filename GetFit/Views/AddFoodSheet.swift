@@ -163,8 +163,9 @@ struct AddFoodSheet: View {
                                 .foregroundStyle(selectedMealType == type ? .black : Color.gray)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .background(selectedMealType == type ? paleBlue : Color(UIColor.secondarySystemBackground))
-                                .clipShape(Capsule())
+                                .background(selectedMealType == type ? paleBlue : Color.black)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                                 .onTapGesture { selectedMealType = type }
                         }
                     }
@@ -177,8 +178,7 @@ struct AddFoodSheet: View {
                     TextField("e.g., Dosa & Coffee Breakfast", text: $foodName)
                         .font(.body)
                         .padding(14)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .monochromeCard(cornerRadius: 12)
                 }
                 
                 // Calories
@@ -192,8 +192,7 @@ struct AddFoodSheet: View {
                         Text("kcal").font(.subheadline).foregroundStyle(Color.gray)
                     }
                     .padding(14)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .monochromeCard(cornerRadius: 12)
                 }
                 
                 // Macros
@@ -217,7 +216,7 @@ struct AddFoodSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(paleBlue)
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                         .opacity(canSave ? 1.0 : 0.5)
                 }
                 .disabled(!canSave)
@@ -342,14 +341,30 @@ struct AddFoodSheet: View {
                     }
                 }
                 .padding(12)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12)
+                .monochromeCard(cornerRadius: 10)
             }
         }
     }
     
     // MARK: - Photo Section
     
+    private var galleryPickerLabel: some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle().fill(paleBlue.opacity(0.15)).frame(width: 36, height: 36)
+                Image(systemName: "photo.on.rectangle").font(.system(size: 16)).foregroundStyle(paleBlue)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Gallery").font(.subheadline).fontWeight(.medium).foregroundStyle(.white)
+                Text("Choose Photo").font(.caption2).foregroundStyle(Color.gray)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .monochromeCard(cornerRadius: 16)
+    }
+
     private var photoSection: some View {
         VStack(spacing: 12) {
             if let image = selectedUIImage {
@@ -387,25 +402,11 @@ struct AddFoodSheet: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .monochromeCard(cornerRadius: 16)
                     }
                     
                     PhotosPicker(selection: $selectedItem, matching: .images) {
-                        HStack(spacing: 8) {
-                            ZStack {
-                                Circle().fill(paleBlue.opacity(0.15)).frame(width: 36, height: 36)
-                                Image(systemName: "photo.on.rectangle").font(.system(size: 16)).foregroundStyle(paleBlue)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Gallery").font(.subheadline).fontWeight(.medium).foregroundStyle(.white)
-                                Text("Choose Photo").font(.caption2).foregroundStyle(Color.gray)
-                            }
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        galleryPickerLabel
                     }
                 }
             }
@@ -460,7 +461,7 @@ struct AddFoodSheet: View {
                     }
                     .foregroundStyle(paleBlue)
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(paleBlue.opacity(0.15)).clipShape(Capsule())
+                    .background(paleBlue.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 6))
                 }
             }
             
@@ -490,8 +491,7 @@ struct AddFoodSheet: View {
             }
         }
         .padding(14)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .monochromeCard(cornerRadius: 16)
     }
     
     private func itemRow(_ item: DetectedFoodItem) -> some View {
@@ -515,7 +515,7 @@ struct AddFoodSheet: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(paleBlue)
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(paleBlue.opacity(0.15)).clipShape(Capsule())
+                    .background(paleBlue.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 6))
                 
                 // Edit button
                 Button { itemToEdit = item } label: {
@@ -570,7 +570,7 @@ struct AddFoodSheet: View {
                     }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Color.white.opacity(0.06)).clipShape(Capsule())
+                .background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
         .padding(10)
@@ -652,8 +652,7 @@ struct AddFoodSheet: View {
                 Text("g").font(.caption2).foregroundStyle(Color.gray)
             }
             .padding(10)
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .monochromeCard(cornerRadius: 12)
         }
     }
     
