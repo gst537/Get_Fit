@@ -224,7 +224,7 @@ struct AddFoodSheet: View {
             }
             .padding(24)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.black.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onAppear { selectedMealType = initialMealType }

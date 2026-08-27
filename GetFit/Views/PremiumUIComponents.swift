@@ -79,15 +79,7 @@ struct AnimatedRingView: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt)
                 )
                 .rotationEffect(.degrees(-90))
-            
-            // Dot at tip
-            if animatedProgress > 0.02 {
-                Circle()
-                    .fill(gradient.last ?? .white)
-                    .frame(width: lineWidth, height: lineWidth)
-                    .offset(y: -size / 2)
-                    .rotationEffect(.degrees(360 * animatedProgress - 90))
-            }
+
         }
         .frame(width: size, height: size)
         .onAppear {

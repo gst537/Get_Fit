@@ -337,7 +337,7 @@ struct ExerciseDetailSheet: View {
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.black.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onAppear {
