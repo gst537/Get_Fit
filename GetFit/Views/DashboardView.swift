@@ -124,7 +124,7 @@ struct DashboardView: View {
                                     .font(.body)
                                     .fontWeight(.regular)
                             }
-                            .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                         }
@@ -168,7 +168,7 @@ struct DashboardView: View {
                 } label: {
                     Image(systemName: "person.circle")
                         .font(.system(size: 20))
-                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundStyle(.white)
                 }
             }
         }
@@ -189,8 +189,8 @@ struct DashboardView: View {
                 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("\(calculatedStreak)")
-                        .font(.system(size: 80, design: .rounded))
-                        .fontWeight(.heavy)
+                        .font(.system(size: 90, design: .default))
+                        .fontWeight(.black)
                         .foregroundStyle(.white)
                     
                     Text("Days")
@@ -208,7 +208,7 @@ struct DashboardView: View {
             } label: {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(.white)
             }
         }
     }
@@ -258,7 +258,7 @@ struct DashboardView: View {
                     }) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 16))
-                            .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                            .foregroundStyle(.white)
                     }
                     
                     Spacer()
@@ -277,7 +277,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .glassmorphic(cornerRadius: 18)
+            .monochromeCard()
             .shimmerGlow()
         }
     }
@@ -352,7 +352,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .glassmorphic(cornerRadius: 18)
+            .monochromeCard()
         }
     }
 
@@ -387,7 +387,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .glassmorphic(cornerRadius: 18)
+            .monochromeCard()
         }
     }
     
@@ -416,7 +416,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Int(weeklyDuration)) min")
                         .font(.system(size: 26, weight: .light))
-                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .foregroundStyle(.white)
                     
                     Text("Logged This Week")
                         .font(.caption2)
@@ -426,7 +426,7 @@ struct DashboardView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-            .glassmorphic(cornerRadius: 18)
+            .monochromeCard()
         }
     }
     
@@ -441,7 +441,7 @@ struct DashboardView: View {
                 Image(systemName: "moon.zzz.fill")
                     .font(.system(size: 40))
                     .fontWeight(.ultraLight)
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(.white)
                 
                 Text("Rest Day")
                     .font(.title2)
@@ -460,7 +460,7 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 36)
-            .glassmorphic(cornerRadius: 20)
+            .monochromeCard()
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showRestDaySheet) {
@@ -543,7 +543,7 @@ struct DashboardView: View {
                                     Text(weightUnit.formatWeight(entry.defaultWeight))
                                         .font(.subheadline)
                                         .fontWeight(.light)
-                                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                                        .foregroundStyle(.white)
                                 }
                                 
                                 Text("\(entry.defaultSets) × \(entry.defaultReps)")
@@ -586,9 +586,8 @@ struct DashboardView: View {
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Color(red: 0.68, green: 0.78, blue: 0.90))
-                .clipShape(Capsule())
-                .shadow(color: Color(red: 0.68, green: 0.78, blue: 0.90).opacity(0.3), radius: 12, x: 0, y: 6)
+                .background(.white)
+                .clipShape(Rectangle())
         }
     }
 }

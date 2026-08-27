@@ -123,7 +123,7 @@ struct AddFoodSheet: View {
     @State private var showKeySettings = false
     
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color.white
 
     var body: some View {
         ScrollView {
@@ -202,8 +202,8 @@ struct AddFoodSheet: View {
                         .font(.subheadline).fontWeight(.light).foregroundStyle(Color.gray)
                     HStack(spacing: 12) {
                         macroField(title: "Protein", color: paleBlue, text: $proteinText)
-                        macroField(title: "Carbs", color: Color(red: 0.95, green: 0.75, blue: 0.40), text: $carbsText)
-                        macroField(title: "Fats", color: Color(red: 0.45, green: 0.85, blue: 0.65), text: $fatsText)
+                        macroField(title: "Carbs", color: Color(white: 0.8), text: $carbsText)
+                        macroField(title: "Fats", color: Color(white: 0.6), text: $fatsText)
                     }
                 }
                 
@@ -504,8 +504,8 @@ struct AddFoodSheet: View {
                         .font(.subheadline).foregroundStyle(.white)
                     HStack(spacing: 6) {
                         Text("P:\(item.protein)g").font(.caption2).foregroundStyle(paleBlue)
-                        Text("C:\(item.carbs)g").font(.caption2).foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
-                        Text("F:\(item.fats)g").font(.caption2).foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
+                        Text("C:\(item.carbs)g").font(.caption2).foregroundStyle(Color(white: 0.8))
+                        Text("F:\(item.fats)g").font(.caption2).foregroundStyle(Color(white: 0.6))
                     }
                 }
                 
@@ -715,7 +715,7 @@ struct AddNewItemSheet: View {
     @State private var fatsInput = "3"
     @State private var iconInput = "🍲"
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color.white
     
     var body: some View {
         NavigationStack {
@@ -772,7 +772,7 @@ struct EditDetectedItemSheet: View {
     @State private var carbsInput = ""
     @State private var fatsInput = ""
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color.white
     
     var body: some View {
         NavigationStack {
