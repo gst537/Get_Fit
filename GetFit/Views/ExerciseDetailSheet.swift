@@ -15,7 +15,7 @@ struct ExerciseDetailSheet: View {
     @State private var showCameraPicker = false
     @State private var loadedUIImage: UIImage? = nil
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let slateBlue = MutedEarth.slateBlue
 
     var body: some View {
         ScrollView {
@@ -31,17 +31,17 @@ struct ExerciseDetailSheet: View {
                         Text(exercise.category.uppercased())
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1.0)
-                            .foregroundStyle(paleBlue)
+                            .foregroundStyle(slateBlue)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(paleBlue.opacity(0.12))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                            .background(slateBlue.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(slateBlue.opacity(0.35), lineWidth: 0.8))
                         
                         HStack(spacing: 6) {
                             Image(systemName: iconForEquipment(exercise.equipmentType))
                                 .font(.system(size: 12))
-                                .foregroundStyle(paleBlue)
+                                .foregroundStyle(slateBlue)
                             Text(exercise.equipmentType)
                                 .font(.caption)
                                 .fontWeight(.regular)
@@ -50,7 +50,7 @@ struct ExerciseDetailSheet: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(Color.white.opacity(0.06))
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
                 
@@ -98,7 +98,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(paleBlue)
+                        .foregroundStyle(slateBlue)
                     }
                     
                     if isEditingVideo {
@@ -106,8 +106,9 @@ struct ExerciseDetailSheet: View {
                             TextField("Paste YouTube or Shorts URL", text: $videoURLInput)
                                 .font(.body)
                                 .padding(12)
-                                .background(Color(UIColor.secondarySystemBackground))
+                                .background(Color.black)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                             
@@ -122,11 +123,11 @@ struct ExerciseDetailSheet: View {
                             HStack(spacing: 16) {
                                 ZStack {
                                     Circle()
-                                        .fill(paleBlue.opacity(0.12))
+                                        .fill(slateBlue.opacity(0.12))
                                         .frame(width: 44, height: 44)
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 16))
-                                        .foregroundStyle(paleBlue)
+                                        .foregroundStyle(slateBlue)
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -148,13 +149,13 @@ struct ExerciseDetailSheet: View {
                                     .foregroundStyle(Color.gray.opacity(0.5))
                             }
                             .padding(16)
-                            .matteBlack(cornerRadius: 14, accentColor: paleBlue)
+                            .matteBlack(cornerRadius: 14, accentColor: slateBlue)
                         }
                     } else {
                         HStack {
                             Image(systemName: "play.rectangle")
                                 .font(.system(size: 20))
-                                .foregroundStyle(paleBlue.opacity(0.6))
+                                .foregroundStyle(slateBlue.opacity(0.6))
                             Text("No video added yet. Tap '+ Add Video' to attach a YouTube Short or tutorial.")
                                 .font(.caption)
                                 .fontWeight(.light)
@@ -162,7 +163,7 @@ struct ExerciseDetailSheet: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .matteBlack(cornerRadius: 12, accentColor: paleBlue)
+                        .matteBlack(cornerRadius: 12, accentColor: slateBlue)
                     }
                 }
                 
@@ -197,7 +198,7 @@ struct ExerciseDetailSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .stroke(paleBlue.opacity(0.3), lineWidth: 0.8)
+                                    .stroke(slateBlue.opacity(0.3), lineWidth: 0.8)
                             )
                     } else if let imgStr = exercise.imageURL, !imgStr.isEmpty, imgStr.hasPrefix("http"), let url = URL(string: imgStr) {
                         AsyncImage(url: url) { phase in
@@ -205,7 +206,7 @@ struct ExerciseDetailSheet: View {
                             case .empty:
                                 ProgressView()
                                     .frame(maxWidth: .infinity, minHeight: 160)
-                                    .matteBlack(cornerRadius: 14, accentColor: paleBlue)
+                                    .matteBlack(cornerRadius: 14, accentColor: slateBlue)
                             case .success(let image):
                                 image
                                     .resizable()
@@ -226,7 +227,7 @@ struct ExerciseDetailSheet: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "photo.badge.plus")
                                     .font(.system(size: 24))
-                                    .foregroundStyle(paleBlue)
+                                    .foregroundStyle(slateBlue)
                                 Text("Attach Exercise Photo or Form Diagram")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
@@ -246,8 +247,8 @@ struct ExerciseDetailSheet: View {
                                     .foregroundStyle(.black)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 8)
-                                    .background(paleBlue)
-                                    .clipShape(Capsule())
+                                    .background(slateBlue)
+                                    .clipShape(RoundedRectangle(cornerRadius: 6))
                                 }
                                 
                                 // Camera Button
@@ -261,18 +262,18 @@ struct ExerciseDetailSheet: View {
                                             .font(.caption)
                                             .fontWeight(.medium)
                                     }
-                                    .foregroundStyle(paleBlue)
+                                    .foregroundStyle(slateBlue)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 8)
-                                    .background(paleBlue.opacity(0.15))
-                                    .clipShape(Capsule())
-                                    .overlay(Capsule().stroke(paleBlue.opacity(0.4), lineWidth: 0.8))
+                                    .background(slateBlue.opacity(0.15))
+                                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(slateBlue.opacity(0.4), lineWidth: 0.8))
                                 }
                             }
                         }
                         .padding(20)
                         .frame(maxWidth: .infinity)
-                        .matteBlack(cornerRadius: 14, accentColor: paleBlue)
+                        .matteBlack(cornerRadius: 14, accentColor: slateBlue)
                     }
                     
                     // Replace/Change Photo Button when image exists
@@ -286,12 +287,12 @@ struct ExerciseDetailSheet: View {
                                         .font(.caption)
                                         .fontWeight(.medium)
                                 }
-                                .foregroundStyle(paleBlue)
+                                .foregroundStyle(slateBlue)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(paleBlue.opacity(0.12))
-                                .clipShape(Capsule())
-                                .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                                .background(slateBlue.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(slateBlue.opacity(0.35), lineWidth: 0.8))
                             }
                             
                             Button {
@@ -304,12 +305,12 @@ struct ExerciseDetailSheet: View {
                                         .font(.caption)
                                         .fontWeight(.medium)
                                 }
-                                .foregroundStyle(paleBlue)
+                                .foregroundStyle(slateBlue)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(paleBlue.opacity(0.12))
-                                .clipShape(Capsule())
-                                .overlay(Capsule().stroke(paleBlue.opacity(0.35), lineWidth: 0.8))
+                                .background(slateBlue.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(slateBlue.opacity(0.35), lineWidth: 0.8))
                             }
                         }
                     }
@@ -329,9 +330,8 @@ struct ExerciseDetailSheet: View {
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(paleBlue)
-                    .clipShape(Capsule())
-                    .shadow(color: paleBlue.opacity(0.2), radius: 6, x: 0, y: 3)
+                    .background(slateBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
             }
             .padding(24)

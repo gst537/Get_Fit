@@ -276,7 +276,7 @@ struct DashboardView: View {
                 }
             }
             .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
             .monochromeCard()
             .shimmerGlow()
         }
@@ -351,7 +351,7 @@ struct DashboardView: View {
                 }
             }
             .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
             .monochromeCard()
         }
     }
@@ -386,7 +386,7 @@ struct DashboardView: View {
                 }
             }
             .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
             .monochromeCard()
         }
     }
@@ -425,7 +425,7 @@ struct DashboardView: View {
                 }
             }
             .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
             .monochromeCard()
         }
     }

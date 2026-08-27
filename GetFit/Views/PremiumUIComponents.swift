@@ -157,7 +157,7 @@ struct BodyPartActivationCard: View {
                 Text("Body Part Activation & Form Guide")
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(MutedEarth.slateBlue)
                 
                 Spacer()
                 
@@ -165,8 +165,8 @@ struct BodyPartActivationCard: View {
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Color.black)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white)
+                    .background(MutedEarth.slateBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             
             // Targeted Muscle Activation Gauges
@@ -194,7 +194,7 @@ struct BodyPartActivationCard: View {
                                         .frame(height: 4)
                                     
                                     Rectangle()
-                                        .fill(Color.white)
+                                        .fill(MuscleGroupBadge.colorForMuscle(muscle))
                                         .frame(width: geo.size.width * (CGFloat(percentage) / 100.0), height: 4)
                                 }
                             }
@@ -209,6 +209,7 @@ struct BodyPartActivationCard: View {
                 }
                 .padding(12)
                 .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
             // Instructions
@@ -227,7 +228,8 @@ struct BodyPartActivationCard: View {
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.black)
                                 .frame(width: 20, height: 20)
-                                .background(Color.white)
+                                .background(MutedEarth.slateBlue)
+                                .clipShape(Circle())
                             
                             Text(step)
                                 .font(.caption)
@@ -240,7 +242,7 @@ struct BodyPartActivationCard: View {
             }
         }
         .padding(14)
-        .monochromeCard(cornerRadius: 0)
+        .monochromeCard(cornerRadius: 12)
     }
     
     private func parseInstructions(_ text: String, machineName: String, equipmentType: String) -> [String] {
