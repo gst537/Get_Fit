@@ -155,7 +155,7 @@ struct NutritionTrackerView: View {
                 VStack(spacing: 2) {
                     if isCalorieOverGoal {
                         Text("+\(abs(remainingCalories))")
-                            .font(.system(size: 32, weight: .light, design: .rounded))
+                            .font(.system(size: 38, weight: .heavy, design: .rounded))
                             .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
                         Text("kcal over goal")
                             .font(.caption2)
@@ -163,7 +163,7 @@ struct NutritionTrackerView: View {
                             .foregroundStyle(Color(red: 1.00, green: 0.45, blue: 0.45))
                     } else {
                         Text("\(remainingCalories)")
-                            .font(.system(size: 32, weight: .light, design: .rounded))
+                            .font(.system(size: 38, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
                         Text("kcal left")
                             .font(.caption2)
@@ -286,6 +286,7 @@ struct NutritionTrackerView: View {
                 }
                 
                 Button {
+                    Haptics.playLightImpact()
                     selectedCategoryForAdd = categoryName
                     showAddFoodSheet = true
                 } label: {
@@ -389,6 +390,7 @@ struct NutritionTrackerView: View {
                                 
                                 HStack(spacing: 10) {
                                     Button {
+                                        Haptics.playLightImpact()
                                         adjustLoggedMealQty(meal, delta: -1)
                                     } label: {
                                         Image(systemName: "minus.circle.fill")
@@ -404,6 +406,7 @@ struct NutritionTrackerView: View {
                                         .multilineTextAlignment(.center)
                                     
                                     Button {
+                                        Haptics.playLightImpact()
                                         adjustLoggedMealQty(meal, delta: 1)
                                     } label: {
                                         Image(systemName: "plus.circle.fill")

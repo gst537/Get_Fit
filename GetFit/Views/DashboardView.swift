@@ -114,6 +114,7 @@ struct DashboardView: View {
                         }
                         
                         Button {
+                            Haptics.playLightImpact()
                             showCreateExercise = true
                         } label: {
                             HStack(spacing: 8) {
@@ -162,6 +163,7 @@ struct DashboardView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    Haptics.playLightImpact()
                     showProfileSheet = true
                 } label: {
                     Image(systemName: "person.circle")
@@ -187,8 +189,8 @@ struct DashboardView: View {
                 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("\(calculatedStreak)")
-                        .font(.system(size: 80))
-                        .fontWeight(.ultraLight)
+                        .font(.system(size: 80, design: .rounded))
+                        .fontWeight(.heavy)
                         .foregroundStyle(.white)
                     
                     Text("Days")
@@ -201,6 +203,7 @@ struct DashboardView: View {
             Spacer()
             
             Button {
+                Haptics.playLightImpact()
                 showProfileSheet = true
             } label: {
                 Image(systemName: "person.crop.circle.fill")
@@ -240,13 +243,19 @@ struct DashboardView: View {
                     .minimumScaleFactor(0.7)
                 
                 HStack(spacing: 12) {
-                    Button(action: { updateSteps(by: -500) }) {
+                    Button(action: {
+                        Haptics.playLightImpact()
+                        updateSteps(by: -500)
+                    }) {
                         Image(systemName: "minus.circle")
                             .font(.system(size: 16))
                             .foregroundStyle(Color.gray)
                     }
                     
-                    Button(action: { updateSteps(by: 500) }) {
+                    Button(action: {
+                        Haptics.playLightImpact()
+                        updateSteps(by: 500)
+                    }) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 16))
                             .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
@@ -255,7 +264,10 @@ struct DashboardView: View {
                     Spacer()
                     
                     if !healthKitManager.isAuthorized {
-                        Button(action: syncHealthKitSteps) {
+                        Button(action: {
+                            Haptics.playLightImpact()
+                            syncHealthKitSteps()
+                        }) {
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 14))
                                 .foregroundStyle(.pink)
@@ -266,6 +278,7 @@ struct DashboardView: View {
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
             .glassmorphic(cornerRadius: 18)
+            .shimmerGlow()
         }
     }
     
@@ -421,6 +434,7 @@ struct DashboardView: View {
     
     private var restDaySection: some View {
         Button {
+            Haptics.playLightImpact()
             showRestDaySheet = true
         } label: {
             VStack(spacing: 16) {
@@ -557,6 +571,7 @@ struct DashboardView: View {
     
     private var startWorkoutButton: some View {
         Button {
+            Haptics.playLightImpact()
             guard let split = todaySplit else { return }
             let session = activeSessions.first ?? WorkoutSession(splitName: split.name)
             if activeSessions.isEmpty {

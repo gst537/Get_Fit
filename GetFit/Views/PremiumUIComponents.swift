@@ -458,3 +458,44 @@ extension View {
         self.modifier(ShimmerEffect(color: color))
     }
 }
+
+// MARK: - Haptic Feedback
+
+@MainActor
+public struct Haptics {
+    public static func playLightImpact() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    public static func playMediumImpact() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    public static func playHeavyImpact() {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    public static func playSuccess() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.success)
+    }
+    
+    public static func playError() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.error)
+    }
+    
+    public static func playSelection() {
+        let generator = UISelectionFeedbackGenerator()
+        generator.prepare()
+        generator.selectionChanged()
+    }
+}

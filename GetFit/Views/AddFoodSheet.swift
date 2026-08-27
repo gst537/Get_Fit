@@ -208,7 +208,10 @@ struct AddFoodSheet: View {
                 }
                 
                 // Save Button
-                Button { saveMeal() } label: {
+                Button {
+                    Haptics.playSuccess()
+                    saveMeal()
+                } label: {
                     Text("Save Food Entry")
                         .font(.body).fontWeight(.medium).foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
@@ -588,6 +591,7 @@ struct AddFoodSheet: View {
         detectedItems[idx].fats = Int(round(Double(detectedItems[idx].baseFats) * newQty))
         
         recalcTotals()
+        Haptics.playLightImpact()
     }
     
     private func recalcTotals() {
