@@ -339,9 +339,25 @@ struct AddFoodSheet: View {
                 .padding(10).frame(maxWidth: .infinity)
                 .background(Color.green.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
             } else if let err = aiErrorMessage {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-                    Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
+                        Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                    }
+                    if err.contains("Deep Scan") || err.contains("confident") {
+                        Button {
+                            if let img = selectedUIImage {
+                                scanWithDeepAI(img)
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "sparkles")
+                                Text("Run Deep Scan (Cloud AI)")
+                            }
+                            .font(.caption2).fontWeight(.bold).foregroundStyle(paleBlue)
+                            .padding(.vertical, 4)
+                        }
+                    }
                 }
                 .padding(10).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
@@ -535,6 +551,37 @@ struct AddFoodSheet: View {
     
     // MARK: - AI Scan
     
+    private func scanWithDeepAI(_ image: UIImage) {
+        guard let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty else {
+            aiErrorMessage = "Deep Scan requires Gemini API Key in Profile Settings."
+            return
+        }
+        
+        isScanningWithAI = true
+        aiSuccessMessage = nil
+        aiErrorMessage = nil
+        detectedItems = []
+        
+        Task {
+            let result = await AIFoodVisionService.shared.analyzeFoodImage(image)
+            
+            await MainActor.run {
+                isScanningWithAI = false
+                if let err = result.errorMessage {
+                    aiErrorMessage = err
+                } else {
+                    foodName = result.plateTitle
+                    caloriesText = "\(result.totalCalories)"
+                    proteinText = "\(result.totalProtein)"
+                    carbsText = "\(result.totalCarbs)"
+                    fatsText = "\(result.totalFats)"
+                    detectedItems = result.detectedItems
+                    aiSuccessMessage = "Deep Scan Identified '\(result.plateTitle)'"
+                }
+            }
+        }
+    }
+    
     private func scanWithAI(_ image: UIImage) {
         isScanningWithAI = true
         aiSuccessMessage = nil
@@ -542,8 +589,8 @@ struct AddFoodSheet: View {
         detectedItems = []
         
         Task {
-            // Simulate local CoreML processing delay (500ms)
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            // Simulate local CoreML processing delay (50ms - near instant!)
+            try? await Task.sleep(nanoseconds: 50_000_000)
             
             let mockDatabase: [DetectedFoodItem] = [
                 DetectedFoodItem(name: "Chicken Biryani", calories: 450, protein: 30, carbs: 45, fats: 15, icon: "🍗"),
@@ -554,27 +601,35 @@ struct AddFoodSheet: View {
                 DetectedFoodItem(name: "Sprouted Channa", calories: 120, protein: 8, carbs: 20, fats: 2, icon: "🥗")
             ]
             
-            // Randomly select 1-2 items from the mock database
+            // Randomly select 1-2 items from the mock database (Simulating CoreML confidence)
             let numItems = Int.random(in: 1...2)
             let shuffled = mockDatabase.shuffled()
             let selected = Array(shuffled.prefix(numItems))
             
+            // CoreML confidence mock (randomly generate 60-99%)
+            let confidence = Int.random(in: 60...99)
+            
             await MainActor.run {
                 isScanningWithAI = false
-                detectedItems = selected
                 
-                let cals = detectedItems.reduce(0) { $0 + $1.calories }
-                let prot = detectedItems.reduce(0) { $0 + $1.protein }
-                let carb = detectedItems.reduce(0) { $0 + $1.carbs }
-                let fat = detectedItems.reduce(0) { $0 + $1.fats }
-                
-                foodName = detectedItems.map { $0.name }.joined(separator: " + ")
-                caloriesText = "\(cals)"
-                proteinText = "\(prot)"
-                carbsText = "\(carb)"
-                fatsText = "\(fat)"
-                
-                aiSuccessMessage = "CoreML Identified '\(foodName)'"
+                if confidence < 75 {
+                    aiErrorMessage = "Local AI is not confident. Please use Deep Scan."
+                } else {
+                    detectedItems = selected
+                    
+                    let cals = detectedItems.reduce(0) { $0 + $1.calories }
+                    let prot = detectedItems.reduce(0) { $0 + $1.protein }
+                    let carb = detectedItems.reduce(0) { $0 + $1.carbs }
+                    let fat = detectedItems.reduce(0) { $0 + $1.fats }
+                    
+                    foodName = detectedItems.map { $0.name }.joined(separator: " + ")
+                    caloriesText = "\(cals)"
+                    proteinText = "\(prot)"
+                    carbsText = "\(carb)"
+                    fatsText = "\(fat)"
+                    
+                    aiSuccessMessage = "CoreML Identified '\(foodName)'"
+                }
             }
         }
     }

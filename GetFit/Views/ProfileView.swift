@@ -19,6 +19,7 @@ struct ProfileView: View {
     @Query(sort: \BodyWeightEntry.date, order: .reverse) private var weightEntries: [BodyWeightEntry]
     
     @State private var showEditProfileSheet = false
+    @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
     
     let slateBlue = MutedEarth.slateBlue
     
@@ -283,6 +284,45 @@ struct ProfileView: View {
                                 Text("lb").tag(WeightUnitManager.WeightUnit.lb)
                             }
                             .pickerStyle(.segmented)
+                        }
+                        .padding(16)
+                        .monochromeCard()
+                    }
+                    
+                    // 5. AI Features Section
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("AI Integrations")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Gemini API Key (Deep Scan Fallback)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Color.gray)
+                            
+                            PasteFriendlyTextField(text: $geminiKeyInput, placeholder: "Tap to paste API Key")
+                                .frame(height: 44)
+                            
+                            HStack {
+                                PasteButton(payloadType: String.self) { strings in
+                                    if let text = strings.first {
+                                        geminiKeyInput = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        AIFoodVisionService.shared.savedAPIKey = geminiKeyInput
+                                    }
+                                }
+                                .labelStyle(.titleOnly)
+                                .tint(slateBlue)
+                                .buttonBorderShape(.capsule)
+                                
+                                Spacer()
+                                
+                                Button("Save") {
+                                    AIFoodVisionService.shared.savedAPIKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                }
+                                .font(.caption).fontWeight(.bold).foregroundStyle(.black)
+                                .padding(.horizontal, 16).padding(.vertical, 8)
+                                .background(slateBlue).clipShape(Capsule())
+                            }
                         }
                         .padding(16)
                         .monochromeCard()
