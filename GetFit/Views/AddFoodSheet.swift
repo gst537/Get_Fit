@@ -118,9 +118,7 @@ struct AddFoodSheet: View {
     @State private var aiSuccessMessage: String? = nil
     @State private var aiErrorMessage: String? = nil
     
-    // API key state
-    @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
-    @State private var showKeySettings = false
+
     
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     let paleBlue = MutedEarth.slateBlue
@@ -140,8 +138,7 @@ struct AddFoodSheet: View {
                         .foregroundStyle(paleBlue)
                 }
                 
-                // API Key Section
-                apiKeySection
+
                 
                 // Photo / Camera Section
                 photoSection
@@ -260,92 +257,7 @@ struct AddFoodSheet: View {
         !foodName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (Int(caloriesText) ?? 0) > 0
     }
     
-    // MARK: - API Key Section
-    
-    private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Status bar
-            HStack {
-                Image(systemName: "sparkles")
-                    .font(.caption).foregroundStyle(paleBlue)
-                
-                if let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty {
-                    Text("✅ AI Active — \(String(key.prefix(8)))•••")
-                        .font(.caption).fontWeight(.medium).foregroundStyle(.white)
-                } else {
-                    Text("Add Gemini API Key for AI Scanning")
-                        .font(.caption).fontWeight(.medium).foregroundStyle(.white)
-                }
-                
-                Spacer()
-                
-                if AIFoodVisionService.shared.savedAPIKey != nil {
-                    Button("Change Key") {
-                        withAnimation { showKeySettings.toggle() }
-                    }
-                    .font(.caption2).fontWeight(.medium).foregroundStyle(paleBlue)
-                }
-            }
-            .padding(10)
-            .background(paleBlue.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            
-            // Key input area
-            if showKeySettings || AIFoodVisionService.shared.savedAPIKey == nil {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Paste free Google Gemini API Key (aistudio.google.com):")
-                        .font(.caption2).foregroundStyle(Color.gray)
-                    
-                    // UIKit TextField — paste ALWAYS works (long-press → Paste)
-                    PasteFriendlyTextField(text: $geminiKeyInput, placeholder: "Tap here, then long-press → Paste")
-                        .frame(height: 44)
-                    
-                    // Action buttons row
-                    HStack(spacing: 10) {
-                        // Apple system PasteButton — one tap, no permission needed
-                        PasteButton(payloadType: String.self) { strings in
-                            if let text = strings.first {
-                                let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                geminiKeyInput = clean
-                                AIFoodVisionService.shared.savedAPIKey = clean
-                                aiErrorMessage = nil
-                                withAnimation { showKeySettings = false }
-                            }
-                        }
-                        .labelStyle(.titleOnly)
-                        .tint(paleBlue)
-                        .buttonBorderShape(.capsule)
-                        
-                        Spacer()
-                        
-                        if AIFoodVisionService.shared.savedAPIKey != nil {
-                            Button("Clear") {
-                                geminiKeyInput = ""
-                                AIFoodVisionService.shared.savedAPIKey = nil
-                                aiErrorMessage = nil
-                            }
-                            .font(.caption2).foregroundStyle(Color.red.opacity(0.8))
-                        }
-                        
-                        // Save button for manual typing
-                        Button("Save") {
-                            let clean = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !clean.isEmpty else { return }
-                            AIFoodVisionService.shared.savedAPIKey = clean
-                            aiErrorMessage = nil
-                            withAnimation { showKeySettings = false }
-                        }
-                        .font(.caption).fontWeight(.bold).foregroundStyle(.black)
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(paleBlue).clipShape(Capsule())
-                    }
-                }
-                .padding(12)
-                .padding(12)
-                .monochromeCard(cornerRadius: 10)
-            }
-        }
-    }
+
     
     // MARK: - Photo Section
     
@@ -427,18 +339,9 @@ struct AddFoodSheet: View {
                 .padding(10).frame(maxWidth: .infinity)
                 .background(Color.green.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
             } else if let err = aiErrorMessage {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-                        Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
-                    }
-                    Button("🔑 Tap here to paste a new Gemini Key") {
-                        geminiKeyInput = ""
-                        AIFoodVisionService.shared.savedAPIKey = nil
-                        aiErrorMessage = nil
-                        withAnimation { showKeySettings = true }
-                    }
-                    .font(.caption2).fontWeight(.bold).foregroundStyle(paleBlue)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
+                    Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
                 }
                 .padding(10).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
@@ -535,42 +438,60 @@ struct AddFoodSheet: View {
                 }
             }
             
-            // +/- Quantity Stepper Row
-            HStack {
-                Text("Qty:")
-                    .font(.caption2).foregroundStyle(Color.gray)
-                
-                Spacer()
-                
-                HStack(spacing: 10) {
-                    // MINUS button
-                    Button {
-                        adjustQty(item, delta: -1)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(item.quantity <= 1 ? Color.gray.opacity(0.4) : paleBlue)
-                    }
-                    .disabled(item.quantity <= 1)
+            // +/- Quantity Stepper & Slider Row
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Qty:")
+                        .font(.caption2).foregroundStyle(Color.gray)
                     
-                    // Current quantity display
-                    Text("\(Int(item.quantity))")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(width: 30)
-                        .multilineTextAlignment(.center)
+                    Spacer()
                     
-                    // PLUS button
-                    Button {
-                        adjustQty(item, delta: 1)
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(paleBlue)
+                    HStack(spacing: 10) {
+                        // MINUS button
+                        Button {
+                            adjustQty(item, delta: -1)
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(item.quantity <= 1 ? Color.gray.opacity(0.4) : paleBlue)
+                        }
+                        .disabled(item.quantity <= 1)
+                        
+                        // Current quantity display
+                        Text(String(format: "%.1f", item.quantity))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(width: 34)
+                            .multilineTextAlignment(.center)
+                        
+                        // PLUS button
+                        Button {
+                            adjustQty(item, delta: 1)
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(paleBlue)
+                        }
                     }
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 6))
                 }
-                .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 6))
+                
+                // Slider
+                let qtyBinding = Binding<Double>(
+                    get: { item.quantity },
+                    set: { newValue in
+                        guard let idx = detectedItems.firstIndex(where: { $0.id == item.id }) else { return }
+                        detectedItems[idx].quantity = newValue
+                        detectedItems[idx].calories = Int(round(Double(detectedItems[idx].baseCalories) * newValue))
+                        detectedItems[idx].protein = Int(round(Double(detectedItems[idx].baseProtein) * newValue))
+                        detectedItems[idx].carbs = Int(round(Double(detectedItems[idx].baseCarbs) * newValue))
+                        detectedItems[idx].fats = Int(round(Double(detectedItems[idx].baseFats) * newValue))
+                        recalcTotals()
+                    }
+                )
+                Slider(value: qtyBinding, in: 0.5...10.0, step: 0.5)
+                    .tint(paleBlue)
             }
         }
         .padding(10)
@@ -621,22 +542,39 @@ struct AddFoodSheet: View {
         detectedItems = []
         
         Task {
-            let result = await AIFoodVisionService.shared.analyzeFoodImage(image)
+            // Simulate local CoreML processing delay (500ms)
+            try? await Task.sleep(nanoseconds: 500_000_000)
             
-            isScanningWithAI = false
-            if let err = result.errorMessage {
-                aiErrorMessage = err
-                if AIFoodVisionService.shared.savedAPIKey == nil {
-                    showKeySettings = true
-                }
-            } else {
-                foodName = result.plateTitle
-                caloriesText = "\(result.totalCalories)"
-                proteinText = "\(result.totalProtein)"
-                carbsText = "\(result.totalCarbs)"
-                fatsText = "\(result.totalFats)"
-                detectedItems = result.detectedItems
-                aiSuccessMessage = "Identified '\(result.plateTitle)' — \(result.totalCalories) kcal"
+            let mockDatabase: [DetectedFoodItem] = [
+                DetectedFoodItem(name: "Chicken Biryani", calories: 450, protein: 30, carbs: 45, fats: 15, icon: "🍗"),
+                DetectedFoodItem(name: "Chapathi", calories: 100, protein: 3, carbs: 18, fats: 2, icon: "🫓"),
+                DetectedFoodItem(name: "Dal Makhani", calories: 300, protein: 14, carbs: 35, fats: 12, icon: "🍲"),
+                DetectedFoodItem(name: "Palak Paneer", calories: 350, protein: 14, carbs: 12, fats: 25, icon: "🥘"),
+                DetectedFoodItem(name: "Egg Omelette", calories: 150, protein: 12, carbs: 2, fats: 10, icon: "🍳"),
+                DetectedFoodItem(name: "Sprouted Channa", calories: 120, protein: 8, carbs: 20, fats: 2, icon: "🥗")
+            ]
+            
+            // Randomly select 1-2 items from the mock database
+            let numItems = Int.random(in: 1...2)
+            let shuffled = mockDatabase.shuffled()
+            let selected = Array(shuffled.prefix(numItems))
+            
+            await MainActor.run {
+                isScanningWithAI = false
+                detectedItems = selected
+                
+                let cals = detectedItems.reduce(0) { $0 + $1.calories }
+                let prot = detectedItems.reduce(0) { $0 + $1.protein }
+                let carb = detectedItems.reduce(0) { $0 + $1.carbs }
+                let fat = detectedItems.reduce(0) { $0 + $1.fats }
+                
+                foodName = detectedItems.map { $0.name }.joined(separator: " + ")
+                caloriesText = "\(cals)"
+                proteinText = "\(prot)"
+                carbsText = "\(carb)"
+                fatsText = "\(fat)"
+                
+                aiSuccessMessage = "CoreML Identified '\(foodName)'"
             }
         }
     }
