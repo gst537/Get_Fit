@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import Vision
+import CoreML
 
 // MARK: - UIKit TextField Wrapper (guaranteed paste support on iPhone)
 struct PasteFriendlyTextField: UIViewRepresentable {
@@ -589,49 +591,94 @@ struct AddFoodSheet: View {
         detectedItems = []
         
         Task {
-            // Simulate local CoreML processing delay (50ms - near instant!)
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            let ciImage: CIImage?
+            if let ci = CIImage(image: image) {
+                ciImage = ci
+            } else if let cg = image.cgImage {
+                ciImage = CIImage(cgImage: cg)
+            } else {
+                ciImage = nil
+            }
             
-            let mockDatabase: [DetectedFoodItem] = [
-                DetectedFoodItem(name: "Chicken Biryani", calories: 450, protein: 30, carbs: 45, fats: 15, icon: "🍗"),
-                DetectedFoodItem(name: "Chapathi", calories: 100, protein: 3, carbs: 18, fats: 2, icon: "🫓"),
-                DetectedFoodItem(name: "Dal Makhani", calories: 300, protein: 14, carbs: 35, fats: 12, icon: "🍲"),
-                DetectedFoodItem(name: "Palak Paneer", calories: 350, protein: 14, carbs: 12, fats: 25, icon: "🥘"),
-                DetectedFoodItem(name: "Egg Omelette", calories: 150, protein: 12, carbs: 2, fats: 10, icon: "🍳"),
-                DetectedFoodItem(name: "Sprouted Channa", calories: 120, protein: 8, carbs: 20, fats: 2, icon: "🥗")
-            ]
+            guard let validCIImage = ciImage else {
+                await MainActor.run {
+                    isScanningWithAI = false
+                    aiErrorMessage = "Could not process image."
+                }
+                return
+            }
             
-            // Randomly select 1-2 items from the mock database (Simulating CoreML confidence)
-            let numItems = Int.random(in: 1...2)
-            let shuffled = mockDatabase.shuffled()
-            let selected = Array(shuffled.prefix(numItems))
-            
-            // CoreML confidence mock (randomly generate 60-99%)
-            let confidence = Int.random(in: 60...99)
-            
-            await MainActor.run {
-                isScanningWithAI = false
+            do {
+                let config = MLModelConfiguration()
+                let model = try NutriLens_v2(configuration: config)
+                let visionModel = try VNCoreMLModel(for: model.model)
                 
-                if confidence < 75 {
-                    aiErrorMessage = "Local AI is not confident. Please use Deep Scan."
-                } else {
-                    detectedItems = selected
-                    
-                    let cals = detectedItems.reduce(0) { $0 + $1.calories }
-                    let prot = detectedItems.reduce(0) { $0 + $1.protein }
-                    let carb = detectedItems.reduce(0) { $0 + $1.carbs }
-                    let fat = detectedItems.reduce(0) { $0 + $1.fats }
-                    
-                    foodName = detectedItems.map { $0.name }.joined(separator: " + ")
-                    caloriesText = "\(cals)"
-                    proteinText = "\(prot)"
-                    carbsText = "\(carb)"
-                    fatsText = "\(fat)"
-                    
-                    aiSuccessMessage = "CoreML Identified '\(foodName)'"
+                let request = VNCoreMLRequest(model: visionModel) { request, error in
+                    Task {
+                        await MainActor.run {
+                            self.handleCoreMLResults(request: request, error: error)
+                        }
+                    }
+                }
+                
+                let handler = VNImageRequestHandler(ciImage: validCIImage, options: [:])
+                try handler.perform([request])
+            } catch {
+                await MainActor.run {
+                    isScanningWithAI = false
+                    aiErrorMessage = "Failed to load NutriLens model: \(error.localizedDescription)"
                 }
             }
         }
+    }
+    
+    private func handleCoreMLResults(request: VNRequest, error: Error?) {
+        isScanningWithAI = false
+        if let error = error {
+            aiErrorMessage = "Scan failed: \(error.localizedDescription)"
+            return
+        }
+        
+        guard let results = request.results as? [VNClassificationObservation],
+              let topResult = results.first else {
+            aiErrorMessage = "Could not identify any food."
+            return
+        }
+        
+        // Ensure standard formatting from the label
+        let label = topResult.identifier.replacingOccurrences(of: "_", with: " ").capitalized
+        let confidence = Int(topResult.confidence * 100)
+        
+        if confidence < 75 {
+            aiErrorMessage = "Local AI is only \(confidence)% confident it's \(label). Please use Deep Scan."
+            return
+        }
+        
+        let matchedItem = getMacrosFor(label: label)
+        detectedItems = [matchedItem]
+        
+        foodName = matchedItem.name
+        caloriesText = "\(matchedItem.calories)"
+        proteinText = "\(matchedItem.protein)"
+        carbsText = "\(matchedItem.carbs)"
+        fatsText = "\(matchedItem.fats)"
+        
+        aiSuccessMessage = "CoreML Identified '\(label)' (\(confidence)%)"
+    }
+    
+    private func getMacrosFor(label: String) -> DetectedFoodItem {
+        let l = label.lowercased()
+        if l.contains("biryani") { return DetectedFoodItem(name: "Chicken Biryani", calories: 450, protein: 30, carbs: 45, fats: 15, icon: "🍗") }
+        if l.contains("chapati") || l.contains("roti") { return DetectedFoodItem(name: "Chapati", calories: 100, protein: 3, carbs: 18, fats: 2, icon: "🫓") }
+        if l.contains("dosa") { return DetectedFoodItem(name: "Dosa", calories: 150, protein: 4, carbs: 30, fats: 3, icon: "🫓") }
+        if l.contains("idli") { return DetectedFoodItem(name: "Idli", calories: 60, protein: 2, carbs: 12, fats: 0, icon: "⚪") }
+        if l.contains("samosa") { return DetectedFoodItem(name: "Samosa", calories: 250, protein: 3, carbs: 24, fats: 15, icon: "🥟") }
+        if l.contains("paneer") { return DetectedFoodItem(name: "Paneer Dish", calories: 350, protein: 14, carbs: 12, fats: 25, icon: "🥘") }
+        if l.contains("chicken") { return DetectedFoodItem(name: "Chicken Curry", calories: 300, protein: 25, carbs: 10, fats: 15, icon: "🍗") }
+        if l.contains("dal") { return DetectedFoodItem(name: "Dal", calories: 200, protein: 10, carbs: 30, fats: 5, icon: "🍲") }
+        if l.contains("chole") || l.contains("channa") { return DetectedFoodItem(name: "Chole", calories: 250, protein: 12, carbs: 35, fats: 8, icon: "🥘") }
+        
+        return DetectedFoodItem(name: label.capitalized, calories: 200, protein: 5, carbs: 25, fats: 10, icon: "🍽️")
     }
     
     // MARK: - Helpers

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		05A1BD4630454581008D87A0 /* NutriLens_v2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 05A1BD4530454581008D87A0 /* NutriLens_v2.mlpackage */; };
 		0B03835A68F5F723F365EDCF /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37832AD76D2051C59101AA17 /* HealthKitManager.swift */; };
 		0EBA81EF9D1660920E0C5F5F /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0E577D8B1AF211EA7FBC10 /* SafariView.swift */; };
 		1861C0219ED783DB75CB5417 /* WorkoutHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3B77B3ABA6BF6BC7FC6B9F4 /* WorkoutHistoryView.swift */; };
@@ -52,6 +53,7 @@
 /* Begin PBXFileReference section */
 		01AD3E2E44349C4A176E8B7E /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		04E2E0B7BFD92102581ABCDB /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
+		05A1BD4530454581008D87A0 /* NutriLens_v2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = NutriLens_v2.mlpackage; sourceTree = "<group>"; };
 		0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionChartView.swift; sourceTree = "<group>"; };
 		15888ED4181530646D032A1A /* BodyWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightView.swift; sourceTree = "<group>"; };
 		1899C627C5E21B46659D1117 /* ProgressiveOverloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveOverloadService.swift; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 			children = (
 				3C9F63C0C1240DD5A43EBC36 /* GetFit */,
 				49E04869D1DFEEDBB867AB27 /* GetFitWidgets */,
+				05A1BD4530454581008D87A0 /* NutriLens_v2.mlpackage */,
 				2951BD2E0BEA613C88ED67D4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -276,6 +279,7 @@
 				D65188B7F44DD9FC9C76EBB2 /* DashboardView.swift in Sources */,
 				4518F814439684FC1230255E /* EditSetsRepsSheet.swift in Sources */,
 				AED95E02AEEAA5E43638AF20 /* ExerciseDetailSheet.swift in Sources */,
+				05A1BD4630454581008D87A0 /* NutriLens_v2.mlpackage in Sources */,
 				CF5E79215D5314AF1A622FE2 /* GetFitApp.swift in Sources */,
 				0B03835A68F5F723F365EDCF /* HealthKitManager.swift in Sources */,
 				2AE98037E652067198E0C2F7 /* KokonutAppleActivityCard.swift in Sources */,
