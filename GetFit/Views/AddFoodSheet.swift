@@ -610,75 +610,81 @@ struct AddFoodSheet: View {
             
             do {
                 let config = MLModelConfiguration()
+                #if targetEnvironment(simulator)
+                config.computeUnits = .cpuOnly
+                #endif
+                
                 let model = try NutriLens_v2(configuration: config)
                 let visionModel = try VNCoreMLModel(for: model.model)
                 
                 let nutriLensRequest = VNCoreMLRequest(model: visionModel)
-                let appleRequest = VNClassifyImageRequest()
-                
                 let handler = VNImageRequestHandler(ciImage: validCIImage, options: [:])
-                try handler.perform([nutriLensRequest, appleRequest])
                 
-                await MainActor.run {
-                    self.handleHybridResults(nutriLensRequest: nutriLensRequest, appleRequest: appleRequest)
+                // Run Indian Model First
+                try handler.perform([nutriLensRequest])
+                
+                var topIndian: VNClassificationObservation? = nil
+                if let indianResults = nutriLensRequest.results as? [VNClassificationObservation] {
+                    topIndian = indianResults.first
                 }
+                
+                let indianConfidence = topIndian != nil ? Int(topIndian!.confidence * 100) : 0
+                
+                // If Indian model is confident, stop here.
+                if indianConfidence >= 75, let top = topIndian {
+                    await MainActor.run {
+                        self.handleSuccessfulResult(label: top.identifier, confidence: indianConfidence, isApple: false)
+                    }
+                    return
+                }
+                
+                // Otherwise, run Apple's Built-in Generic Model
+                let appleRequest = VNClassifyImageRequest()
+                try handler.perform([appleRequest])
+                
+                if let appleResults = appleRequest.results as? [VNClassificationObservation],
+                   let topApple = appleResults.first {
+                    
+                    let appleConfidence = Int(topApple.confidence * 100)
+                    if appleConfidence >= 70 {
+                        await MainActor.run {
+                            self.handleSuccessfulResult(label: topApple.identifier, confidence: appleConfidence, isApple: true)
+                        }
+                        return
+                    }
+                }
+                
+                // Both failed (graceful fallback to Deep Scan)
+                await MainActor.run {
+                    isScanningWithAI = false
+                    let guess = topIndian?.identifier.replacingOccurrences(of: "_", with: " ").capitalized ?? "Unknown"
+                    aiErrorMessage = "Local AI is only \(indianConfidence)% confident it's \(guess). Please use Deep Scan."
+                }
+                
             } catch {
                 await MainActor.run {
                     isScanningWithAI = false
-                    aiErrorMessage = "Failed to load models: \(error.localizedDescription)"
+                    aiErrorMessage = "Failed to run AI models: \(error.localizedDescription)"
                 }
             }
         }
     }
     
-    private func handleHybridResults(nutriLensRequest: VNRequest, appleRequest: VNRequest) {
+    private func handleSuccessfulResult(label: String, confidence: Int, isApple: Bool) {
         isScanningWithAI = false
         
-        // 1. Try Indian Food Model first
-        if let indianResults = nutriLensRequest.results as? [VNClassificationObservation],
-           let topIndian = indianResults.first {
-            
-            let confidence = Int(topIndian.confidence * 100)
-            if confidence >= 75 {
-                let label = topIndian.identifier.replacingOccurrences(of: "_", with: " ").capitalized
-                let matchedItem = getMacrosFor(label: label)
-                
-                detectedItems = [matchedItem]
-                foodName = matchedItem.name
-                caloriesText = "\(matchedItem.calories)"
-                proteinText = "\(matchedItem.protein)"
-                carbsText = "\(matchedItem.carbs)"
-                fatsText = "\(matchedItem.fats)"
-                aiSuccessMessage = "CoreML Identified '\(label)' (\(confidence)%)"
-                return
-            }
-            
-            // 2. Try Apple's Built-in Generic Model if Indian model failed
-            if let appleResults = appleRequest.results as? [VNClassificationObservation],
-               let topApple = appleResults.first {
-                
-                let appleConfidence = Int(topApple.confidence * 100)
-                if appleConfidence >= 70 {
-                    let label = topApple.identifier.replacingOccurrences(of: "_", with: " ").capitalized
-                    let matchedItem = getMacrosFor(label: label)
-                    
-                    detectedItems = [matchedItem]
-                    foodName = matchedItem.name
-                    caloriesText = "\(matchedItem.calories)"
-                    proteinText = "\(matchedItem.protein)"
-                    carbsText = "\(matchedItem.carbs)"
-                    fatsText = "\(matchedItem.fats)"
-                    aiSuccessMessage = "Apple AI Identified '\(label)' (\(appleConfidence)%)"
-                    return
-                }
-            }
-            
-            // 3. Both failed (graceful fallback to Deep Scan)
-            let guess = topIndian.identifier.replacingOccurrences(of: "_", with: " ").capitalized
-            aiErrorMessage = "Local AI is only \(confidence)% confident it's \(guess). Please use Deep Scan."
-        } else {
-            aiErrorMessage = "Could not identify any food."
-        }
+        let formattedLabel = label.replacingOccurrences(of: "_", with: " ").capitalized
+        let matchedItem = getMacrosFor(label: formattedLabel)
+        
+        detectedItems = [matchedItem]
+        foodName = matchedItem.name
+        caloriesText = "\(matchedItem.calories)"
+        proteinText = "\(matchedItem.protein)"
+        carbsText = "\(matchedItem.carbs)"
+        fatsText = "\(matchedItem.fats)"
+        
+        let source = isApple ? "Apple AI" : "CoreML"
+        aiSuccessMessage = "\(source) Identified '\(formattedLabel)' (\(confidence)%)"
     }
     
     private func getMacrosFor(label: String) -> DetectedFoodItem {
