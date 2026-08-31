@@ -613,57 +613,72 @@ struct AddFoodSheet: View {
                 let model = try NutriLens_v2(configuration: config)
                 let visionModel = try VNCoreMLModel(for: model.model)
                 
-                let request = VNCoreMLRequest(model: visionModel) { request, error in
-                    Task {
-                        await MainActor.run {
-                            self.handleCoreMLResults(request: request, error: error)
-                        }
-                    }
-                }
+                let nutriLensRequest = VNCoreMLRequest(model: visionModel)
+                let appleRequest = VNClassifyImageRequest()
                 
                 let handler = VNImageRequestHandler(ciImage: validCIImage, options: [:])
-                try handler.perform([request])
+                try handler.perform([nutriLensRequest, appleRequest])
+                
+                await MainActor.run {
+                    self.handleHybridResults(nutriLensRequest: nutriLensRequest, appleRequest: appleRequest)
+                }
             } catch {
                 await MainActor.run {
                     isScanningWithAI = false
-                    aiErrorMessage = "Failed to load NutriLens model: \(error.localizedDescription)"
+                    aiErrorMessage = "Failed to load models: \(error.localizedDescription)"
                 }
             }
         }
     }
     
-    private func handleCoreMLResults(request: VNRequest, error: Error?) {
+    private func handleHybridResults(nutriLensRequest: VNRequest, appleRequest: VNRequest) {
         isScanningWithAI = false
-        if let error = error {
-            aiErrorMessage = "Scan failed: \(error.localizedDescription)"
-            return
-        }
         
-        guard let results = request.results as? [VNClassificationObservation],
-              let topResult = results.first else {
+        // 1. Try Indian Food Model first
+        if let indianResults = nutriLensRequest.results as? [VNClassificationObservation],
+           let topIndian = indianResults.first {
+            
+            let confidence = Int(topIndian.confidence * 100)
+            if confidence >= 75 {
+                let label = topIndian.identifier.replacingOccurrences(of: "_", with: " ").capitalized
+                let matchedItem = getMacrosFor(label: label)
+                
+                detectedItems = [matchedItem]
+                foodName = matchedItem.name
+                caloriesText = "\(matchedItem.calories)"
+                proteinText = "\(matchedItem.protein)"
+                carbsText = "\(matchedItem.carbs)"
+                fatsText = "\(matchedItem.fats)"
+                aiSuccessMessage = "CoreML Identified '\(label)' (\(confidence)%)"
+                return
+            }
+            
+            // 2. Try Apple's Built-in Generic Model if Indian model failed
+            if let appleResults = appleRequest.results as? [VNClassificationObservation],
+               let topApple = appleResults.first {
+                
+                let appleConfidence = Int(topApple.confidence * 100)
+                if appleConfidence >= 70 {
+                    let label = topApple.identifier.replacingOccurrences(of: "_", with: " ").capitalized
+                    let matchedItem = getMacrosFor(label: label)
+                    
+                    detectedItems = [matchedItem]
+                    foodName = matchedItem.name
+                    caloriesText = "\(matchedItem.calories)"
+                    proteinText = "\(matchedItem.protein)"
+                    carbsText = "\(matchedItem.carbs)"
+                    fatsText = "\(matchedItem.fats)"
+                    aiSuccessMessage = "Apple AI Identified '\(label)' (\(appleConfidence)%)"
+                    return
+                }
+            }
+            
+            // 3. Both failed (graceful fallback to Deep Scan)
+            let guess = topIndian.identifier.replacingOccurrences(of: "_", with: " ").capitalized
+            aiErrorMessage = "Local AI is only \(confidence)% confident it's \(guess). Please use Deep Scan."
+        } else {
             aiErrorMessage = "Could not identify any food."
-            return
         }
-        
-        // Ensure standard formatting from the label
-        let label = topResult.identifier.replacingOccurrences(of: "_", with: " ").capitalized
-        let confidence = Int(topResult.confidence * 100)
-        
-        if confidence < 75 {
-            aiErrorMessage = "Local AI is only \(confidence)% confident it's \(label). Please use Deep Scan."
-            return
-        }
-        
-        let matchedItem = getMacrosFor(label: label)
-        detectedItems = [matchedItem]
-        
-        foodName = matchedItem.name
-        caloriesText = "\(matchedItem.calories)"
-        proteinText = "\(matchedItem.protein)"
-        carbsText = "\(matchedItem.carbs)"
-        fatsText = "\(matchedItem.fats)"
-        
-        aiSuccessMessage = "CoreML Identified '\(label)' (\(confidence)%)"
     }
     
     private func getMacrosFor(label: String) -> DetectedFoodItem {
@@ -677,6 +692,9 @@ struct AddFoodSheet: View {
         if l.contains("chicken") { return DetectedFoodItem(name: "Chicken Curry", calories: 300, protein: 25, carbs: 10, fats: 15, icon: "🍗") }
         if l.contains("dal") { return DetectedFoodItem(name: "Dal", calories: 200, protein: 10, carbs: 30, fats: 5, icon: "🍲") }
         if l.contains("chole") || l.contains("channa") { return DetectedFoodItem(name: "Chole", calories: 250, protein: 12, carbs: 35, fats: 8, icon: "🥘") }
+        if l.contains("salad") { return DetectedFoodItem(name: "Healthy Salad", calories: 120, protein: 4, carbs: 10, fats: 7, icon: "🥗") }
+        if l.contains("burger") { return DetectedFoodItem(name: "Burger", calories: 500, protein: 20, carbs: 40, fats: 25, icon: "🍔") }
+        if l.contains("pizza") { return DetectedFoodItem(name: "Pizza Slice", calories: 280, protein: 12, carbs: 35, fats: 10, icon: "🍕") }
         
         return DetectedFoodItem(name: label.capitalized, calories: 200, protein: 5, carbs: 25, fats: 10, icon: "🍽️")
     }
