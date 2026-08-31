@@ -129,10 +129,18 @@ final class SetLog {
     var machineName: String
     var machineId: UUID?
     var equipmentType: String
+    var rpe: Int?
 
     var session: WorkoutSession?
+    
+    var estimated1RM: Double {
+        guard reps > 0 && weight > 0 else { return 0 }
+        if reps == 1 { return weight }
+        // Epley Formula
+        return weight * (1.0 + (Double(reps) / 30.0))
+    }
 
-    init(setNumber: Int, reps: Int, weight: Double, machineName: String = "", machineId: UUID? = nil, equipmentType: String = "Barbell") {
+    init(setNumber: Int, reps: Int, weight: Double, machineName: String = "", machineId: UUID? = nil, equipmentType: String = "Barbell", rpe: Int? = nil) {
         self.id = UUID()
         self.setNumber = setNumber
         self.reps = reps
@@ -140,6 +148,7 @@ final class SetLog {
         self.machineName = machineName
         self.machineId = machineId
         self.equipmentType = equipmentType
+        self.rpe = rpe
     }
 }
 

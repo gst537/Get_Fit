@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import PhotosUI
 
 struct ExerciseDetailSheet: View {
@@ -15,7 +16,15 @@ struct ExerciseDetailSheet: View {
     @State private var showCameraPicker = false
     @State private var loadedUIImage: UIImage? = nil
     
+    @Query private var allSetLogs: [SetLog]
+    @StateObject private var weightUnit = WeightUnitManager.shared
+    
     let slateBlue = MutedEarth.slateBlue
+    
+    private var max1RM: Double {
+        let historicalSets = allSetLogs.filter { $0.machineId == exercise.id }
+        return historicalSets.map { $0.estimated1RM }.max() ?? 0.0
+    }
 
     var body: some View {
         ScrollView {
@@ -52,6 +61,49 @@ struct ExerciseDetailSheet: View {
                         .background(Color.white.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+                }
+                
+                if max1RM > 0 {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("ALL-TIME EST. 1RM")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(1.0)
+                                .foregroundStyle(Color.gray)
+                            
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(weightUnit.formatNumber(weightUnit.displayWeight(max1RM)))")
+                                    .font(.system(size: 28, weight: .light, design: .rounded))
+                                    .foregroundStyle(.white)
+                                Text(weightUnit.unitLabel)
+                                    .font(.callout)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(slateBlue)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "trophy")
+                            .font(.system(size: 32, weight: .light))
+                            .foregroundStyle(slateBlue.opacity(0.8))
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(UIColor.secondarySystemBackground).opacity(0.5))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [slateBlue.opacity(0.6), Color.clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
                 }
                 
                 // Section 2: Body Part Activation & Step-by-Step Form Guide

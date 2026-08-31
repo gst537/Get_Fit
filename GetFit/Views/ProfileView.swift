@@ -12,6 +12,7 @@ struct ProfileView: View {
     @AppStorage("userAge") private var userAge: Int = 19
     @AppStorage("userHeight") private var userHeight: Int = 170
     @AppStorage("targetWeightKg") private var targetWeightKg: Double = 64.0
+    @AppStorage("keepScreenAwake") private var keepScreenAwake: Bool = true
     
     @Query private var userStats: [UserStats]
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }) private var completedSessions: [WorkoutSession]
@@ -289,7 +290,20 @@ struct ProfileView: View {
                         .monochromeCard()
                     }
                     
-                    // 5. AI Features Section
+                    // 5. Workout Preferences Section
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Workout Preferences")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        
+                        Toggle("Keep Screen Awake During Workouts", isOn: $keepScreenAwake)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.gray)
+                            .tint(slateBlue)
+                    }
+                    .monochromeCard()
+                    
+                    // 6. AI Features Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("AI Integrations")
                             .font(.system(size: 16, weight: .bold))

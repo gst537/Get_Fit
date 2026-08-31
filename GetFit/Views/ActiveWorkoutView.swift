@@ -15,10 +15,13 @@ struct ActiveWorkoutView: View {
     @State private var weightInputs: [UUID: Double] = [:]
     @State private var weightStrings: [UUID: String] = [:]
     @State private var repInputs: [UUID: Int] = [:]
+    @State private var rpeInputs: [UUID: String] = [:]
     @State private var showRestTimer = false
     @State private var restDuration = 90
     @State private var showPlateCalculator = false
     @State private var calculatorTargetWeight: Double = 60.0
+    
+    @AppStorage("keepScreenAwake") private var keepScreenAwake: Bool = true
     
     // Interactive Progressive Overload Acceptance state
     @State private var acceptedOverloads: [UUID: Bool] = [:]
@@ -64,9 +67,13 @@ struct ActiveWorkoutView: View {
         .onAppear {
             startTimer()
             initializeInputs()
+            if keepScreenAwake {
+                UIApplication.shared.isIdleTimerDisabled = true
+            }
         }
         .onDisappear {
             timer?.invalidate()
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         .fullScreenCover(isPresented: $showRestTimer) {
             RestTimerView(duration: restDuration, onComplete: {
@@ -294,10 +301,21 @@ struct ActiveWorkoutView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Spacer()
-                            Text("\(weightUnit.formatNumber(weightUnit.displayWeight(log.weight))) \(weightUnit.unitLabel) × \(log.reps)")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
+                            HStack(spacing: 8) {
+                                if let rpe = log.rpe {
+                                    Text("RPE \(rpe)")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(MutedEarth.slateBlue.opacity(0.2))
+                                        .foregroundStyle(MutedEarth.slateBlue)
+                                        .clipShape(Capsule())
+                                }
+                                Text("\(weightUnit.formatNumber(weightUnit.displayWeight(log.weight))) \(weightUnit.unitLabel) × \(log.reps)")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                            }
                             Button(action: {
                                 deleteSet(log)
                             }) {
@@ -421,6 +439,22 @@ struct ActiveWorkoutView: View {
                     ),
                     step: 1
                 )
+                
+                VStack(spacing: 2) {
+                    Text("RPE")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(Color.gray)
+                    TextField("-", text: Binding(
+                        get: { rpeInputs[machine.id] ?? "" },
+                        set: { rpeInputs[machine.id] = $0 }
+                    ))
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .font(.caption)
+                    .frame(width: 32, height: 32)
+                    .background(Color.white.opacity(0.05))
+                    .border(Color.white.opacity(0.1), width: 1)
+                }
                 
                 Spacer()
                 
@@ -604,18 +638,27 @@ struct ActiveWorkoutView: View {
         let weightInKg = weightUnit.toKg(displayWeight)
         let reps = repInputs[machine.id] ?? entry.defaultReps
         
+        var parsedRpe: Int? = nil
+        if let rpeString = rpeInputs[machine.id], let val = Int(rpeString), val > 0 && val <= 10 {
+            parsedRpe = val
+        }
+        
         let newSet = SetLog(
             setNumber: loggedSetsCount + 1,
             reps: reps,
             weight: weightInKg,
             machineName: machine.name,
             machineId: machine.id,
-            equipmentType: machine.equipmentType
+            equipmentType: machine.equipmentType,
+            rpe: parsedRpe
         )
         
         newSet.session = session
         modelContext.insert(newSet)
         try? modelContext.save()
+        
+        // Clear RPE for the next set
+        rpeInputs[machine.id] = ""
         
         // Trigger rest timer
         restDuration = 90
