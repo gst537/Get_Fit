@@ -35,10 +35,11 @@ struct ActiveWorkoutView: View {
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted }) private var completedSessions: [WorkoutSession]
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            
-            ScrollView {
+        NavigationStack {
+            VStack(spacing: 0) {
+                header
+                
+                ScrollView {
                 VStack(spacing: 24) {
                     let sortedEntries = split.entries.sorted { $0.order < $1.order }
                     ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
@@ -62,8 +63,10 @@ struct ActiveWorkoutView: View {
                 }
                 .padding(.vertical, 16)
             }
+            .scrollDismissesKeyboard(.immediately)
         }
         .background(Color.black)
+        .navigationBarHidden(true)
         .onAppear {
             startTimer()
             initializeInputs()
@@ -98,6 +101,7 @@ struct ActiveWorkoutView: View {
                     hideKeyboard()
                 }
             }
+        }
         }
     }
     
@@ -204,7 +208,8 @@ struct ActiveWorkoutView: View {
                         .font(.caption)
                         .foregroundStyle(Color.gray)
                     TextField("25", text: $finisherDuration)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.numbersAndPunctuation)
+                        .submitLabel(.done)
                         .font(.title3)
                         .padding(10)
                         .background(Color.black)
@@ -216,7 +221,8 @@ struct ActiveWorkoutView: View {
                         .font(.caption)
                         .foregroundStyle(Color.gray)
                     TextField("3.0", text: $finisherDistance)
-                        .keyboardType(.decimalPad)
+                        .keyboardType(.numbersAndPunctuation)
+                        .submitLabel(.done)
                         .font(.title3)
                         .padding(10)
                         .background(Color.black)
@@ -456,7 +462,8 @@ struct ActiveWorkoutView: View {
                         get: { rpeInputs[machine.id] ?? "" },
                         set: { rpeInputs[machine.id] = $0 }
                     ))
-                    .keyboardType(.numberPad)
+                    .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                     .multilineTextAlignment(.center)
                     .font(.caption)
                     .frame(width: 32, height: 32)
@@ -549,7 +556,8 @@ struct ActiveWorkoutView: View {
             
             HStack(spacing: 2) {
                 TextField("0", text: textValue)
-                    .keyboardType(.decimalPad)
+                    .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                     .multilineTextAlignment(.center)
                     .font(.body)
                     .fontWeight(.medium)

@@ -571,7 +571,8 @@ struct EditLoggedMealSheet: View {
                         Text("Calories (kcal)")
                         Spacer()
                         TextField("0", text: $caloriesInput)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                     
@@ -579,7 +580,8 @@ struct EditLoggedMealSheet: View {
                         Text("Protein (g)")
                         Spacer()
                         TextField("0", text: $proteinInput)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                     
@@ -587,7 +589,8 @@ struct EditLoggedMealSheet: View {
                         Text("Carbs (g)")
                         Spacer()
                         TextField("0", text: $carbsInput)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                     
@@ -595,7 +598,8 @@ struct EditLoggedMealSheet: View {
                         Text("Fats (g)")
                         Spacer()
                         TextField("0", text: $fatsInput)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                 }
@@ -681,7 +685,8 @@ struct EditNutritionGoalSheet: View {
                     .font(.caption)
                     .foregroundStyle(Color.gray)
                 TextField("2200", text: $calsText)
-                    .keyboardType(.numberPad)
+                    .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                     .font(.body)
                     .padding(12)
                     .background(Color(UIColor.secondarySystemBackground))
@@ -694,7 +699,8 @@ struct EditNutritionGoalSheet: View {
                         .font(.caption)
                         .foregroundStyle(paleBlue)
                     TextField("160", text: $proteinText)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .font(.body)
                         .padding(12)
                         .background(Color(UIColor.secondarySystemBackground))
@@ -706,7 +712,8 @@ struct EditNutritionGoalSheet: View {
                         .font(.caption)
                         .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.40))
                     TextField("220", text: $carbsText)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .font(.body)
                         .padding(12)
                         .background(Color(UIColor.secondarySystemBackground))
@@ -718,7 +725,8 @@ struct EditNutritionGoalSheet: View {
                         .font(.caption)
                         .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.65))
                     TextField("70", text: $fatsText)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .font(.body)
                         .padding(12)
                         .background(Color(UIColor.secondarySystemBackground))

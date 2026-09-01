@@ -458,7 +458,8 @@ struct EditProfileSheet: View {
                         Text("Age")
                         Spacer()
                         TextField("Age", text: $inputAgeStr)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                     
@@ -466,7 +467,8 @@ struct EditProfileSheet: View {
                         Text("Height (cm)")
                         Spacer()
                         TextField("Height in cm", text: $inputHeightStr)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                 }
@@ -476,7 +478,8 @@ struct EditProfileSheet: View {
                         Text("Target Weight (kg)")
                         Spacer()
                         TextField("Target Weight", text: $inputTargetWeightStr)
-                            .keyboardType(.decimalPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .multilineTextAlignment(.trailing)
                     }
                 }

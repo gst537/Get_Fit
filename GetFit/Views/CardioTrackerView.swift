@@ -253,7 +253,8 @@ struct CardioTrackerView: View {
                     }
                     
                     TextField("Duration (min)", text: $durationMinutes)
-                        .keyboardType(.decimalPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -266,7 +267,8 @@ struct CardioTrackerView: View {
                         .foregroundStyle(Color.gray)
                     
                     TextField("Distance (km)", text: $distanceKm)
-                        .keyboardType(.decimalPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -279,7 +281,8 @@ struct CardioTrackerView: View {
                         .foregroundStyle(Color.gray)
                     
                     TextField("e.g. 250", text: $caloriesBurned)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                         .padding(14)
                         .background(Color(UIColor.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))

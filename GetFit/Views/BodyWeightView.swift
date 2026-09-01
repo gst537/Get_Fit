@@ -65,7 +65,8 @@ struct BodyWeightView: View {
                     
                     HStack(alignment: .lastTextBaseline) {
                         TextField("Weight", text: $weightText)
-                            .keyboardType(.decimalPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .onChange(of: weightText) { oldValue, newValue in
                                 if let val = Double(newValue) {
                                     inputWeight = val

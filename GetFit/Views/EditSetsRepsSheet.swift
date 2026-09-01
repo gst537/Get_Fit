@@ -152,7 +152,8 @@ struct EditSetsRepsSheet: View {
                 }
 
                 TextField("0", text: textValue)
-                    .keyboardType(.decimalPad)
+                    .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                     .multilineTextAlignment(.center)
                     .font(.title3)
                     .fontWeight(.light)

@@ -186,7 +186,8 @@ struct AddFoodSheet: View {
                         .font(.subheadline).fontWeight(.light).foregroundStyle(Color.gray)
                     HStack {
                         TextField("0", text: $caloriesText)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .font(.title3).fontWeight(.medium).foregroundStyle(.white)
                         Text("kcal").font(.subheadline).foregroundStyle(Color.gray)
                     }
@@ -712,7 +713,8 @@ struct AddFoodSheet: View {
             Text(title).font(.caption).fontWeight(.medium).foregroundStyle(color)
             HStack(spacing: 2) {
                 TextField("0", text: text)
-                    .keyboardType(.numberPad).font(.body).fontWeight(.medium).foregroundStyle(.white)
+                    .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).font(.body).fontWeight(.medium).foregroundStyle(.white)
                 Text("g").font(.caption2).foregroundStyle(Color.gray)
             }
             .padding(10)
@@ -790,10 +792,14 @@ struct AddNewItemSheet: View {
                     }
                 }
                 Section("Calories & Macros") {
-                    HStack { Text("Calories"); Spacer(); TextField("150", text: $caloriesInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Protein (g)"); Spacer(); TextField("5", text: $proteinInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Carbs (g)"); Spacer(); TextField("20", text: $carbsInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Fats (g)"); Spacer(); TextField("3", text: $fatsInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
+                    HStack { Text("Calories"); Spacer(); TextField("150", text: $caloriesInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Protein (g)"); Spacer(); TextField("5", text: $proteinInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Carbs (g)"); Spacer(); TextField("20", text: $carbsInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Fats (g)"); Spacer(); TextField("3", text: $fatsInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
                 }
             }
             .navigationTitle("Add Plate Item")
@@ -844,10 +850,14 @@ struct EditDetectedItemSheet: View {
                     TextField("e.g. 1 Dosa", text: $nameInput)
                 }
                 Section("Calories & Macros") {
-                    HStack { Text("Calories"); Spacer(); TextField("0", text: $caloriesInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $proteinInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $carbsInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Fats (g)"); Spacer(); TextField("0", text: $fatsInput).keyboardType(.numberPad).multilineTextAlignment(.trailing) }
+                    HStack { Text("Calories"); Spacer(); TextField("0", text: $caloriesInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $proteinInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $carbsInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
+                    HStack { Text("Fats (g)"); Spacer(); TextField("0", text: $fatsInput).keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done).multilineTextAlignment(.trailing) }
                 }
             }
             .navigationTitle("Edit Item")

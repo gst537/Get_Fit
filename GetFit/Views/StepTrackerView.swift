@@ -146,7 +146,8 @@ struct StepTrackerView: View {
                     
                     HStack(spacing: 12) {
                         TextField("Enter steps (e.g. 10000)", text: $customStepInput)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.numbersAndPunctuation)
+                    .submitLabel(.done)
                             .padding(14)
                             .background(Color(UIColor.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
