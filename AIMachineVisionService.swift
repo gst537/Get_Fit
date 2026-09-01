@@ -25,6 +25,24 @@ final class AIMachineVisionService: @unchecked Sendable {
     }
     
     private init() {}
+
+    private func resizeImage(image: UIImage, targetSize: CGSize = CGSize(width: 800, height: 800)) -> UIImage {
+        let size = image.size
+        let widthRatio  = targetSize.width  / size.width
+        let heightRatio = targetSize.height / size.height
+        let ratio = min(widthRatio, heightRatio)
+        
+        if ratio >= 1.0 { return image }
+        
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+
     
     func analyzeMachineImage(_ image: UIImage) async -> MachineAnalysisResult {
         guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -36,7 +54,8 @@ final class AIMachineVisionService: @unchecked Sendable {
     }
     
     private func callGeminiVision(image: UIImage, apiKey: String) async -> MachineAnalysisResult {
-        guard let jpegData = image.jpegData(compressionQuality: 0.6) else {
+        let resized = resizeImage(image: image)
+        guard let jpegData = resized.jpegData(compressionQuality: 0.5) else {
             return MachineAnalysisResult(machine: nil, errorMessage: "Could not process image data.")
         }
         let base64Image = jpegData.base64EncodedString()
@@ -86,7 +105,7 @@ final class AIMachineVisionService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = httpBody
-        request.timeoutInterval = 15
+        request.timeoutInterval = 60
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)

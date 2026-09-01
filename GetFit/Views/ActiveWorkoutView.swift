@@ -91,6 +91,14 @@ struct ActiveWorkoutView: View {
         }) {
             WorkoutSummaryCardView(session: session)
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    hideKeyboard()
+                }
+            }
+        }
     }
     
     // MARK: - Cardio Finisher Card & Sheet
@@ -701,5 +709,11 @@ struct ActiveWorkoutView: View {
             .map { $0.weight }
             .max() ?? 0
         return currentWeight > previousMax && currentWeight > 0
+    }
+}
+
+extension View {
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
