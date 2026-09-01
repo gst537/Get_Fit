@@ -12,6 +12,10 @@ struct ScanMachineSheet: View {
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var inputImage: UIImage? = nil
     
+    @State private var showImageSourceDialog = false
+    @State private var showCameraPicker = false
+    @State private var showPhotoLibraryPicker = false
+    
     @State private var isAnalyzing = false
     @State private var analysisResult: MachineAnalysisResult? = nil
     
@@ -48,11 +52,9 @@ struct ScanMachineSheet: View {
                             }
                         }
                         .padding(.horizontal)
-                        .overlay(
-                            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                                Color.clear
-                            }
-                        )
+                        .onTapGesture {
+                            showImageSourceDialog = true
+                        }
                         .onChange(of: selectedPhotoItem) { _, newItem in
                             Task {
                                 if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -60,6 +62,21 @@ struct ScanMachineSheet: View {
                                     inputImage = uiImage
                                     analyzeImage(uiImage)
                                 }
+                            }
+                        }
+                        .confirmationDialog("Choose Image Source", isPresented: $showImageSourceDialog, titleVisibility: .visible) {
+                            Button("Camera") {
+                                showCameraPicker = true
+                            }
+                            Button("Photo Library") {
+                                showPhotoLibraryPicker = true
+                            }
+                        }
+                        .photosPicker(isPresented: $showPhotoLibraryPicker, selection: $selectedPhotoItem, matching: .images)
+                        .sheet(isPresented: $showCameraPicker) {
+                            CameraPicker { image in
+                                inputImage = image
+                                analyzeImage(image)
                             }
                         }
                         
