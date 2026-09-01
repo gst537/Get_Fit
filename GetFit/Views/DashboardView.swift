@@ -16,6 +16,7 @@ struct DashboardView: View {
     @State private var activeSession: WorkoutSession?
     @State private var selectedExercise: GymMachine?
     @State private var showCreateExercise = false
+    @State private var showScanSheet = false
     @State private var selectedEntryToEdit: SplitMachineEntry?
     @State private var showProfileSheet = false
     @State private var showRestDaySheet = false
@@ -113,20 +114,42 @@ struct DashboardView: View {
                                 .padding(.top, 8)
                         }
                         
-                        Button {
-                            Haptics.playLightImpact()
-                            showCreateExercise = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus.circle")
-                                    .font(.system(size: 16))
-                                Text("Create Exercise")
-                                    .font(.body)
-                                    .fontWeight(.regular)
+                        HStack(spacing: 12) {
+                            Button {
+                                Haptics.playLightImpact()
+                                showScanSheet = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "camera.viewfinder")
+                                        .font(.system(size: 16))
+                                    Text("Scan Machine")
+                                        .font(.body)
+                                        .fontWeight(.regular)
+                                }
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(MutedEarth.slateBlue)
+                                .clipShape(Capsule())
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            
+                            Button {
+                                Haptics.playLightImpact()
+                                showCreateExercise = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus.circle")
+                                        .font(.system(size: 16))
+                                    Text("Custom")
+                                        .font(.body)
+                                        .fontWeight(.regular)
+                                }
+                                .foregroundStyle(MutedEarth.slateBlue)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(MutedEarth.slateBlue.opacity(0.15))
+                                .clipShape(Capsule())
+                            }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -156,6 +179,9 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showCreateExercise) {
             CreateExerciseSheet()
+        }
+        .sheet(isPresented: $showScanSheet) {
+            ScanMachineSheet()
         }
         .sheet(item: $selectedEntryToEdit) { entry in
             EditSetsRepsSheet(entry: entry)

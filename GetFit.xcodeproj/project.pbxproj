@@ -48,6 +48,8 @@
 		F16CE7E9B2D627019CD88B43 /* AIFoodVisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28BEA24CAF5D5D1077BC9305 /* AIFoodVisionService.swift */; };
 		F5D5D5480363B033D631EA12 /* NutritionTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790701B298751BB575D5CAE0 /* NutritionTrackerView.swift */; };
 		F9CEC5DE1E6A93332B835752 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15888ED4181530646D032A1A /* BodyWeightView.swift */; };
+		A8E3CD46D62A4F1792C14F61 /* ScanMachineSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130CA8EFD9D643CB95C71605 /* ScanMachineSheet.swift */; };
+		C58A2601DB9F40B890DAE903 /* AIMachineVisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29762750A94A47209AEBE2B3 /* AIMachineVisionService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,6 +96,8 @@
 		E19C7253066C4595E493361A /* PremiumUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumUIComponents.swift; sourceTree = "<group>"; };
 		E5EECB1B5EE57614123C729F /* WorkoutSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryCardView.swift; sourceTree = "<group>"; };
 		F81CEFF320ACB72D30188792 /* StepTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepTrackerView.swift; sourceTree = "<group>"; };
+		130CA8EFD9D643CB95C71605 /* ScanMachineSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanMachineSheet.swift; sourceTree = "<group>"; };
+		29762750A94A47209AEBE2B3 /* AIMachineVisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIMachineVisionService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -267,6 +271,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C58A2601DB9F40B890DAE903 /* AIMachineVisionService.swift in Sources */,
+				A8E3CD46D62A4F1792C14F61 /* ScanMachineSheet.swift in Sources */,
 				F16CE7E9B2D627019CD88B43 /* AIFoodVisionService.swift in Sources */,
 				CA136AB1D21F346DCC9A3057 /* ActiveWorkoutView.swift in Sources */,
 				2A4CF4B712A6F550FB1F6EEA /* AddExerciseSheet.swift in Sources */,

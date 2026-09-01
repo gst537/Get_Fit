@@ -291,16 +291,37 @@ struct ProfileView: View {
                     }
                     
                     // 5. Workout Preferences Section
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("Workout Preferences")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                         
-                        Toggle("Keep Screen Awake During Workouts", isOn: $keepScreenAwake)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.gray)
-                            .tint(slateBlue)
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(slateBlue.opacity(0.15))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "sun.max.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(slateBlue)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Keep Screen Awake")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(.white)
+                                Text("Prevents your phone from locking mid-set")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.gray)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $keepScreenAwake)
+                                .labelsHidden()
+                                .tint(slateBlue)
+                        }
                     }
+                    .padding(16)
                     .monochromeCard()
                     
                     // 6. AI Features Section

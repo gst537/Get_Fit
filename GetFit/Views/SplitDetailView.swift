@@ -6,6 +6,7 @@ struct SplitDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var selectedEntry: SplitMachineEntry?
     @State private var showAddExercise = false
+    @State private var showScanSheet = false
 
     private var sortedEntries: [SplitMachineEntry] {
         split.entries.sorted { $0.order < $1.order }
@@ -119,20 +120,41 @@ struct SplitDetailView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
 
-                // Add exercise button
-                Button {
-                    showAddExercise = true
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 18))
-                        Text("Add Exercise")
-                            .font(.body)
-                            .fontWeight(.regular)
+                // Add exercise buttons
+                HStack(spacing: 16) {
+                    Button {
+                        showAddExercise = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 16))
+                            Text("Search Library")
+                                .font(.body)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .clipShape(Capsule())
                     }
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    
+                    Button {
+                        showScanSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "camera.viewfinder")
+                                .font(.system(size: 16))
+                            Text("Scan Machine")
+                                .font(.body)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.68, green: 0.78, blue: 0.90).opacity(0.15))
+                        .clipShape(Capsule())
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
@@ -151,6 +173,20 @@ struct SplitDetailView: View {
         }
         .sheet(isPresented: $showAddExercise) {
             AddExerciseSheet(split: split)
+        }
+        .sheet(isPresented: $showScanSheet) {
+            ScanMachineSheet { detectedMachine in
+                let newEntry = SplitMachineEntry(
+                    order: split.entries.count,
+                    defaultSets: 3,
+                    defaultReps: 10,
+                    defaultWeight: 20.0,
+                    machine: detectedMachine
+                )
+                newEntry.split = split
+                modelContext.insert(newEntry)
+                try? modelContext.save()
+            }
         }
     }
 
