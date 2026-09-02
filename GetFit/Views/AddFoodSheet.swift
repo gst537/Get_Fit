@@ -615,7 +615,7 @@ struct AddFoodSheet: View {
                 config.computeUnits = .cpuOnly
                 #endif
                 
-                let model = try IndianFoodScanner_1(configuration: config)
+                let model = try IndianFoodScanner1_1(configuration: config)
                 let visionModel = try VNCoreMLModel(for: model.model)
                 
                 let nutriLensRequest = VNCoreMLRequest(model: visionModel)
@@ -632,30 +632,14 @@ struct AddFoodSheet: View {
                 let indianConfidence = topIndian != nil ? Int(topIndian!.confidence * 100) : 0
                 
                 // If Indian model is confident, stop here.
-                if indianConfidence >= 75, let top = topIndian {
+                if indianConfidence >= 50, let top = topIndian {
                     await MainActor.run {
                         self.handleSuccessfulResult(label: top.identifier, confidence: indianConfidence, isApple: false)
                     }
                     return
                 }
                 
-                // Otherwise, run Apple's Built-in Generic Model
-                let appleRequest = VNClassifyImageRequest()
-                try handler.perform([appleRequest])
-                
-                if let appleResults = appleRequest.results as? [VNClassificationObservation],
-                   let topApple = appleResults.first {
-                    
-                    let appleConfidence = Int(topApple.confidence * 100)
-                    if appleConfidence >= 70 {
-                        await MainActor.run {
-                            self.handleSuccessfulResult(label: topApple.identifier, confidence: appleConfidence, isApple: true)
-                        }
-                        return
-                    }
-                }
-                
-                // Both failed (graceful fallback to Deep Scan)
+                // If it's less than 50% confident, fail and suggest Deep Scan
                 await MainActor.run {
                     isScanningWithAI = false
                     let guess = topIndian?.identifier.replacingOccurrences(of: "_", with: " ").capitalized ?? "Unknown"
