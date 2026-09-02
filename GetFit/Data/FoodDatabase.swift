@@ -7,7 +7,7 @@ struct NutritionFacts {
     let fats: Double
 }
 
-class FoodDatabase {
+struct FoodDatabase {
     static let shared = FoodDatabase()
     
     // Maps the exact output of the AI (or manual search) to its macros
