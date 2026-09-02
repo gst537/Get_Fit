@@ -233,12 +233,12 @@ struct AddFoodSheet: View {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
                     selectedUIImage = image
-                    scanWithAI(image)
+                    scanWithDeepAI(image)
                 }
             }
         }
         .sheet(isPresented: $showCameraPicker) {
-            CameraView(selectedImage: $selectedUIImage) { img in scanWithAI(img) }
+            CameraView(selectedImage: $selectedUIImage) { img in scanWithDeepAI(img) }
         }
         .sheet(isPresented: $showAddItemSheet) {
             AddNewItemSheet { newItem in
@@ -346,20 +346,6 @@ struct AddFoodSheet: View {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
                         Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
-                    }
-                    if err.contains("Deep Scan") || err.contains("confident") {
-                        Button {
-                            if let img = selectedUIImage {
-                                scanWithDeepAI(img)
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "sparkles")
-                                Text("Run Deep Scan (Cloud AI)")
-                            }
-                            .font(.caption2).fontWeight(.bold).foregroundStyle(paleBlue)
-                            .padding(.vertical, 4)
-                        }
                     }
                 }
                 .padding(10).frame(maxWidth: .infinity, alignment: .leading)
@@ -583,111 +569,6 @@ struct AddFoodSheet: View {
                 }
             }
         }
-    }
-    
-    private func scanWithAI(_ image: UIImage) {
-        isScanningWithAI = true
-        aiSuccessMessage = nil
-        aiErrorMessage = nil
-        detectedItems = []
-        
-        Task {
-            let ciImage: CIImage?
-            if let ci = CIImage(image: image) {
-                ciImage = ci
-            } else if let cg = image.cgImage {
-                ciImage = CIImage(cgImage: cg)
-            } else {
-                ciImage = nil
-            }
-            
-            guard let validCIImage = ciImage else {
-                await MainActor.run {
-                    isScanningWithAI = false
-                    aiErrorMessage = "Could not process image."
-                }
-                return
-            }
-            
-            do {
-                let config = MLModelConfiguration()
-                #if targetEnvironment(simulator)
-                config.computeUnits = .cpuOnly
-                #endif
-                
-                let model = try IndianFoodScanner1_1(configuration: config)
-                let visionModel = try VNCoreMLModel(for: model.model)
-                
-                let nutriLensRequest = VNCoreMLRequest(model: visionModel)
-                let handler = VNImageRequestHandler(ciImage: validCIImage, options: [:])
-                
-                // Run Indian Model First
-                try handler.perform([nutriLensRequest])
-                
-                var topIndian: VNClassificationObservation? = nil
-                if let indianResults = nutriLensRequest.results as? [VNClassificationObservation] {
-                    topIndian = indianResults.first
-                }
-                
-                let indianConfidence = topIndian != nil ? Int(topIndian!.confidence * 100) : 0
-                
-                // If Indian model is confident, stop here.
-                if indianConfidence >= 50, let top = topIndian {
-                    await MainActor.run {
-                        self.handleSuccessfulResult(label: top.identifier, confidence: indianConfidence, isApple: false)
-                    }
-                    return
-                }
-                
-                // If it's less than 50% confident, fail and suggest Deep Scan
-                await MainActor.run {
-                    isScanningWithAI = false
-                    let guess = topIndian?.identifier.replacingOccurrences(of: "_", with: " ").capitalized ?? "Unknown"
-                    aiErrorMessage = "Local AI is only \(indianConfidence)% confident it's \(guess). Please use Deep Scan."
-                }
-                
-            } catch {
-                await MainActor.run {
-                    isScanningWithAI = false
-                    aiErrorMessage = "Failed to run AI models: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-    
-    private func handleSuccessfulResult(label: String, confidence: Int, isApple: Bool) {
-        isScanningWithAI = false
-        
-        let formattedLabel = label.replacingOccurrences(of: "_", with: " ").capitalized
-        let matchedItem = getMacrosFor(label: formattedLabel)
-        
-        detectedItems = [matchedItem]
-        foodName = matchedItem.name
-        caloriesText = "\(matchedItem.calories)"
-        proteinText = "\(matchedItem.protein)"
-        carbsText = "\(matchedItem.carbs)"
-        fatsText = "\(matchedItem.fats)"
-        
-        let source = isApple ? "Apple AI" : "CoreML"
-        aiSuccessMessage = "\(source) Identified '\(formattedLabel)' (\(confidence)%)"
-    }
-    
-    private func getMacrosFor(label: String) -> DetectedFoodItem {
-        let cleanName = label.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if let facts = FoodDatabase.shared.getMacros(for: cleanName) {
-            return DetectedFoodItem(
-                name: label.capitalized,
-                calories: facts.calories,
-                protein: Int(facts.protein),
-                carbs: Int(facts.carbs),
-                fats: Int(facts.fats),
-                        icon: "🍽️"
-            )
-        }
-        
-        // Fallback if not found in database (should rarely happen now)
-        return DetectedFoodItem(name: label.capitalized, calories: 200, protein: 5, carbs: 25, fats: 10, icon: "🍽️")
     }
     
     // MARK: - Helpers

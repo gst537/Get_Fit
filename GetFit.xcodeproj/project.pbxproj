@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0594172A3047E11C005C2671 /* IndianFoodScanner 1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 059417293047E11C005C2671 /* IndianFoodScanner 1.mlmodel */; };
 		0594172C3047EDAF005C2671 /* IndianFoodScanner1 1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 0594172B3047EDAF005C2671 /* IndianFoodScanner1 1.mlmodel */; };
 		0B03835A68F5F723F365EDCF /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37832AD76D2051C59101AA17 /* HealthKitManager.swift */; };
 		0EBA81EF9D1660920E0C5F5F /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0E577D8B1AF211EA7FBC10 /* SafariView.swift */; };
@@ -57,7 +56,6 @@
 /* Begin PBXFileReference section */
 		01AD3E2E44349C4A176E8B7E /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		04E2E0B7BFD92102581ABCDB /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
-		059417293047E11C005C2671 /* IndianFoodScanner 1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = "IndianFoodScanner 1.mlmodel"; sourceTree = "<group>"; };
 		0594172B3047EDAF005C2671 /* IndianFoodScanner1 1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = "IndianFoodScanner1 1.mlmodel"; sourceTree = "<group>"; };
 		0A7EF8ECFD1F802C6C9975C5 /* ProgressionChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionChartView.swift; sourceTree = "<group>"; };
 		130CA8EFD9D643CB95C71605 /* ScanMachineSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanMachineSheet.swift; sourceTree = "<group>"; };
@@ -177,7 +175,6 @@
 			isa = PBXGroup;
 			children = (
 				0594172B3047EDAF005C2671 /* IndianFoodScanner1 1.mlmodel */,
-				059417293047E11C005C2671 /* IndianFoodScanner 1.mlmodel */,
 				3C9F63C0C1240DD5A43EBC36 /* GetFit */,
 				49E04869D1DFEEDBB867AB27 /* GetFitWidgets */,
 				2951BD2E0BEA613C88ED67D4 /* Products */,
@@ -328,7 +325,6 @@
 				E9442F00F51C7E1BF12DE063 /* WeightUnitManager.swift in Sources */,
 				1861C0219ED783DB75CB5417 /* WorkoutHistoryView.swift in Sources */,
 				E404775E624ED53D3EC09D85 /* WorkoutSummaryCardView.swift in Sources */,
-				0594172A3047E11C005C2671 /* IndianFoodScanner 1.mlmodel in Sources */,
 				8068626F5639A0E3F40C43F3 /* YouTubePlayerView.swift in Sources */,
 				ED2D470BA1A983DE15777215 /* FoodDatabase.swift in Sources */,
 			);
