@@ -615,7 +615,7 @@ struct AddFoodSheet: View {
                 config.computeUnits = .cpuOnly
                 #endif
                 
-                let model = try NutriLens_v2(configuration: config)
+                let model = try IndianFoodScanner_1(configuration: config)
                 let visionModel = try VNCoreMLModel(for: model.model)
                 
                 let nutriLensRequest = VNCoreMLRequest(model: visionModel)
@@ -689,20 +689,20 @@ struct AddFoodSheet: View {
     }
     
     private func getMacrosFor(label: String) -> DetectedFoodItem {
-        let l = label.lowercased()
-        if l.contains("biryani") { return DetectedFoodItem(name: "Chicken Biryani", calories: 450, protein: 30, carbs: 45, fats: 15, icon: "🍗") }
-        if l.contains("chapati") || l.contains("roti") { return DetectedFoodItem(name: "Chapati", calories: 100, protein: 3, carbs: 18, fats: 2, icon: "🫓") }
-        if l.contains("dosa") { return DetectedFoodItem(name: "Dosa", calories: 150, protein: 4, carbs: 30, fats: 3, icon: "🫓") }
-        if l.contains("idli") { return DetectedFoodItem(name: "Idli", calories: 60, protein: 2, carbs: 12, fats: 0, icon: "⚪") }
-        if l.contains("samosa") { return DetectedFoodItem(name: "Samosa", calories: 250, protein: 3, carbs: 24, fats: 15, icon: "🥟") }
-        if l.contains("paneer") { return DetectedFoodItem(name: "Paneer Dish", calories: 350, protein: 14, carbs: 12, fats: 25, icon: "🥘") }
-        if l.contains("chicken") { return DetectedFoodItem(name: "Chicken Curry", calories: 300, protein: 25, carbs: 10, fats: 15, icon: "🍗") }
-        if l.contains("dal") { return DetectedFoodItem(name: "Dal", calories: 200, protein: 10, carbs: 30, fats: 5, icon: "🍲") }
-        if l.contains("chole") || l.contains("channa") { return DetectedFoodItem(name: "Chole", calories: 250, protein: 12, carbs: 35, fats: 8, icon: "🥘") }
-        if l.contains("salad") { return DetectedFoodItem(name: "Healthy Salad", calories: 120, protein: 4, carbs: 10, fats: 7, icon: "🥗") }
-        if l.contains("burger") { return DetectedFoodItem(name: "Burger", calories: 500, protein: 20, carbs: 40, fats: 25, icon: "🍔") }
-        if l.contains("pizza") { return DetectedFoodItem(name: "Pizza Slice", calories: 280, protein: 12, carbs: 35, fats: 10, icon: "🍕") }
+        let cleanName = label.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
+        if let facts = FoodDatabase.shared.getMacros(for: cleanName) {
+            return DetectedFoodItem(
+                name: label.capitalized,
+                calories: facts.calories,
+                protein: Int(facts.protein),
+                carbs: Int(facts.carbs),
+                fats: Int(facts.fats),
+                        icon: "🍽️"
+            )
+        }
+        
+        // Fallback if not found in database (should rarely happen now)
         return DetectedFoodItem(name: label.capitalized, calories: 200, protein: 5, carbs: 25, fats: 10, icon: "🍽️")
     }
     
