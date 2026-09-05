@@ -11,14 +11,14 @@ final class RestTimerActivityManager: ObservableObject {
     
     private init() {}
     
-    func startActivity(duration: Int, exerciseName: String = "Rest") {
+    func startActivity(duration: Int, exerciseName: String = "Rest", currentSet: Int = 0, totalSets: Int = 0, isResting: Bool = true) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         
         endActivity()
         
         let attributes = RestTimerAttributes(totalDuration: duration)
         let endTime = Date().addingTimeInterval(TimeInterval(duration))
-        let state = RestTimerAttributes.ContentState(endTime: endTime, exerciseName: exerciseName)
+        let state = RestTimerAttributes.ContentState(endTime: endTime, exerciseName: exerciseName, currentSet: currentSet, totalSets: totalSets, isResting: isResting)
         let content = ActivityContent(state: state, staleDate: endTime)
         
         do {

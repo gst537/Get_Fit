@@ -123,6 +123,8 @@ struct MuscleGroupBadge: View {
         Text(muscle.uppercased())
             .font(.system(size: 10, weight: .bold))
             .tracking(1.2)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .foregroundStyle(Color.black)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -307,13 +309,15 @@ struct SetCompletionEffect: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background(
-                Rectangle()
-                    .fill(isCompleted ? Color.white.opacity(0.1) : Color.clear)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isCompleted ? Color.white.opacity(0.08) : Color.clear)
             )
             .overlay(
-                Rectangle()
-                    .stroke(isCompleted ? Color.white : Color.clear, lineWidth: 1.0)
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isCompleted ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.0)
             )
             .animation(.easeIn(duration: 0.1), value: isCompleted)
     }

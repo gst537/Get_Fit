@@ -2,14 +2,20 @@ import SwiftUI
 
 struct RestTimerView: View {
     let duration: Int  // seconds
+    let exerciseName: String
+    let currentSet: Int
+    let totalSets: Int
     let onComplete: () -> Void
     @State private var timeRemaining: Int
     @State private var timer: Timer?
     @State private var selectedDuration: Int
     @Environment(\.dismiss) private var dismiss
 
-    init(duration: Int, onComplete: @escaping () -> Void) {
+    init(duration: Int, exerciseName: String = "Rest", currentSet: Int = 0, totalSets: Int = 0, onComplete: @escaping () -> Void) {
         self.duration = duration
+        self.exerciseName = exerciseName
+        self.currentSet = currentSet
+        self.totalSets = totalSets
         self.onComplete = onComplete
         _timeRemaining = State(initialValue: duration)
         _selectedDuration = State(initialValue: duration)
@@ -52,7 +58,7 @@ struct RestTimerView: View {
                         Button(action: {
                             selectedDuration = sec
                             timeRemaining = sec
-                            RestTimerActivityManager.shared.startActivity(duration: sec)
+                            RestTimerActivityManager.shared.startActivity(duration: sec, exerciseName: exerciseName, currentSet: currentSet, totalSets: totalSets, isResting: true)
                         }) {
                             Text("\(sec)s")
                                 .font(.subheadline)
@@ -80,7 +86,7 @@ struct RestTimerView: View {
         }
         .onAppear {
             startCountdown()
-            RestTimerActivityManager.shared.startActivity(duration: timeRemaining)
+            RestTimerActivityManager.shared.startActivity(duration: timeRemaining, exerciseName: exerciseName, currentSet: currentSet, totalSets: totalSets, isResting: true)
         }
         .onDisappear {
             RestTimerActivityManager.shared.endActivity()

@@ -54,51 +54,53 @@ struct WorkoutHistoryView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(sessions) { session in
-                            Button(action: {
-                                selectedSession = session
-                            }) {
-                                HStack(spacing: 16) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(session.splitName)
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundColor(.white)
-                                        
-                                        Text(session.date, format: .dateTime.month().day().year().hour().minute())
-                                            .font(.system(size: 12, weight: .regular))
-                                            .foregroundColor(.gray)
-                                    }
+                List {
+                    ForEach(sessions) { session in
+                        Button(action: {
+                            selectedSession = session
+                        }) {
+                            HStack(spacing: 16) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(session.splitName)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                     
-                                    Spacer()
-                                    
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text("\(Int(session.duration / 60)) min")
-                                            .font(.system(size: 14, weight: .regular))
-                                            .foregroundColor(.white)
-                                        
-                                        let tonnage = totalTonnage(for: session)
-                                        if tonnage > 0 {
-                                            Text(weightUnit.formatWeight(tonnage))
-                                                .font(.system(size: 12, weight: .bold))
-                                                .foregroundColor(slateBlue)
-                                        }
-                                    }
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(Color.gray.opacity(0.4))
+                                    Text(session.date, format: .dateTime.month().day().year().hour().minute())
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.gray)
                                 }
-                                .padding()
-                                .background(Color.black)
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    Text("\(Int(session.duration / 60)) min")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white)
+                                    
+                                    let tonnage = totalTonnage(for: session)
+                                    if tonnage > 0 {
+                                        Text(weightUnit.formatWeight(tonnage))
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(slateBlue)
+                                    }
+                                }
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Color.gray.opacity(0.4))
                             }
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.2))
+                            .padding()
+                            .background(Color.black)
+                            .cornerRadius(12)
                         }
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                     }
+                    .onDelete(perform: deleteSessions)
                 }
+                .listStyle(.plain)
+                .padding(.top, 8)
             }
         }
     }

@@ -20,8 +20,8 @@ final class ProgressiveOverloadService: @unchecked Sendable {
     /// Analyzes historical completed sessions for an exercise and returns a smart overload recommendation.
     func calculateRecommendation(
         for exerciseName: String,
-        equipmentType: String = "Barbell",
-        category: String = "Chest",
+        equipmentType: EquipmentType = .barbell,
+        category: MachineCategory = .push,
         defaultWeight: Double = 0.0,
         defaultReps: Int = 12,
         completedSessions: [WorkoutSession]
@@ -58,13 +58,20 @@ final class ProgressiveOverloadService: @unchecked Sendable {
             )
         }
         
+        var increment: Double = 0.0
+        
+        switch equipmentType {
+        case .dumbbell, .kettlebell:
+            increment = 2.5
+        case .barbell, .machine, .cable:
+            increment = category == .legs ? 5.0 : 2.5
+        case .bodyweight, .other:
+            increment = 0.0 // progression via reps/form for bodyweight
+        }
+        
         let previousWeight = maxWeightLog.weight
         let minRepsHit = lastSessionLogs.map { $0.reps }.min() ?? 0
         
-        // Determine upper vs lower body increment (+2.5 kg vs +5.0 kg)
-        let lowerBodyCategories = ["legs", "quads", "hamstrings", "glutes", "calves", "squat", "deadlift", "leg press"]
-        let isLowerBody = lowerBodyCategories.contains { category.lowercased().contains($0) || exerciseName.lowercased().contains($0) }
-        let increment = isLowerBody ? 5.0 : 2.5
         
         // Rule 1: Double Progression - If all sets hit >= 12 reps (or targetRepsCap)
         if minRepsHit >= targetRepsCap {

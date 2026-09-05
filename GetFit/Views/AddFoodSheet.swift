@@ -98,10 +98,10 @@ struct AddFoodSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    var initialMealType: String = "Breakfast"
+    var initialMealType: MealType = .breakfast
     
     @State private var foodName = ""
-    @State private var selectedMealType = "Breakfast"
+    @State private var selectedMealType: MealType = .breakfast
     @State private var caloriesText = ""
     @State private var proteinText = ""
     @State private var carbsText = ""
@@ -111,6 +111,15 @@ struct AddFoodSheet: View {
     @State private var detectedItems: [DetectedFoodItem] = []
     @State private var itemToEdit: DetectedFoodItem? = nil
     @State private var showAddItemSheet = false
+    
+    enum InputMode: String, CaseIterable {
+        case photo = "Smart Photo"
+        case text = "Text Log"
+        case quick = "Quick Estimate"
+    }
+    
+    @State private var inputMode: InputMode = .photo
+    @State private var textLogInput = ""
     
     // Photo & AI state
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -122,7 +131,7 @@ struct AddFoodSheet: View {
     
 
     
-    let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
+    let mealTypes = MealType.allCases
     let paleBlue = MutedEarth.slateBlue
 
     var body: some View {
@@ -141,9 +150,23 @@ struct AddFoodSheet: View {
                 }
                 
 
+                // Input Mode Picker
+                Picker("Input Mode", selection: $inputMode) {
+                    ForEach(InputMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.bottom, 8)
                 
-                // Photo / Camera Section
-                photoSection
+                // Dynamic Input Section
+                if inputMode == .photo {
+                    photoSection
+                } else if inputMode == .text {
+                    textLogSection
+                } else {
+                    quickEstimateSection
+                }
                 
                 // Detected Items with +/- Quantity Steppers
                 itemsBreakdownSection
@@ -156,7 +179,7 @@ struct AddFoodSheet: View {
                         .foregroundStyle(Color.gray)
                     HStack(spacing: 8) {
                         ForEach(mealTypes, id: \.self) { type in
-                            Text(type)
+                            Text(type.rawValue)
                                 .font(.subheadline)
                                 .fontWeight(selectedMealType == type ? .medium : .regular)
                                 .foregroundStyle(selectedMealType == type ? .black : Color.gray)
@@ -256,6 +279,113 @@ struct AddFoodSheet: View {
         }
     }
     
+    // MARK: - Text Log Section
+    
+    private var textLogSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Describe Your Meal")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(.white)
+            
+            TextField("e.g. 2 rotis and some dal...", text: $textLogInput, axis: .vertical)
+                .lineLimit(2...4)
+                .font(.body)
+                .padding(14)
+                .monochromeCard(cornerRadius: 12)
+            
+            Button {
+                Haptics.playLightImpact()
+                scanWithTextAI(textLogInput)
+            } label: {
+                HStack {
+                    Image(systemName: "sparkles")
+                    Text("Analyze Text")
+                }
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(paleBlue)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .opacity(textLogInput.isEmpty || isScanningWithAI ? 0.5 : 1.0)
+            }
+            .disabled(textLogInput.isEmpty || isScanningWithAI)
+            
+            // Status Messages
+            if isScanningWithAI {
+                HStack(spacing: 10) {
+                    ProgressView().tint(paleBlue)
+                    Text("Gemini AI analyzing text...").font(.caption).foregroundStyle(paleBlue)
+                }
+                .padding(10).frame(maxWidth: .infinity)
+                .background(paleBlue.opacity(0.1)).clipShape(RoundedRectangle(cornerRadius: 10))
+            } else if let err = aiErrorMessage {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
+                    Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                }
+                .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+    
+    // MARK: - Quick Estimate Section
+    
+    private var quickEstimateSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Tap to auto-fill macros")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.gray)
+            
+            VStack(spacing: 12) {
+                quickEstimateRow(sizeTitle: "Small Meal (300 kcal)", cals: 300)
+                quickEstimateRow(sizeTitle: "Medium Meal (600 kcal)", cals: 600)
+                quickEstimateRow(sizeTitle: "Large Meal (900 kcal)", cals: 900)
+            }
+        }
+    }
+    
+    private func quickEstimateRow(sizeTitle: String, cals: Int) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(sizeTitle).font(.caption).foregroundStyle(.white)
+            HStack(spacing: 8) {
+                quickButton(title: "Balanced", cals: cals, p: 0.25, c: 0.50, f: 0.25)
+                quickButton(title: "Carb Heavy", cals: cals, p: 0.15, c: 0.65, f: 0.20)
+                quickButton(title: "Protein Heavy", cals: cals, p: 0.40, c: 0.35, f: 0.25)
+            }
+        }
+    }
+    
+    private func quickButton(title: String, cals: Int, p: Double, c: Double, f: Double) -> some View {
+        Button {
+            Haptics.playSuccess()
+            let pGrams = Int(Double(cals) * p / 4.0)
+            let cGrams = Int(Double(cals) * c / 4.0)
+            let fGrams = Int(Double(cals) * f / 9.0)
+            
+            foodName = "Mess Meal (\(title))"
+            caloriesText = "\(cals)"
+            proteinText = "\(pGrams)"
+            carbsText = "\(cGrams)"
+            fatsText = "\(fGrams)"
+            
+            detectedItems = []
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(paleBlue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(paleBlue.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+
     private var canSave: Bool {
         !foodName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (Int(caloriesText) ?? 0) > 0
     }
@@ -566,6 +696,37 @@ struct AddFoodSheet: View {
                     fatsText = "\(result.totalFats)"
                     detectedItems = result.detectedItems
                     aiSuccessMessage = "Deep Scan Identified '\(result.plateTitle)'"
+                }
+            }
+        }
+    }
+    
+    private func scanWithTextAI(_ text: String) {
+        guard let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty else {
+            aiErrorMessage = "Text Scan requires Gemini API Key in Profile Settings."
+            return
+        }
+        
+        isScanningWithAI = true
+        aiSuccessMessage = nil
+        aiErrorMessage = nil
+        detectedItems = []
+        
+        Task {
+            let result = await AIFoodVisionService.shared.analyzeFoodText(text)
+            
+            await MainActor.run {
+                isScanningWithAI = false
+                if let err = result.errorMessage {
+                    aiErrorMessage = err
+                } else {
+                    foodName = result.plateTitle
+                    caloriesText = "\(result.totalCalories)"
+                    proteinText = "\(result.totalProtein)"
+                    carbsText = "\(result.totalCarbs)"
+                    fatsText = "\(result.totalFats)"
+                    detectedItems = result.detectedItems
+                    aiSuccessMessage = "Text Scan Identified '\(result.plateTitle)'"
                 }
             }
         }

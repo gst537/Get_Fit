@@ -214,11 +214,11 @@ struct ScanMachineSheet: View {
         } else {
             let newMachine = GymMachine(
                 name: detected.name,
-                category: detected.category,
+                category: MachineCategory(rawValue: detected.category) ?? .push,
                 targetMuscles: detected.targetMuscles,
                 instructions: detected.instructions,
                 isCustom: true,
-                equipmentType: detected.equipmentType
+                equipmentType: EquipmentType(rawValue: detected.equipmentType) ?? .other
             )
             modelContext.insert(newMachine)
             machineToUse = newMachine

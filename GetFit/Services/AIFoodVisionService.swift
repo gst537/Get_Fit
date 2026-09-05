@@ -68,16 +68,17 @@ final class AIFoodVisionService: @unchecked Sendable {
         }
         
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        let result = await callGeminiVision(image: image, apiKey: cleanKey)
-        
-        // If Gemini API succeeded and detected items, return AI result
-        if result.errorMessage == nil && !result.detectedItems.isEmpty {
-            return result
+        return await callGeminiVision(image: image, apiKey: cleanKey)
+    }
+    
+    /// Secondary entry point: Analyzes plain text description of a meal using Google Gemini AI
+    func analyzeFoodText(_ text: String) async -> FoodAnalysisResult {
+        guard let key = savedAPIKey, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return generateSmartLocalFallback(reason: "No API Key entered. Generated Smart Local Meal Estimate below!")
         }
         
-        // If Gemini API hit 429 rate limit or project limit 0, fall back to Smart Local Estimation gracefully!
-        let note = result.errorMessage ?? "Cloud API limit reached. Smart Local Nutrition Estimate generated below."
-        return generateSmartLocalFallback(reason: note)
+        let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        return await callGeminiText(textInput: text, apiKey: cleanKey)
     }
     
     // MARK: - Smart Local Nutrition Fallback Estimator
@@ -122,8 +123,8 @@ final class AIFoodVisionService: @unchecked Sendable {
         
         let promptText = """
         You are an expert nutritionist and food vision AI.
-        Analyze this meal photo carefully.
-        Identify every specific food item visible (e.g. Masala Dosa, Filter Coffee, Sambar, Idli, Fried Eggs, Chicken Biryani, Roti, Dal, Rice, Chapati).
+        Analyze this meal photo carefully. The user frequently eats at an Indian Hostel Mess.
+        Identify every specific food item visible. Typical mess items include: Poori, Aloo Masala, Uthapam, Sambar, Idly, Vada, Chapathi, Paneer Korma, Dal, Rice, Mughlai Chicken, Roti, etc.
         
         CRITICAL MULTIPLIER RULE:
         If there are multiple of the same item (e.g. 2 dosas or 3 eggs), set `quantity` to the number of items (e.g. 2.0). 
@@ -210,19 +211,111 @@ final class AIFoodVisionService: @unchecked Sendable {
                     }
                 }
             } catch {
-                lastError = "Network error: \(error.localizedDescription)"
+                lastError = error.localizedDescription
             }
         }
         
         return FoodAnalysisResult(
-            plateTitle: "API Notice",
+            plateTitle: "Error",
             totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
             detectedItems: [], confidence: 0.0,
             errorMessage: lastError
         )
     }
     
-    // MARK: - JSON Parser
+    // MARK: - Google Gemini Text API
+    
+    private func callGeminiText(textInput: String, apiKey: String) async -> FoodAnalysisResult {
+        let promptText = """
+        You are an expert nutritionist AI. The user is eating at an Indian Hostel Mess.
+        They have provided a textual description of their meal: "\(textInput)".
+        
+        Identify every specific food item mentioned. Approximate their standard sizes (e.g. 1 medium chapati, 1 katori of dal) and standard hostel nutrition.
+        
+        CRITICAL MULTIPLIER RULE:
+        If the user mentions multiple of the same item (e.g. "3 idlis" or "2 rotis"), set `quantity` to the number of items (e.g. 3.0 or 2.0). 
+        However, the `calories`, `protein`, `carbs`, and `fats` you return MUST be for exactly ONE base unit. The app will multiply them. Do NOT multiply the macros yourself.
+        
+        IMPORTANT: Return ONLY raw valid JSON with NO markdown formatting, NO ```json backticks, and NO extra text.
+        {
+          "plateTitle": "Summary Title (e.g. Mess Lunch)",
+          "items": [
+            {
+              "name": "Chapati",
+              "calories": 100,
+              "protein": 3,
+              "carbs": 15,
+              "fats": 2,
+              "icon": "🫓",
+              "quantity": 2.0
+            }
+          ]
+        }
+        """
+        
+        let requestBody: [String: Any] = [
+            "contents": [
+                [
+                    "parts": [
+                        ["text": promptText]
+                    ]
+                ]
+            ]
+        ]
+        
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody) else {
+            return FoodAnalysisResult(
+                plateTitle: "Error",
+                totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+                detectedItems: [], confidence: 0.0,
+                errorMessage: "Could not format API request payload."
+            )
+        }
+        
+        let models = [
+            "gemini-flash-latest",
+            "gemini-1.5-flash-latest"
+        ]
+        
+        let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encodedKey = cleanKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cleanKey
+        var lastError = "Could not connect to Google Gemini API."
+        
+        for model in models {
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(encodedKey)"
+            guard let url = URL(string: urlString) else { continue }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = httpBody
+            request.timeoutInterval = 10
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+                
+                if statusCode == 200 {
+                    if let result = parseGeminiResponse(data) {
+                        return result
+                    }
+                } else {
+                    lastError = "API Error: Status \(statusCode)"
+                }
+            } catch {
+                lastError = error.localizedDescription
+            }
+        }
+        
+        return FoodAnalysisResult(
+            plateTitle: "Error",
+            totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0,
+            detectedItems: [], confidence: 0.0,
+            errorMessage: lastError
+        )
+    }
+    
+    // MARK: - Generic Response Parser
     
     private func parseGeminiResponse(_ data: Data) -> FoodAnalysisResult? {
         guard let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

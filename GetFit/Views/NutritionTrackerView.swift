@@ -7,12 +7,12 @@ struct NutritionTrackerView: View {
     @Query private var nutritionGoals: [NutritionGoal]
     
     @State private var showAddFoodSheet = false
-    @State private var selectedCategoryForAdd = "Breakfast"
+    @State private var selectedCategoryForAdd: MealType = .breakfast
     @State private var showEditGoalSheet = false
     @State private var selectedMealPhoto: UIImage? = nil
     @State private var mealToEdit: MealLog? = nil
     
-    let paleBlue = MutedEarth.slateBlue
+    let paleBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     let warmGold = MutedEarth.terracotta
     let mintGreen = MutedEarth.softSage
     
@@ -252,15 +252,15 @@ struct NutritionTrackerView: View {
     
     private var mealCategoriesSection: some View {
         VStack(spacing: 16) {
-            mealCategoryBlock(title: "Breakfast", icon: "sunrise.fill", categoryName: "Breakfast")
-            mealCategoryBlock(title: "Lunch", icon: "sun.max.fill", categoryName: "Lunch")
-            mealCategoryBlock(title: "Dinner", icon: "moon.fill", categoryName: "Dinner")
-            mealCategoryBlock(title: "Snacks", icon: "leaf.fill", categoryName: "Snack")
+            mealCategoryBlock(title: "Breakfast", icon: "sunrise.fill", categoryName: .breakfast)
+            mealCategoryBlock(title: "Lunch", icon: "sun.max.fill", categoryName: .lunch)
+            mealCategoryBlock(title: "Dinner", icon: "moon.fill", categoryName: .dinner)
+            mealCategoryBlock(title: "Snacks", icon: "leaf.fill", categoryName: .snack)
         }
     }
     
-    private func mealCategoryBlock(title: String, icon: String, categoryName: String) -> some View {
-        let categoryMeals = todayMeals.filter { $0.mealType.lowercased() == categoryName.lowercased() }
+    private func mealCategoryBlock(title: String, icon: String, categoryName: MealType) -> some View {
+        let categoryMeals = todayMeals.filter { $0.mealType == categoryName }
         let categoryCalories = categoryMeals.reduce(0) { $0 + $1.calories }
         
         return VStack(alignment: .leading, spacing: 12) {
@@ -515,7 +515,7 @@ struct EditLoggedMealSheet: View {
     @State private var baseCarbs: Double = 0.0
     @State private var baseFats: Double = 0.0
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     
     var body: some View {
         NavigationStack {
@@ -663,7 +663,7 @@ struct EditNutritionGoalSheet: View {
     @State private var carbsText = ""
     @State private var fatsText = ""
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {

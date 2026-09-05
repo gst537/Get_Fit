@@ -61,7 +61,7 @@ struct ProgressionChartView: View {
                         .fontWeight(.light)
                         .foregroundColor(.white)
                     
-                    Text(exercise.equipmentType)
+                    Text(exercise.equipmentType.rawValue)
                         .font(.caption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)

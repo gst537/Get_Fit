@@ -27,6 +27,12 @@ struct ActiveWorkoutView: View {
     @State private var acceptedOverloads: [UUID: Bool] = [:]
     
     @State private var showCardioFinisherSheet = false
+    
+    // Rest Timer Context
+    @State private var currentRestingExerciseName: String = "Rest"
+    @State private var currentRestingSet: Int = 0
+    @State private var currentTotalSets: Int = 0
+    
     @State private var loggedCardioMinutes: Double? = nil
     @State private var loggedCardioDistance: Double? = nil
     @State private var showSummaryCard = false
@@ -78,8 +84,11 @@ struct ActiveWorkoutView: View {
             timer?.invalidate()
             UIApplication.shared.isIdleTimerDisabled = false
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            startTimer()
+        }
         .fullScreenCover(isPresented: $showRestTimer) {
-            RestTimerView(duration: restDuration, onComplete: {
+            RestTimerView(duration: restDuration, exerciseName: currentRestingExerciseName, currentSet: currentRestingSet, totalSets: currentTotalSets, onComplete: {
                 showRestTimer = false
             })
         }
@@ -256,15 +265,17 @@ struct ActiveWorkoutView: View {
                         .foregroundColor(.white)
                     
                     if let muscles = entry.machine?.targetMuscles, !muscles.isEmpty {
-                        HStack(spacing: 4) {
-                            ForEach(muscles.prefix(3), id: \.self) { muscle in
-                                MuscleGroupBadge(muscle: muscle, color: MuscleGroupBadge.colorForMuscle(muscle))
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 4) {
+                                ForEach(muscles, id: \.self) { muscle in
+                                    MuscleGroupBadge(muscle: muscle, color: MuscleGroupBadge.colorForMuscle(muscle))
+                                }
                             }
                         }
                     }
                 }
                 Spacer()
-                if machine.equipmentType.lowercased() == "barbell" {
+                if machine.equipmentType == .barbell {
                     Button(action: {
                         calculatorTargetWeight = weightInputs[machine.id] ?? weightUnit.displayWeight(entry.defaultWeight)
                         showPlateCalculator = true
@@ -278,7 +289,7 @@ struct ActiveWorkoutView: View {
                     }
                     .padding(.trailing, 8)
                 }
-                Text(machine.equipmentType)
+                Text(machine.equipmentType.rawValue)
                     .font(.caption)
                     .foregroundColor(.gray)
             }
@@ -302,7 +313,7 @@ struct ActiveWorkoutView: View {
                 machineName: machine.name,
                 targetMuscles: machine.targetMuscles,
                 instructions: machine.instructions,
-                equipmentType: machine.equipmentType
+                equipmentType: machine.equipmentType.rawValue
             )
             
             let loggedSets = loggedSets(for: machine.id)
@@ -310,32 +321,36 @@ struct ActiveWorkoutView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(loggedSets.indices, id: \.self) { idx in
                         let log = loggedSets[idx]
-                        HStack {
+                        HStack(spacing: 16) {
                             Text("Set \(idx + 1)")
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(MutedEarth.slateBlue)
+                            
                             Spacer()
-                            HStack(spacing: 8) {
-                                if let rpe = log.rpe {
-                                    Text("RPE \(rpe)")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(MutedEarth.slateBlue.opacity(0.2))
-                                        .foregroundStyle(MutedEarth.slateBlue)
-                                        .clipShape(Capsule())
-                                }
-                                Text("\(weightUnit.formatNumber(weightUnit.displayWeight(log.weight))) \(weightUnit.unitLabel) × \(log.reps)")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
+                            
+                            if let rpe = log.rpe {
+                                Text("RPE \(rpe)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(MutedEarth.slateBlue.opacity(0.15))
+                                    .foregroundStyle(MutedEarth.slateBlue)
+                                    .clipShape(Capsule())
                             }
+                            
+                            Text("\(weightUnit.formatNumber(weightUnit.displayWeight(log.weight))) \(weightUnit.unitLabel) × \(log.reps)")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                            
                             Button(action: {
                                 deleteSet(log)
                             }) {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.gray)
+                                Image(systemName: "trash")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.red.opacity(0.8))
+                                    .padding(.leading, 8)
                             }
                         }
                         .setCompletionEffect(isCompleted: true)
@@ -425,7 +440,7 @@ struct ActiveWorkoutView: View {
                 .border(MutedEarth.slateBlue.opacity(0.3), width: 1)
             }
             
-            HStack {
+            HStack(alignment: .bottom) {
                 stepperControl(
                     value: Binding(
                         get: { weightInputs[machine.id] ?? 0.0 },
@@ -445,6 +460,7 @@ struct ActiveWorkoutView: View {
                 
                 Text("×")
                     .foregroundColor(.gray)
+                    .padding(.bottom, 6)
                 
                 stepperControlInt(
                     value: Binding(
@@ -454,7 +470,7 @@ struct ActiveWorkoutView: View {
                     step: 1
                 )
                 
-                VStack(spacing: 2) {
+                VStack(spacing: 4) {
                     Text("RPE")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(Color.gray)
@@ -465,13 +481,17 @@ struct ActiveWorkoutView: View {
                     .keyboardType(.numbersAndPunctuation)
                     .submitLabel(.done)
                     .multilineTextAlignment(.center)
-                    .font(.caption)
-                    .frame(width: 32, height: 32)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 34, height: 28)
                     .background(Color.white.opacity(0.05))
-                    .border(Color.white.opacity(0.1), width: 1)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
                 }
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
                 Button(action: {
                     let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -481,16 +501,18 @@ struct ActiveWorkoutView: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.black)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 36, height: 28)
                         .background(MutedEarth.slateBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
+                .padding(.bottom, 0)
             }
         }
         .padding(16)
         .monochromeCard()
     }
     
-    private func incrementStep(for equipmentType: String) -> Double {
+    private func incrementStep(for equipmentType: EquipmentType) -> Double {
         return weightUnit.stepSize(for: equipmentType)
     }
     
@@ -547,11 +569,11 @@ struct ActiveWorkoutView: View {
                 }
             }) {
                 Image(systemName: "minus")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(Color.black)
-                    .border(Color.white.opacity(0.3), width: 0.5)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             
             HStack(spacing: 2) {
@@ -559,14 +581,15 @@ struct ActiveWorkoutView: View {
                     .keyboardType(.numbersAndPunctuation)
                     .submitLabel(.done)
                     .multilineTextAlignment(.center)
-                    .font(.body)
-                    .fontWeight(.medium)
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
-                    .frame(width: 44)
+                    .frame(width: 50)
                 
                 Text(weightUnit.unitLabel)
                     .font(.caption)
                     .foregroundColor(.gray)
+                    .lineLimit(1)
+                    .fixedSize()
             }
             
             Button(action: {
@@ -575,11 +598,11 @@ struct ActiveWorkoutView: View {
                 textValue.wrappedValue = weightUnit.formatNumber(cur + step)
             }) {
                 Image(systemName: "plus")
-                    .font(.system(size: 12))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(MutedEarth.slateBlue)
                     .frame(width: 28, height: 28)
-                    .background(Color.black)
-                    .border(Color.white.opacity(0.3), width: 0.5)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
     }
@@ -592,28 +615,31 @@ struct ActiveWorkoutView: View {
                 }
             }) {
                 Image(systemName: "minus")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(Color.black)
-                    .border(Color.white.opacity(0.3), width: 0.5)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             
             Text("\(value.wrappedValue) reps")
-                .font(.body)
-                .fontWeight(.medium)
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white)
-                .frame(width: 60)
+                .frame(width: 64)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: true, vertical: false)
+                .multilineTextAlignment(.center)
             
             Button(action: {
                 value.wrappedValue += step
             }) {
                 Image(systemName: "plus")
-                    .font(.system(size: 12))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(MutedEarth.slateBlue)
                     .frame(width: 28, height: 28)
-                    .background(Color.black)
-                    .border(Color.white.opacity(0.3), width: 0.5)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
     }
@@ -676,6 +702,14 @@ struct ActiveWorkoutView: View {
         // Clear RPE for the next set
         rpeInputs[machine.id] = ""
         
+        currentRestingExerciseName = machine.name
+        currentRestingSet = loggedSetsCount + 1
+        currentTotalSets = entry.defaultSets
+        
+        if currentRestingSet >= currentTotalSets {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+        
         // Trigger rest timer
         restDuration = 90
         showRestTimer = true
@@ -687,8 +721,12 @@ struct ActiveWorkoutView: View {
     }
 
     private func startTimer() {
+        // Synchronize with the actual session start time immediately
+        elapsedTime = max(0, Date.now.timeIntervalSince(session.date))
+        
+        timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            elapsedTime += 1.0
+            elapsedTime = max(0, Date.now.timeIntervalSince(session.date))
         }
     }
 

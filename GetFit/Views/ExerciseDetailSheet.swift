@@ -37,7 +37,7 @@ struct ExerciseDetailSheet: View {
                         .foregroundStyle(.white)
                     
                     HStack(spacing: 8) {
-                        Text(exercise.category.uppercased())
+                        Text(exercise.category.rawValue.uppercased())
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1.0)
                             .foregroundStyle(slateBlue)
@@ -51,7 +51,7 @@ struct ExerciseDetailSheet: View {
                             Image(systemName: iconForEquipment(exercise.equipmentType))
                                 .font(.system(size: 12))
                                 .foregroundStyle(slateBlue)
-                            Text(exercise.equipmentType)
+                            Text(exercise.equipmentType.rawValue)
                                 .font(.caption)
                                 .fontWeight(.regular)
                                 .foregroundStyle(Color.gray)
@@ -111,7 +111,7 @@ struct ExerciseDetailSheet: View {
                     machineName: exercise.name,
                     targetMuscles: exercise.targetMuscles,
                     instructions: exercise.instructions,
-                    equipmentType: exercise.equipmentType
+                    equipmentType: exercise.equipmentType.rawValue
                 )
                 
                 // Section 3: Target Muscles Badges
@@ -444,13 +444,13 @@ struct ExerciseDetailSheet: View {
         }
     }
     
-    private func iconForEquipment(_ type: String) -> String {
+    private func iconForEquipment(_ type: EquipmentType) -> String {
         switch type {
-        case "Barbell": return "figure.strengthtraining.traditional"
-        case "Dumbbell": return "dumbbell"
-        case "Cable": return "cable.connector"
-        case "Machine": return "gearshape"
-        case "Bodyweight": return "figure.walk"
+        case .barbell: return "figure.strengthtraining.traditional"
+        case .dumbbell: return "dumbbell"
+        case .cable: return "cable.connector"
+        case .machine: return "gearshape"
+        case .bodyweight: return "figure.walk"
         default: return "dumbbell"
         }
     }

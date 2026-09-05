@@ -22,7 +22,7 @@ struct ProfileView: View {
     @State private var showEditProfileSheet = false
     @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
     
-    let slateBlue = MutedEarth.slateBlue
+    let slateBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     
     private var currentWeightKg: Double {
         weightEntries.first?.weight ?? 70.0
@@ -85,11 +85,11 @@ struct ProfileView: View {
         } else if tonnes >= 50 {
             return ("PLATINUM ATHLETE", "crown.fill", Color.gray)
         } else if tonnes >= 10 {
-            return ("GOLD ATHLETE", "trophy.fill", MutedEarth.slateBlue)
+            return ("GOLD ATHLETE", "trophy.fill", Color(red: 0.35, green: 0.65, blue: 0.95))
         } else if tonnes >= 1 {
             return ("SILVER ATHLETE", "star.fill", Color.gray)
         } else {
-            return ("ROOKIE ATHLETE", "flame.fill", MutedEarth.slateBlue)
+            return ("ROOKIE ATHLETE", "flame.fill", Color(red: 0.35, green: 0.65, blue: 0.95))
         }
     }
     
@@ -185,7 +185,7 @@ struct ProfileView: View {
                         }
                     }
                     .padding(18)
-                    .monochromeCard()
+                    .glassmorphic(cornerRadius: 18)
                     
                     // 2. Kokonut Activity Rings Card
                     VStack(alignment: .leading, spacing: 12) {
@@ -223,7 +223,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .monochromeCard()
+                            .glassmorphic(cornerRadius: 18)
                             
                             // Workouts Completed
                             VStack(alignment: .leading, spacing: 8) {
@@ -237,7 +237,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .monochromeCard()
+                            .glassmorphic(cornerRadius: 18)
                             
                             // Total Cardio Time
                             VStack(alignment: .leading, spacing: 8) {
@@ -251,7 +251,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .monochromeCard()
+                            .glassmorphic(cornerRadius: 18)
                             
                             // Current Streak
                             VStack(alignment: .leading, spacing: 8) {
@@ -265,7 +265,7 @@ struct ProfileView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .monochromeCard()
+                            .glassmorphic(cornerRadius: 18)
                         }
                     }
                     
@@ -287,7 +287,7 @@ struct ProfileView: View {
                             .pickerStyle(.segmented)
                         }
                         .padding(16)
-                        .monochromeCard()
+                        .glassmorphic(cornerRadius: 18)
                     }
                     
                     // 5. Workout Preferences Section
@@ -322,7 +322,7 @@ struct ProfileView: View {
                         }
                     }
                     .padding(16)
-                    .monochromeCard()
+                    .glassmorphic(cornerRadius: 18)
                     
                     // 6. AI Features Section
                     VStack(alignment: .leading, spacing: 14) {
@@ -360,12 +360,12 @@ struct ProfileView: View {
                             }
                         }
                         .padding(16)
-                        .monochromeCard()
+                        .glassmorphic(cornerRadius: 18)
                     }
                 }
                 .padding(20)
             }
-            .background(Color(UIColor.systemBackground).ignoresSafeArea())
+            .background(Color.black.ignoresSafeArea())
             .navigationTitle("Profile & Stats")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -397,7 +397,7 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .monochromeCard()
+        .glassmorphic(cornerRadius: 18)
     }
     
     private func syncAppleHealth() {
@@ -441,49 +441,85 @@ struct EditProfileSheet: View {
     @State private var inputHeightStr: String = ""
     @State private var inputTargetWeightStr: String = ""
     
-    let slateBlue = MutedEarth.slateBlue
+    let slateBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Personal Info") {
-                    HStack {
-                        Text("Name")
-                        Spacer()
-                        TextField("Your Name", text: $inputName)
-                            .multilineTextAlignment(.trailing)
+            ScrollView {
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Personal Info")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.gray)
+                            .padding(.leading, 4)
+                        
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("Name")
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                TextField("Your Name", text: $inputName)
+                                    .multilineTextAlignment(.trailing)
+                                    .foregroundStyle(slateBlue)
+                            }
+                            .padding(16)
+                            
+                            Divider().background(Color.white.opacity(0.1))
+                            
+                            HStack {
+                                Text("Age")
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                TextField("Age", text: $inputAgeStr)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .submitLabel(.done)
+                                    .multilineTextAlignment(.trailing)
+                                    .foregroundStyle(slateBlue)
+                            }
+                            .padding(16)
+                            
+                            Divider().background(Color.white.opacity(0.1))
+                            
+                            HStack {
+                                Text("Height (cm)")
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                TextField("Height in cm", text: $inputHeightStr)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .submitLabel(.done)
+                                    .multilineTextAlignment(.trailing)
+                                    .foregroundStyle(slateBlue)
+                            }
+                            .padding(16)
+                        }
+                        .glassmorphic(cornerRadius: 18)
                     }
                     
-                    HStack {
-                        Text("Age")
-                        Spacer()
-                        TextField("Age", text: $inputAgeStr)
-                            .keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    HStack {
-                        Text("Height (cm)")
-                        Spacer()
-                        TextField("Height in cm", text: $inputHeightStr)
-                            .keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done)
-                            .multilineTextAlignment(.trailing)
-                    }
-                }
-                
-                Section("Body Recomp Target") {
-                    HStack {
-                        Text("Target Weight (kg)")
-                        Spacer()
-                        TextField("Target Weight", text: $inputTargetWeightStr)
-                            .keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done)
-                            .multilineTextAlignment(.trailing)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Body Recomp Target")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.gray)
+                            .padding(.leading, 4)
+                        
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("Target Weight (kg)")
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                TextField("Target Weight", text: $inputTargetWeightStr)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .submitLabel(.done)
+                                    .multilineTextAlignment(.trailing)
+                                    .foregroundStyle(slateBlue)
+                            }
+                            .padding(16)
+                        }
+                        .glassmorphic(cornerRadius: 18)
                     }
                 }
+                .padding(20)
             }
+            .background(Color.black.ignoresSafeArea())
             .navigationTitle("Edit Athlete Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

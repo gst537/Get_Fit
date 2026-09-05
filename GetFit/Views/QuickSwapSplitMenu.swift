@@ -1,4 +1,4 @@
-import SwiftUI
+ import SwiftUI
 import SwiftData
 
 struct QuickSwapSplitMenu: View {
@@ -60,7 +60,7 @@ struct QuickSwapSplitMenu: View {
                 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
         }
         .alert("New Custom Split", isPresented: $showCustomSplitAlert) {
@@ -83,7 +83,7 @@ struct QuickSwapSplitMenu: View {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         
-        let newSplit = WorkoutSplit(name: trimmed, status: "Active")
+        let newSplit = WorkoutSplit(name: trimmed, status: .active)
         modelContext.insert(newSplit)
         scheduleEntry.assignedSplit = newSplit
         try? modelContext.save()

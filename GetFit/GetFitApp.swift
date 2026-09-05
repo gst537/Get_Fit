@@ -19,14 +19,11 @@ struct GetFitApp: App {
             NutritionGoal.self,
             MealLog.self
         ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            container = try ModelContainer(for: schema)
+            container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            let config = ModelConfiguration()
-            if let url = config.url as URL? {
-                try? FileManager.default.removeItem(at: url)
-            }
-            container = try! ModelContainer(for: schema)
+            fatalError("Could not create ModelContainer: \(error)")
         }
     }
 

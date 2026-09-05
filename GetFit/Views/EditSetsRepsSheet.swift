@@ -44,7 +44,7 @@ struct EditSetsRepsSheet: View {
                 .frame(height: 0.5)
 
             // Weight row
-            weightRow(label: "Target Weight (\(weightUnit.unitLabel))", value: $weight, textValue: $weightString, step: weightUnit.stepSize(for: entry.machine?.equipmentType ?? "Barbell"))
+            weightRow(label: "Target Weight (\(weightUnit.unitLabel))", value: $weight, textValue: $weightString, step: weightUnit.stepSize(for: entry.machine?.equipmentType ?? .barbell))
 
             Spacer()
 

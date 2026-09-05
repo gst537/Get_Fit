@@ -18,9 +18,9 @@ struct AddExerciseSheet: View {
         return filtered.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
-    private var groupedByCategory: [(String, [GymMachine])] {
+    private var groupedByCategory: [(MachineCategory, [GymMachine])] {
         let grouped = Dictionary(grouping: availableMachines, by: { $0.category })
-        return grouped.sorted { $0.key < $1.key }
+        return grouped.sorted { $0.key.rawValue < $1.key.rawValue }
     }
 
     var body: some View {
@@ -75,7 +75,7 @@ struct AddExerciseSheet: View {
                     } else {
                         ForEach(groupedByCategory, id: \.0) { category, machines in
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(category)
+                                Text(category.rawValue)
                                     .font(.subheadline)
                                     .fontWeight(.light)
                                     .foregroundStyle(Color.gray)
@@ -140,7 +140,7 @@ struct AddExerciseSheet: View {
 #Preview {
     Text("Preview")
         .sheet(isPresented: .constant(true)) {
-            AddExerciseSheet(split: WorkoutSplit(name: "Push Day", status: "Active"))
+            AddExerciseSheet(split: WorkoutSplit(name: "Push Day", status: .active))
                 .modelContainer(for: [GymMachine.self, WorkoutSplit.self, SplitMachineEntry.self], inMemory: true)
                 .preferredColorScheme(.dark)
         }

@@ -70,6 +70,9 @@ for cat, ex_list in categories.items():
         var_name = var_name[0].lower() + var_name[1:]
         
         eq = random.choice(equipments)
+        eq_enum_str = f'.{eq.lower()}'
+        cat_enum_str = f'.{cat.lower()}'
+        
         if cat == "Push": m = random.sample(muscles_push, random.randint(1, 3))
         elif cat == "Pull": m = random.sample(muscles_pull, random.randint(1, 3))
         elif cat == "Legs": m = random.sample(muscles_legs, random.randint(1, 3))
@@ -79,7 +82,7 @@ for cat, ex_list in categories.items():
         
         steps = make_instructions(ex)
         
-        line = f'    static let {var_name} = GymMachine(name: "{ex}", category: "{cat}", targetMuscles: {m_str}, instructions: {steps}, videoURL: nil, isCustom: false, equipmentType: "{eq}")'
+        line = f'    static let {var_name} = GymMachine(name: "{ex}", category: {cat_enum_str}, targetMuscles: {m_str}, instructions: {steps}, videoURL: nil, isCustom: false, equipmentType: {eq_enum_str})'
         instances.append((var_name, line))
 
 # Write instances
@@ -120,10 +123,10 @@ swift_lines.append("""    static func seedIfNeeded(context: ModelContext) {
         syncExercisesIfNeeded(context: context)
 
         // Splits
-        let pushDay = WorkoutSplit(name: "Push Day", status: "Active")
-        let pullDay = WorkoutSplit(name: "Pull Day", status: "Active")
-        let legDay = WorkoutSplit(name: "Leg Day", status: "Active")
-        let coreDay = WorkoutSplit(name: "Core Day", status: "In Development")
+        let pushDay = WorkoutSplit(name: "Push Day", status: .active)
+        let pullDay = WorkoutSplit(name: "Pull Day", status: .active)
+        let legDay = WorkoutSplit(name: "Leg Day", status: .active)
+        let coreDay = WorkoutSplit(name: "Core Day", status: .inDevelopment)
 
         context.insert(pushDay)
         context.insert(pullDay)
@@ -189,7 +192,7 @@ swift_lines.append("""    static func seedIfNeeded(context: ModelContext) {
 
 out = ""
 for line in swift_lines:
-    out += line + "\\n"
+    out += line + "\n"
 
 with open("/Users/tarungs/PERSONAL/Get_Fit/GetFit/Data/SeedData.swift", "w") as f:
     f.write(out)

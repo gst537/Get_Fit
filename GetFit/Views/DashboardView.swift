@@ -1,5 +1,14 @@
 import SwiftUI
 import SwiftData
+import Charts
+
+struct HeatmapData: Identifiable {
+    let id = UUID()
+    let weekIdx: Int
+    let dayIdx: Int
+    let intensity: Double
+    let isRestDay: Bool
+}
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
@@ -93,7 +102,7 @@ struct DashboardView: View {
             if selectedTab == 0 {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
-                        streakSection
+                        activityGraphSection
                         
                         // 2x2 Metric Cards Grid
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
@@ -163,6 +172,7 @@ struct DashboardView: View {
         .background(Color(UIColor.systemBackground))
         .onAppear {
             SeedData.seedIfNeeded(context: modelContext)
+            cleanupStaleSessions()
             if healthKitManager.isAuthorized {
                 healthKitManager.fetchTodaySteps { steps in
                     stats?.dailySteps = steps
@@ -203,40 +213,126 @@ struct DashboardView: View {
         }
     }
     
-    // MARK: - Streak Section
+    // MARK: - Activity Graph (LeetCode Style)
     
-    private var streakSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Current Streak")
+    private var activityGraphSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            let vibrantBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
+            HStack {
+                Text("Activity")
                     .font(.subheadline)
                     .fontWeight(.light)
                     .foregroundStyle(Color.gray)
+                Spacer()
                 
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(calculatedStreak)")
-                        .font(.system(size: 90, design: .default))
-                        .fontWeight(.black)
+                // Keep the rank badge
+                Text("Rookie Athlete")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(vibrantBlue.opacity(0.2))
+                    .foregroundStyle(vibrantBlue)
+                    .clipShape(Capsule())
+                
+                // Restore Profile Button
+                Button {
+                    Haptics.playLightImpact()
+                    showProfileSheet = true
+                } label: {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 28))
                         .foregroundStyle(.white)
-                    
-                    Text("Days")
-                        .font(.title2)
-                        .fontWeight(.light)
-                        .foregroundStyle(MutedEarth.slateBlue)
                 }
+                .padding(.leading, 4)
             }
             
-            Spacer()
+            // Heatmap calculation
+            let today = Calendar.current.startOfDay(for: Date())
+            let daysToShow = 7 * 10 // 10 weeks to make boxes bigger
             
-            Button {
-                Haptics.playLightImpact()
-                showProfileSheet = true
+            // Align start date to Sunday
+            let earliestDate = Calendar.current.date(byAdding: .day, value: -(daysToShow - 1), to: today)!
+            let weekdayOffset = Calendar.current.component(.weekday, from: earliestDate) - 1
+            let alignedStartDate = Calendar.current.date(byAdding: .day, value: -weekdayOffset, to: earliestDate)!
+            let totalDays = Calendar.current.dateComponents([.day], from: alignedStartDate, to: today).day! + 1
+            
+            let gridData: [Date] = (0..<totalDays).map { offset in
+                Calendar.current.date(byAdding: .day, value: offset, to: alignedStartDate)!
+            }
+            
+            let volumeMap: [Date: Double] = completedSessions.reduce(into: [:]) { dict, session in
+                let startOfDay = Calendar.current.startOfDay(for: session.date)
+                let volume = session.setLogs.reduce(0.0) { $0 + ($1.weight * Double($1.reps)) }
+                dict[startOfDay, default: 0] += volume
+            }
+            
+            let maxVolume = volumeMap.values.max() ?? 1000.0
+            
+            let heatmapData: [HeatmapData] = {
+                var result: [HeatmapData] = []
+                for (index, date) in gridData.enumerated() {
+                    let weekIdx = index / 7
+                    let dayIdx = Calendar.current.component(.weekday, from: date) - 1 // 0 (Sun) to 6 (Sat)
+                    
+                    let isFuture = date > today
+                    
+                    let vol = volumeMap[date] ?? 0
+                    let intensity = vol > 0 ? max(0.2, min(1.0, vol / maxVolume)) : 0.0
+                    
+                    if !isFuture {
+                        result.append(HeatmapData(weekIdx: weekIdx, dayIdx: dayIdx, intensity: intensity, isRestDay: false))
+                    }
+                }
+                return result
+            }()
+            
+            let dayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+            
+            NavigationLink {
+                WorkoutHistoryView()
             } label: {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(.white)
+                Chart {
+                    ForEach(heatmapData) { data in
+                        RectangleMark(
+                            x: .value("Week", data.weekIdx),
+                            y: .value("Day", data.dayIdx),
+                            width: 18,
+                            height: 18
+                        )
+                        .foregroundStyle(data.intensity > 0 
+                                         ? vibrantBlue.opacity(data.intensity) 
+                                         : Color.white.opacity(0.05))
+                        .cornerRadius(4)
+                    }
+                }
+                .frame(height: 200) // Made bigger to fit the larger boxes
+                .chartXAxis(.hidden)
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: .stride(by: 1)) { value in
+                        if let dayIdx = value.as(Int.self), dayIdx >= 0 && dayIdx < 7 {
+                            AxisValueLabel {
+                                Text(dayLabels[dayIdx])
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(Color.gray.opacity(0.8))
+                                    .frame(width: 28, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+                .chartYScale(domain: .automatic(includesZero: false, reversed: true))
+            }
+            .buttonStyle(.plain)
+            
+            HStack {
+                Spacer()
+                Text("Tap graph to view history")
+                    .font(.caption2)
+                    .foregroundStyle(Color.gray.opacity(0.7))
             }
         }
+        .padding(16)
+        .glassmorphic(cornerRadius: 18)
     }
     
     // MARK: - Daily Steps Card
@@ -360,13 +456,22 @@ struct DashboardView: View {
                         if weightEntries.count >= 2 {
                             let previous = weightEntries[1].weight
                             let diff = latest.weight - previous
-                            HStack(spacing: 2) {
-                                Image(systemName: diff < 0 ? "arrow.down" : diff > 0 ? "arrow.up" : "arrow.forward")
+                            let displayDiff = weightUnit.displayWeight(diff)
+                            let absDisplayDiff = abs(displayDiff)
+                            
+                            if absDisplayDiff >= 0.1 {
+                                HStack(spacing: 2) {
+                                    Image(systemName: diff < 0 ? "arrow.down" : "arrow.up")
+                                        .font(.caption2)
+                                    Text(String(format: "%.1f %@", absDisplayDiff, weightUnit.unitLabel))
+                                        .font(.caption2)
+                                }
+                                .foregroundStyle(diff < 0 ? Color.green.opacity(0.8) : Color.orange.opacity(0.8))
+                            } else {
+                                Text("Maintained")
                                     .font(.caption2)
-                                Text(weightUnit.formatWeight(abs(diff)))
-                                    .font(.caption2)
+                                    .foregroundStyle(Color.gray)
                             }
-                            .foregroundStyle(diff <= 0 ? Color.green.opacity(0.8) : Color.orange.opacity(0.8))
                         }
                     }
                 } else {
@@ -516,7 +621,7 @@ struct DashboardView: View {
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.gray)
+                        .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
                 }
                 
                 Spacer()
@@ -545,7 +650,7 @@ struct DashboardView: View {
             ForEach(sortedEntries) { entry in
                 VStack(spacing: 0) {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.25))
+                        .fill(Color.gray.opacity(0.15))
                         .frame(height: 0.5)
                     
                     HStack {
@@ -569,7 +674,7 @@ struct DashboardView: View {
                                     Text(weightUnit.formatWeight(entry.defaultWeight))
                                         .font(.subheadline)
                                         .fontWeight(.light)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
                                 }
                                 
                                 Text("\(entry.defaultSets) × \(entry.defaultReps)")
@@ -583,6 +688,22 @@ struct DashboardView: View {
                 }
             }
         }
+        .padding(20)
+        .glassmorphic(cornerRadius: 18)
+    }
+    
+    private func cleanupStaleSessions() {
+        let calendar = Calendar.current
+        for session in activeSessions {
+            if !calendar.isDateInToday(session.date) {
+                if session.setLogs.isEmpty {
+                    modelContext.delete(session)
+                } else {
+                    session.isCompleted = true
+                }
+            }
+        }
+        try? modelContext.save()
     }
     
     private func formatWeight(_ weight: Double) -> String {

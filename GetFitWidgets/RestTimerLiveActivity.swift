@@ -19,7 +19,7 @@ struct RestTimerLiveActivity: Widget {
                 .frame(width: 38, height: 38)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Resting — Get Fit")
+                    Text(context.state.isResting ? "Resting — Set \(context.state.currentSet)/\(context.state.totalSets)" : "Active Set \(context.state.currentSet)/\(context.state.totalSets)")
                         .font(.caption)
                         .fontWeight(.light)
                         .foregroundStyle(.gray)
@@ -47,7 +47,7 @@ struct RestTimerLiveActivity: Widget {
                     HStack(spacing: 6) {
                         Image(systemName: "timer")
                             .foregroundStyle(paleBlue)
-                        Text("Resting")
+                        Text(context.state.isResting ? "Resting" : "Active Set")
                             .font(.subheadline)
                             .fontWeight(.light)
                             .foregroundStyle(.gray)
@@ -60,7 +60,7 @@ struct RestTimerLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Text("Get Fit Workout")
+                        Text("Set \(context.state.currentSet) of \(context.state.totalSets) — \(context.state.exerciseName)")
                             .font(.caption2)
                             .foregroundStyle(.gray.opacity(0.5))
                         Spacer()

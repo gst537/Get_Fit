@@ -24,8 +24,8 @@ struct SplitDetailView: View {
 
                     Spacer()
 
-                    let isActive = split.status == "Active"
-                    Text(split.status)
+                    let isActive = split.status == .active
+                    Text(split.status.rawValue)
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundStyle(isActive ? .green : .gray)
@@ -227,7 +227,7 @@ struct SplitDetailView: View {
 
 #Preview {
     NavigationStack {
-        SplitDetailView(split: WorkoutSplit(name: "Push Day", status: "Active"))
+        SplitDetailView(split: WorkoutSplit(name: "Push Day", status: .active))
             .modelContainer(for: [WorkoutSplit.self, SplitMachineEntry.self, GymMachine.self], inMemory: true)
             .preferredColorScheme(.dark)
     }

@@ -88,16 +88,16 @@ final class WeightUnitManager: ObservableObject {
     }
     
     /// Default weight step for stepper buttons
-    func stepSize(for equipmentType: String) -> Double {
+    func stepSize(for equipmentType: EquipmentType) -> Double {
         switch unit {
         case .kg:
             switch equipmentType {
-            case "Barbell", "Machine": return 5.0
+            case .barbell, .machine: return 5.0
             default: return 2.5
             }
         case .lb:
             switch equipmentType {
-            case "Barbell", "Machine": return 10.0
+            case .barbell, .machine: return 10.0
             default: return 5.0
             }
         }

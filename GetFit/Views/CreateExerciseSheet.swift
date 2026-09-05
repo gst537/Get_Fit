@@ -6,15 +6,15 @@ struct CreateExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var name = ""
-    @State private var category = "Push"
-    @State private var equipmentType = "Barbell"
+    @State private var category: MachineCategory = .push
+    @State private var equipmentType: EquipmentType = .barbell
     @State private var selectedMuscles: Set<String> = []
     @State private var instructions = ""
     @State private var videoURL = ""
     @State private var imageURL = ""
     
-    let categories = ["Push", "Pull", "Legs", "Core"]
-    let equipmentTypes = ["Barbell", "Dumbbell", "Cable", "Machine", "Bodyweight"]
+    let categories = MachineCategory.allCases
+    let equipmentTypes = EquipmentType.allCases
     let muscleGroups = ["Chest", "Upper Chest", "Front Delt", "Lateral Delt", "Rear Delt", "Triceps", "Biceps", "Forearms", "Lats", "Rhomboids", "Mid Back", "Lower Back", "Quads", "Hamstrings", "Glutes", "Calves", "Abs", "Obliques", "Core", "Hip Flexors", "Rotator Cuff"]
     
     var body: some View {
@@ -34,7 +34,7 @@ struct CreateExerciseSheet: View {
                         dismiss()
                     }
                     .font(.body)
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                    .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
                 }
                 
                 // 2. Name Field
@@ -48,7 +48,7 @@ struct CreateExerciseSheet: View {
                         .font(.body)
                         .fontWeight(.regular)
                         .padding(14)
-                        .background(Color(UIColor.secondarySystemBackground))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
@@ -62,13 +62,13 @@ struct CreateExerciseSheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(categories, id: \.self) { cat in
-                                Text(cat)
+                                Text(cat.rawValue)
                                     .font(.subheadline)
                                     .fontWeight(category == cat ? .medium : .regular)
                                     .foregroundStyle(category == cat ? .black : Color.gray)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 8)
-                                    .background(category == cat ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
+                                    .background(category == cat ? Color(red: 0.35, green: 0.65, blue: 0.95) : Color.white.opacity(0.1))
                                     .clipShape(Capsule())
                                     .onTapGesture {
                                         category = cat
@@ -88,13 +88,13 @@ struct CreateExerciseSheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(equipmentTypes, id: \.self) { equip in
-                                Text(equip)
+                                Text(equip.rawValue)
                                     .font(.subheadline)
                                     .fontWeight(equipmentType == equip ? .medium : .regular)
                                     .foregroundStyle(equipmentType == equip ? .black : Color.gray)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 8)
-                                    .background(equipmentType == equip ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.secondarySystemBackground))
+                                    .background(equipmentType == equip ? Color(red: 0.35, green: 0.65, blue: 0.95) : Color.white.opacity(0.1))
                                     .clipShape(Capsule())
                                     .onTapGesture {
                                         equipmentType = equip
@@ -120,7 +120,7 @@ struct CreateExerciseSheet: View {
                                 .foregroundStyle(isSelected ? .black : .white)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .background(isSelected ? Color(red: 0.68, green: 0.78, blue: 0.90) : Color(UIColor.tertiarySystemBackground))
+                                .background(isSelected ? Color(red: 0.35, green: 0.65, blue: 0.95) : Color.white.opacity(0.05))
                                 .clipShape(Capsule())
                                 .onTapGesture {
                                     if isSelected {
@@ -144,7 +144,7 @@ struct CreateExerciseSheet: View {
                         .font(.body)
                         .fontWeight(.regular)
                         .padding(14)
-                        .background(Color(UIColor.secondarySystemBackground))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -161,7 +161,7 @@ struct CreateExerciseSheet: View {
                         .font(.body)
                         .fontWeight(.regular)
                         .padding(14)
-                        .background(Color(UIColor.secondarySystemBackground))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -179,7 +179,7 @@ struct CreateExerciseSheet: View {
                         .fontWeight(.light)
                         .padding(12)
                         .scrollContentBackground(.hidden)
-                        .background(Color(UIColor.secondarySystemBackground))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .frame(minHeight: 120)
                 }
@@ -206,7 +206,7 @@ struct CreateExerciseSheet: View {
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color(red: 0.68, green: 0.78, blue: 0.90))
+                        .background(Color(red: 0.35, green: 0.65, blue: 0.95))
                         .clipShape(Capsule())
                         .opacity(name.isEmpty || selectedMuscles.isEmpty ? 0.5 : 1.0)
                 }
@@ -216,7 +216,7 @@ struct CreateExerciseSheet: View {
             }
             .padding(24)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.black.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }

@@ -5,7 +5,7 @@ struct MuscleVolumeAnalyticsView: View {
     @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted == true }) private var completedSessions: [WorkoutSession]
     @Query private var allMachines: [GymMachine]
     
-    let paleBlue = Color(red: 0.68, green: 0.78, blue: 0.90)
+    let paleBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
     let targetMuscles = ["Chest", "Front Delt", "Lateral Delt", "Rear Delt", "Triceps", "Lats", "Rhomboids", "Lower Back", "Biceps", "Quads", "Hamstrings", "Glutes", "Calves", "Abs"]
     
     var body: some View {
@@ -22,7 +22,7 @@ struct MuscleVolumeAnalyticsView: View {
             }
             .padding()
         }
-        .background(Color(uiColor: .systemBackground))
+        .background(Color.clear)
     }
     
     private func volumeCard(muscle: String, sets: Int) -> some View {
@@ -63,8 +63,7 @@ struct MuscleVolumeAnalyticsView: View {
             .frame(height: 24)
         }
         .padding()
-        .background(Color(uiColor: .systemBackground)) // We apply secondary background inside the card itself or on the capsule
-        .cornerRadius(12)
+        .glassmorphic(cornerRadius: 16)
     }
     
     private func calculateVolume() -> [String: Int] {

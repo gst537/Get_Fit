@@ -21,6 +21,8 @@ struct WeeklyScheduleView: View {
                         let isToday = day.dayOfWeek == todayDayOfWeek
                         let isSelected = selectedDay?.id == day.id && showDaySplit
                         
+                        let vibrantBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
+                        
                         VStack(spacing: 6) {
                             Text(String(day.dayName.prefix(3)))
                                 .font(.caption)
@@ -35,9 +37,9 @@ struct WeeklyScheduleView: View {
                         }
                         .frame(width: 52, height: 58)
                         .background(
-                            isToday ? Color(red: 0.68, green: 0.78, blue: 0.90) :
-                            isSelected ? Color(red: 0.68, green: 0.78, blue: 0.90).opacity(0.6) :
-                            Color(UIColor.secondarySystemBackground)
+                            isToday ? vibrantBlue :
+                            isSelected ? vibrantBlue.opacity(0.8) :
+                            Color.white.opacity(0.05)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                         .onTapGesture {
@@ -63,7 +65,7 @@ struct WeeklyScheduleView: View {
             }
             
             // Inline split preview for selected day
-            if showDaySplit, let day = selectedDay, let split = day.assignedSplit {
+            if showDaySplit, let selectedId = selectedDay?.id, let day = schedule.first(where: { $0.id == selectedId }), let split = day.assignedSplit {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("\(day.dayName) —")
@@ -81,7 +83,7 @@ struct WeeklyScheduleView: View {
                             Text("Edit")
                                 .font(.caption)
                                 .fontWeight(.regular)
-                                .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                                .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
                         }
                     }
                     .padding(.bottom, 12)
@@ -90,7 +92,7 @@ struct WeeklyScheduleView: View {
                     ForEach(sortedEntries) { entry in
                         VStack(spacing: 0) {
                             Rectangle()
-                                .fill(Color.gray.opacity(0.25))
+                                .fill(Color.gray.opacity(0.15))
                                 .frame(height: 0.5)
                             
                             HStack {
@@ -106,7 +108,7 @@ struct WeeklyScheduleView: View {
                                         Text("\(formatWeight(entry.defaultWeight)) kg")
                                             .font(.caption)
                                             .fontWeight(.light)
-                                            .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 0.90))
+                                            .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
                                     }
                                     Text("\(entry.defaultSets) × \(entry.defaultReps)")
                                         .font(.caption)
@@ -118,9 +120,8 @@ struct WeeklyScheduleView: View {
                         }
                     }
                 }
-                .padding(16)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(20)
+                .glassmorphic(cornerRadius: 18)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
             

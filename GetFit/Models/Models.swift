@@ -1,24 +1,55 @@
 import Foundation
 import SwiftData
 
+// MARK: - Enums
+
+enum MachineCategory: String, Codable, CaseIterable {
+    case push = "Push"
+    case pull = "Pull"
+    case legs = "Legs"
+    case core = "Core"
+}
+
+enum EquipmentType: String, Codable, CaseIterable {
+    case barbell = "Barbell"
+    case dumbbell = "Dumbbell"
+    case cable = "Cable"
+    case machine = "Machine"
+    case bodyweight = "Bodyweight"
+    case kettlebell = "Kettlebell"
+    case other = "Other"
+}
+
+enum SplitStatus: String, Codable, CaseIterable {
+    case active = "Active"
+    case inDevelopment = "In Development"
+}
+
+enum MealType: String, Codable, CaseIterable {
+    case breakfast = "Breakfast"
+    case lunch = "Lunch"
+    case dinner = "Dinner"
+    case snack = "Snack"
+}
+
 // MARK: - GymMachine
 
 @Model
 final class GymMachine {
     var id: UUID
     var name: String
-    var category: String
+    var category: MachineCategory
     var targetMuscles: [String]
     var instructions: String
     var videoURL: String?
     var imageURL: String?
     var isCustom: Bool
-    var equipmentType: String
+    var equipmentType: EquipmentType
 
     @Relationship(inverse: \SplitMachineEntry.machine)
     var splitEntries: [SplitMachineEntry]
 
-    init(name: String, category: String, targetMuscles: [String] = [], instructions: String = "", videoURL: String? = nil, imageURL: String? = nil, isCustom: Bool = false, equipmentType: String = "Barbell") {
+    init(name: String, category: MachineCategory, targetMuscles: [String] = [], instructions: String = "", videoURL: String? = nil, imageURL: String? = nil, isCustom: Bool = false, equipmentType: EquipmentType = .barbell) {
         self.id = UUID()
         self.name = name
         self.category = category
@@ -38,7 +69,7 @@ final class GymMachine {
 final class WorkoutSplit {
     var id: UUID
     var name: String
-    var status: String
+    var status: SplitStatus
 
     @Relationship(deleteRule: .cascade, inverse: \SplitMachineEntry.split)
     var entries: [SplitMachineEntry]
@@ -46,7 +77,7 @@ final class WorkoutSplit {
     @Relationship(inverse: \WeeklySchedule.assignedSplit)
     var scheduleEntries: [WeeklySchedule]
 
-    init(name: String, status: String = "Active") {
+    init(name: String, status: SplitStatus = .active) {
         self.id = UUID()
         self.name = name
         self.status = status
@@ -128,7 +159,7 @@ final class SetLog {
     var weight: Double
     var machineName: String
     var machineId: UUID?
-    var equipmentType: String
+    var equipmentType: EquipmentType
     var rpe: Int?
 
     var session: WorkoutSession?
@@ -140,7 +171,7 @@ final class SetLog {
         return weight * (1.0 + (Double(reps) / 30.0))
     }
 
-    init(setNumber: Int, reps: Int, weight: Double, machineName: String = "", machineId: UUID? = nil, equipmentType: String = "Barbell", rpe: Int? = nil) {
+    init(setNumber: Int, reps: Int, weight: Double, machineName: String = "", machineId: UUID? = nil, equipmentType: EquipmentType = .barbell, rpe: Int? = nil) {
         self.id = UUID()
         self.setNumber = setNumber
         self.reps = reps
@@ -233,14 +264,14 @@ final class MealLog {
     var id: UUID
     var date: Date
     var name: String
-    var mealType: String // "Breakfast", "Lunch", "Dinner", "Snack"
+    var mealType: MealType
     var calories: Int
     var proteinGrams: Int
     var carbsGrams: Int
     var fatsGrams: Int
     var imagePath: String?
 
-    init(name: String, mealType: String = "Breakfast", calories: Int = 0, proteinGrams: Int = 0, carbsGrams: Int = 0, fatsGrams: Int = 0, imagePath: String? = nil, date: Date = .now) {
+    init(name: String, mealType: MealType = .breakfast, calories: Int = 0, proteinGrams: Int = 0, carbsGrams: Int = 0, fatsGrams: Int = 0, imagePath: String? = nil, date: Date = .now) {
         self.id = UUID()
         self.date = date
         self.name = name
