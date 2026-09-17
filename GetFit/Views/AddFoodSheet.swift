@@ -12,17 +12,19 @@ struct PasteFriendlyTextField: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextField {
         let tf = UITextField()
         tf.placeholder = placeholder
-        tf.font = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        tf.font = UIFont.systemFont(ofSize: 15, weight: .regular)
         tf.autocorrectionType = .no
         tf.autocapitalizationType = .none
         tf.spellCheckingType = .no
         tf.clearButtonMode = .whileEditing
         tf.textColor = .white
-        tf.backgroundColor = UIColor.tertiarySystemBackground
-        tf.layer.cornerRadius = 10
-        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.backgroundColor = UIColor(white: 0.15, alpha: 1)
+        tf.layer.cornerRadius = 12
+        tf.layer.borderWidth = 1
+        tf.layer.borderColor = UIColor(white: 0.3, alpha: 1).cgColor
+        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
         tf.leftViewMode = .always
-        tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
         tf.rightViewMode = .always
         tf.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         tf.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -115,7 +117,7 @@ struct AddFoodSheet: View {
     enum InputMode: String, CaseIterable {
         case photo = "Smart Photo"
         case text = "Text Log"
-        case quick = "Quick Estimate"
+        case quick = "Quick Est"
     }
     
     @State private var inputMode: InputMode = .photo
@@ -129,127 +131,136 @@ struct AddFoodSheet: View {
     @State private var aiSuccessMessage: String? = nil
     @State private var aiErrorMessage: String? = nil
     
-
-    
     let mealTypes = MealType.allCases
-    let paleBlue = MutedEarth.slateBlue
+    let tCyan = PremiumColors.neonCyan
+    let tWhite = PremiumColors.starkWhite
+    let tGray = PremiumColors.midGray
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+        ZStack {
+            PremiumColors.deepBlack.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("Log Food & Calories")
-                        .font(.title2)
-                        .fontWeight(.light)
-                        .foregroundStyle(.white)
+                    Text("Log Food")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(tCyan)
                     Spacer()
-                    Button("Cancel") { dismiss() }
-                        .font(.body)
-                        .foregroundStyle(paleBlue)
-                }
-                
-
-                // Input Mode Picker
-                Picker("Input Mode", selection: $inputMode) {
-                    ForEach(InputMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(tGray)
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding(.bottom, 8)
+                .padding()
                 
-                // Dynamic Input Section
-                if inputMode == .photo {
-                    photoSection
-                } else if inputMode == .text {
-                    textLogSection
-                } else {
-                    quickEstimateSection
-                }
-                
-                // Detected Items with +/- Quantity Steppers
-                itemsBreakdownSection
-                
-                // Meal Type Picker
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Meal Category")
-                        .font(.subheadline)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
-                    HStack(spacing: 8) {
-                        ForEach(mealTypes, id: \.self) { type in
-                            Text(type.rawValue)
-                                .font(.subheadline)
-                                .fontWeight(selectedMealType == type ? .medium : .regular)
-                                .foregroundStyle(selectedMealType == type ? .black : Color.gray)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(selectedMealType == type ? paleBlue : Color.black)
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
-                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.3), lineWidth: 0.5))
-                                .onTapGesture { selectedMealType = type }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        
+                        // Input Mode Picker
+                        Picker("Input Mode", selection: $inputMode) {
+                            ForEach(InputMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.bottom, 8)
+                        
+                        // Dynamic Input Section
+                        if inputMode == .photo {
+                            photoSection
+                        } else if inputMode == .text {
+                            textLogSection
+                        } else {
+                            quickEstimateSection
+                        }
+                        
+                        // Detected Items with +/- Quantity Steppers
+                        itemsBreakdownSection
+                        
+                        // Meal Type Picker
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Meal Category")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(tGray)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(mealTypes, id: \.self) { type in
+                                        Text(type.rawValue.capitalized)
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(selectedMealType == type ? PremiumColors.deepBlack : tWhite)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 10)
+                                            .background(selectedMealType == type ? tCyan : PremiumColors.glassBackground)
+                                            .clipShape(Capsule())
+                                            .overlay(Capsule().stroke(selectedMealType == type ? tCyan : PremiumColors.glassBorder, lineWidth: 1))
+                                            .onTapGesture { selectedMealType = type }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Food Name
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Food Name")
+                                .font(PremiumFonts.caption).foregroundStyle(tGray)
+                            TextField("e.g. Crispy Dosa", text: $foodName)
+                                .font(PremiumFonts.headline)
+                                .padding(14)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(tWhite)
+                        }
+                        
+                        // Calories
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calories (kcal)")
+                                .font(PremiumFonts.caption).foregroundStyle(tGray)
+                            HStack {
+                                TextField("0", text: $caloriesText)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .submitLabel(.done)
+                                    .font(PremiumFonts.headline).foregroundStyle(tWhite)
+                                Text("kcal").font(PremiumFonts.caption).foregroundStyle(tGray)
+                            }
+                            .padding(14)
+                            .background(PremiumColors.glassBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        
+                        // Macros
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Macronutrients (Optional)")
+                                .font(PremiumFonts.caption).foregroundStyle(tGray)
+                            HStack(spacing: 12) {
+                                macroField(title: "Pro", color: tCyan, text: $proteinText)
+                                macroField(title: "Carbs", color: tWhite, text: $carbsText)
+                                macroField(title: "Fat", color: tGray, text: $fatsText)
+                            }
+                        }
+                        
+                        // Save Button
+                        Button {
+                            Haptics.playSuccess()
+                            saveMeal()
+                        } label: {
+                            Text("Save Food Log")
+                                .font(PremiumFonts.headline).fontWeight(.bold).foregroundStyle(PremiumColors.deepBlack)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(tCyan)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .opacity(canSave ? 1.0 : 0.5)
+                        }
+                        .disabled(!canSave)
+                        .padding(.top, 8)
                     }
+                    .padding(20)
                 }
-                
-                // Food Name
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Food / Dish Name")
-                        .font(.subheadline).fontWeight(.light).foregroundStyle(Color.gray)
-                    TextField("e.g., Dosa & Coffee Breakfast", text: $foodName)
-                        .font(.body)
-                        .padding(14)
-                        .monochromeCard(cornerRadius: 12)
-                }
-                
-                // Calories
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Total Calories (kcal)")
-                        .font(.subheadline).fontWeight(.light).foregroundStyle(Color.gray)
-                    HStack {
-                        TextField("0", text: $caloriesText)
-                            .keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done)
-                            .font(.title3).fontWeight(.medium).foregroundStyle(.white)
-                        Text("kcal").font(.subheadline).foregroundStyle(Color.gray)
-                    }
-                    .padding(14)
-                    .monochromeCard(cornerRadius: 12)
-                }
-                
-                // Macros
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Macros (Optional)")
-                        .font(.subheadline).fontWeight(.light).foregroundStyle(Color.gray)
-                    HStack(spacing: 12) {
-                        macroField(title: "Protein", color: paleBlue, text: $proteinText)
-                        macroField(title: "Carbs", color: MutedEarth.terracotta, text: $carbsText)
-                        macroField(title: "Fats", color: MutedEarth.softSage, text: $fatsText)
-                    }
-                }
-                
-                // Save Button
-                Button {
-                    Haptics.playSuccess()
-                    saveMeal()
-                } label: {
-                    Text("Save Food Entry")
-                        .font(.body).fontWeight(.medium).foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(paleBlue)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .opacity(canSave ? 1.0 : 0.5)
-                }
-                .disabled(!canSave)
-                .padding(.top, 8)
             }
-            .padding(24)
         }
-        .background(Color.black.ignoresSafeArea())
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
         .onAppear { selectedMealType = initialMealType }
         .onChange(of: selectedItem) { _, newItem in
             Task {
@@ -283,51 +294,51 @@ struct AddFoodSheet: View {
     
     private var textLogSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Describe Your Meal")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
+            Text("Describe Meal")
+                .font(PremiumFonts.caption)
+                .foregroundStyle(tGray)
             
-            TextField("e.g. 2 rotis and some dal...", text: $textLogInput, axis: .vertical)
+            TextField("e.g. 2 rotis and dal...", text: $textLogInput, axis: .vertical)
                 .lineLimit(2...4)
-                .font(.body)
+                .font(PremiumFonts.body)
                 .padding(14)
-                .monochromeCard(cornerRadius: 12)
+                .background(PremiumColors.glassBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(tWhite)
             
             Button {
                 Haptics.playLightImpact()
                 scanWithTextAI(textLogInput)
             } label: {
-                HStack {
-                    Image(systemName: "sparkles")
-                    Text("Analyze Text")
-                }
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(paleBlue)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .opacity(textLogInput.isEmpty || isScanningWithAI ? 0.5 : 1.0)
+                Text(isScanningWithAI ? "Analyzing..." : "Run AI Analysis")
+                    .font(PremiumFonts.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(PremiumColors.deepBlack)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(tCyan)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .opacity(textLogInput.isEmpty || isScanningWithAI ? 0.5 : 1.0)
             }
             .disabled(textLogInput.isEmpty || isScanningWithAI)
             
             // Status Messages
             if isScanningWithAI {
                 HStack(spacing: 10) {
-                    ProgressView().tint(paleBlue)
-                    Text("Gemini AI analyzing text...").font(.caption).foregroundStyle(paleBlue)
+                    ProgressView().tint(tCyan)
+                    Text("AI Processing...").font(PremiumFonts.caption).foregroundStyle(tCyan)
                 }
-                .padding(10).frame(maxWidth: .infinity)
-                .background(paleBlue.opacity(0.1)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12).frame(maxWidth: .infinity)
+                .background(tCyan.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if let err = aiErrorMessage {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-                    Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.red)
+                    Text(err).font(PremiumFonts.caption).foregroundStyle(Color.red)
                 }
-                .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -336,26 +347,25 @@ struct AddFoodSheet: View {
     
     private var quickEstimateSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Tap to auto-fill macros")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(Color.gray)
+            Text("Quick Add")
+                .font(PremiumFonts.caption)
+                .foregroundStyle(tGray)
             
             VStack(spacing: 12) {
-                quickEstimateRow(sizeTitle: "Small Meal (300 kcal)", cals: 300)
-                quickEstimateRow(sizeTitle: "Medium Meal (600 kcal)", cals: 600)
-                quickEstimateRow(sizeTitle: "Large Meal (900 kcal)", cals: 900)
+                quickEstimateRow(sizeTitle: "Small Portion (~300 kcal)", cals: 300)
+                quickEstimateRow(sizeTitle: "Medium Portion (~600 kcal)", cals: 600)
+                quickEstimateRow(sizeTitle: "Large Portion (~900 kcal)", cals: 900)
             }
         }
     }
     
     private func quickEstimateRow(sizeTitle: String, cals: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(sizeTitle).font(.caption).foregroundStyle(.white)
+            Text(sizeTitle).font(PremiumFonts.caption).foregroundStyle(tWhite)
             HStack(spacing: 8) {
                 quickButton(title: "Balanced", cals: cals, p: 0.25, c: 0.50, f: 0.25)
-                quickButton(title: "Carb Heavy", cals: cals, p: 0.15, c: 0.65, f: 0.20)
-                quickButton(title: "Protein Heavy", cals: cals, p: 0.40, c: 0.35, f: 0.25)
+                quickButton(title: "High Carb", cals: cals, p: 0.15, c: 0.65, f: 0.20)
+                quickButton(title: "High Pro", cals: cals, p: 0.40, c: 0.35, f: 0.25)
             }
         }
     }
@@ -367,7 +377,7 @@ struct AddFoodSheet: View {
             let cGrams = Int(Double(cals) * c / 4.0)
             let fGrams = Int(Double(cals) * f / 9.0)
             
-            foodName = "Mess Meal (\(title))"
+            foodName = "Quick Add \(title)"
             caloriesText = "\(cals)"
             proteinText = "\(pGrams)"
             carbsText = "\(cGrams)"
@@ -376,49 +386,47 @@ struct AddFoodSheet: View {
             detectedItems = []
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(paleBlue)
+                .font(PremiumFonts.caption)
+                .fontWeight(.bold)
+                .foregroundStyle(tCyan)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(paleBlue.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(.vertical, 10)
+                .background(PremiumColors.glassBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(tCyan, lineWidth: 1))
         }
     }
-
 
     private var canSave: Bool {
         !foodName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (Int(caloriesText) ?? 0) > 0
     }
     
-
-    
     // MARK: - Photo Section
     
     private var galleryPickerLabel: some View {
         HStack(spacing: 8) {
-            ZStack {
-                Circle().fill(paleBlue.opacity(0.15)).frame(width: 36, height: 36)
-                Image(systemName: "photo.on.rectangle").font(.system(size: 16)).foregroundStyle(paleBlue)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Gallery").font(.subheadline).fontWeight(.medium).foregroundStyle(.white)
-                Text("Choose Photo").font(.caption2).foregroundStyle(Color.gray)
-            }
+            Image(systemName: "photo.fill")
+            Text("Gallery")
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .monochromeCard(cornerRadius: 16)
+        .font(PremiumFonts.headline)
+        .fontWeight(.bold)
+        .foregroundStyle(tWhite)
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(PremiumColors.glassBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var photoSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             if let image = selectedUIImage {
                 ZStack(alignment: .topTrailing) {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: 180)
+                        .frame(maxWidth: .infinity, maxHeight: 200)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .black.opacity(0.3), radius: 8)
                     Button {
                         selectedUIImage = nil
                         selectedItem = nil
@@ -427,27 +435,26 @@ struct AddFoodSheet: View {
                         detectedItems = []
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.white, Color.black.opacity(0.6))
+                            .font(.system(size: 28))
+                            .foregroundStyle(tWhite)
                             .padding(8)
+                            .shadow(radius: 4)
                     }
                 }
             } else {
                 HStack(spacing: 12) {
                     Button { showCameraPicker = true } label: {
                         HStack(spacing: 8) {
-                            ZStack {
-                                Circle().fill(paleBlue.opacity(0.15)).frame(width: 36, height: 36)
-                                Image(systemName: "camera.fill").font(.system(size: 16)).foregroundStyle(paleBlue)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Take Photo").font(.subheadline).fontWeight(.medium).foregroundStyle(.white)
-                                Text("Use Camera").font(.caption2).foregroundStyle(Color.gray)
-                            }
+                            Image(systemName: "camera.fill")
+                            Text("Camera")
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .monochromeCard(cornerRadius: 16)
+                        .font(PremiumFonts.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(tWhite)
+                        .padding(14)
+                        .frame(maxWidth: .infinity)
+                        .background(PremiumColors.glassBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     
                     PhotosPicker(selection: $selectedItem, matching: .images) {
@@ -459,27 +466,30 @@ struct AddFoodSheet: View {
             // Status Messages
             if isScanningWithAI {
                 HStack(spacing: 10) {
-                    ProgressView().tint(paleBlue)
-                    Text("Gemini AI scanning your plate...").font(.caption).foregroundStyle(paleBlue)
+                    ProgressView().tint(tCyan)
+                    Text("AI Vision Scanning...").font(PremiumFonts.caption).foregroundStyle(tCyan)
                 }
-                .padding(10).frame(maxWidth: .infinity)
-                .background(paleBlue.opacity(0.1)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12).frame(maxWidth: .infinity)
+                .background(tCyan.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if let msg = aiSuccessMessage {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.green)
-                    Text(msg).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(tCyan)
+                    Text(msg).font(PremiumFonts.caption).foregroundStyle(tCyan)
                 }
-                .padding(10).frame(maxWidth: .infinity)
-                .background(Color.green.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12).frame(maxWidth: .infinity)
+                .background(tCyan.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if let err = aiErrorMessage {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-                        Text(err).font(.caption).fontWeight(.medium).foregroundStyle(.white)
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.red)
+                        Text(err).font(PremiumFonts.caption).foregroundStyle(Color.red)
                     }
                 }
-                .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.orange.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -489,38 +499,35 @@ struct AddFoodSheet: View {
     private var itemsBreakdownSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("🍽️ Plate Breakdown")
-                    .font(.caption).fontWeight(.medium).foregroundStyle(paleBlue)
+                Text("Food Items")
+                    .font(PremiumFonts.headline).foregroundStyle(tWhite)
                 Spacer()
                 Button { showAddItemSheet = true } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "plus").font(.system(size: 10))
-                        Text("Add Item").font(.caption2).fontWeight(.medium)
-                    }
-                    .foregroundStyle(paleBlue)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(paleBlue.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 6))
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(tCyan)
                 }
             }
             
             if detectedItems.isEmpty {
-                Text("Scan a photo or tap '+ Add Item' to add food items.")
-                    .font(.caption2).foregroundStyle(Color.gray).padding(.vertical, 4)
+                Text("No items logged yet.")
+                    .font(PremiumFonts.caption).foregroundStyle(tGray).padding(.vertical, 8)
             } else {
                 // Total calculation banner
                 let totalCals = detectedItems.reduce(0) { $0 + $1.calories }
                 let equation = detectedItems.map { "\($0.calories)" }.joined(separator: " + ")
                 
                 HStack(spacing: 8) {
-                    Image(systemName: "calculator").font(.caption).foregroundStyle(paleBlue)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Total:").font(.caption2).foregroundStyle(Color.gray)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Total Calories:")
+                            .font(PremiumFonts.caption).foregroundStyle(tGray)
                         Text("\(equation) = \(totalCals) kcal")
-                            .font(.subheadline).fontWeight(.medium).foregroundStyle(.white)
+                            .font(PremiumFonts.body).fontWeight(.bold).foregroundStyle(tCyan)
                     }
                 }
-                .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                .background(paleBlue.opacity(0.12)).clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(PremiumColors.glassBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Individual items with +/- quantity controls
                 ForEach(detectedItems) { item in
@@ -528,88 +535,76 @@ struct AddFoodSheet: View {
                 }
             }
         }
-        .padding(14)
-        .monochromeCard(cornerRadius: 16)
+        .padding(20)
+        .glassmorphic(cornerRadius: 16)
     }
     
     private func itemRow(_ item: DetectedFoodItem) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 10) {
-                Text(item.icon).font(.title3)
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Text(item.icon).font(.system(size: 32))
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)
-                        .font(.subheadline).foregroundStyle(.white)
-                    HStack(spacing: 6) {
-                        Text("P:\(item.protein)g").font(.caption2).foregroundStyle(paleBlue)
-                        Text("C:\(item.carbs)g").font(.caption2).foregroundStyle(MutedEarth.terracotta)
-                        Text("F:\(item.fats)g").font(.caption2).foregroundStyle(MutedEarth.softSage)
+                        .font(PremiumFonts.body).fontWeight(.bold).foregroundStyle(tWhite)
+                    HStack(spacing: 8) {
+                        Text("P:\(item.protein)g").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(tCyan)
+                        Text("C:\(item.carbs)g").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(tWhite)
+                        Text("F:\(item.fats)g").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(tGray)
                     }
                 }
                 
                 Spacer()
                 
-                Text("\(item.calories) kcal")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(paleBlue)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(paleBlue.opacity(0.15)).clipShape(RoundedRectangle(cornerRadius: 6))
-                
-                // Edit button
-                Button { itemToEdit = item } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 11)).foregroundStyle(paleBlue)
-                        .padding(6).background(paleBlue.opacity(0.12)).clipShape(Circle())
-                }
-                
-                // Delete button
-                Button {
-                    detectedItems.removeAll { $0.id == item.id }
-                    recalcTotals()
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11)).foregroundStyle(Color.red.opacity(0.85))
-                        .padding(6).background(Color.red.opacity(0.12)).clipShape(Circle())
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(item.calories) kcal")
+                        .font(PremiumFonts.body).fontWeight(.bold)
+                        .foregroundStyle(tWhite)
+                    
+                    HStack(spacing: 8) {
+                        Button { itemToEdit = item } label: {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(tGray)
+                        }
+                        
+                        Button {
+                            detectedItems.removeAll { $0.id == item.id }
+                            recalcTotals()
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Color.red)
+                        }
+                    }
                 }
             }
             
             // +/- Quantity Stepper & Slider Row
             VStack(spacing: 12) {
                 HStack {
-                    Text("Qty:")
-                        .font(.caption2).foregroundStyle(Color.gray)
+                    Text("Quantity:")
+                        .font(PremiumFonts.caption).foregroundStyle(tGray)
                     
                     Spacer()
                     
-                    HStack(spacing: 10) {
-                        // MINUS button
-                        Button {
-                            adjustQty(item, delta: -1)
-                        } label: {
+                    HStack(spacing: 12) {
+                        Button { adjustQty(item, delta: -1) } label: {
                             Image(systemName: "minus.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(item.quantity <= 1 ? Color.gray.opacity(0.4) : paleBlue)
-                        }
-                        .disabled(item.quantity <= 1)
+                                .font(.system(size: 24))
+                                .foregroundStyle(item.quantity <= 1 ? PremiumColors.glassBorder : tWhite)
+                        }.disabled(item.quantity <= 1)
                         
-                        // Current quantity display
                         Text(String(format: "%.1f", item.quantity))
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(width: 34)
-                            .multilineTextAlignment(.center)
+                            .font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(tWhite)
+                            .frame(width: 40).multilineTextAlignment(.center)
                         
-                        // PLUS button
-                        Button {
-                            adjustQty(item, delta: 1)
-                        } label: {
+                        Button { adjustQty(item, delta: 1) } label: {
                             Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(paleBlue)
+                                .font(.system(size: 24))
+                                .foregroundStyle(tCyan)
                         }
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 
                 // Slider
@@ -626,11 +621,11 @@ struct AddFoodSheet: View {
                     }
                 )
                 Slider(value: qtyBinding, in: 0.5...10.0, step: 0.5)
-                    .tint(paleBlue)
+                    .tint(tCyan)
             }
         }
-        .padding(10)
-        .background(Color(UIColor.tertiarySystemBackground).opacity(0.6))
+        .padding(14)
+        .background(PremiumColors.glassBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
@@ -665,14 +660,14 @@ struct AddFoodSheet: View {
             foodName = detectedItems.map { $0.name }.joined(separator: ", ")
         }
         
-        aiSuccessMessage = detectedItems.isEmpty ? nil : "Total: \(cals) kcal"
+        aiSuccessMessage = detectedItems.isEmpty ? nil : "Calculated: \(cals) kcal"
     }
     
     // MARK: - AI Scan
     
     private func scanWithDeepAI(_ image: UIImage) {
         guard let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty else {
-            aiErrorMessage = "Deep Scan requires Gemini API Key in Profile Settings."
+            aiErrorMessage = "API Key Required in Settings"
             return
         }
         
@@ -695,7 +690,7 @@ struct AddFoodSheet: View {
                     carbsText = "\(result.totalCarbs)"
                     fatsText = "\(result.totalFats)"
                     detectedItems = result.detectedItems
-                    aiSuccessMessage = "Deep Scan Identified '\(result.plateTitle)'"
+                    aiSuccessMessage = "Identified: \(result.plateTitle)"
                 }
             }
         }
@@ -703,7 +698,7 @@ struct AddFoodSheet: View {
     
     private func scanWithTextAI(_ text: String) {
         guard let key = AIFoodVisionService.shared.savedAPIKey, !key.isEmpty else {
-            aiErrorMessage = "Text Scan requires Gemini API Key in Profile Settings."
+            aiErrorMessage = "API Key Required in Settings"
             return
         }
         
@@ -726,7 +721,7 @@ struct AddFoodSheet: View {
                     carbsText = "\(result.totalCarbs)"
                     fatsText = "\(result.totalFats)"
                     detectedItems = result.detectedItems
-                    aiSuccessMessage = "Text Scan Identified '\(result.plateTitle)'"
+                    aiSuccessMessage = "Identified: \(result.plateTitle)"
                 }
             }
         }
@@ -736,15 +731,17 @@ struct AddFoodSheet: View {
     
     private func macroField(title: String, color: Color, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.caption).fontWeight(.medium).foregroundStyle(color)
-            HStack(spacing: 2) {
+            Text(title).font(PremiumFonts.caption).fontWeight(.bold).foregroundStyle(color)
+            HStack(spacing: 4) {
                 TextField("0", text: text)
                     .keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).font(.body).fontWeight(.medium).foregroundStyle(.white)
-                Text("g").font(.caption2).foregroundStyle(Color.gray)
+                    .submitLabel(.done).font(PremiumFonts.headline).foregroundStyle(tWhite)
+                Text("g").font(PremiumFonts.caption).foregroundStyle(tGray)
             }
-            .padding(10)
-            .monochromeCard(cornerRadius: 12)
+            .padding(12)
+            .background(PremiumColors.glassBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(color == tGray ? PremiumColors.glassBorder : color.opacity(0.3), lineWidth: 1))
         }
     }
     
@@ -806,51 +803,124 @@ struct AddNewItemSheet: View {
     @State private var fatsInput = "3"
     @State private var iconInput = "🍲"
     
-    let paleBlue = MutedEarth.slateBlue
-    
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Item Name & Emoji") {
-                    HStack {
-                        TextField("🍲", text: $iconInput).frame(width: 44)
-                        TextField("e.g. Crispy Dosa", text: $nameInput)
+        ZStack {
+            PremiumColors.deepBlack.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Add New Item")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(PremiumColors.neonCyan)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(PremiumColors.starkWhite)
                     }
                 }
-                Section("Calories & Macros") {
-                    HStack { Text("Calories"); Spacer(); TextField("150", text: $caloriesInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Protein (g)"); Spacer(); TextField("5", text: $proteinInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Carbs (g)"); Spacer(); TextField("20", text: $carbsInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Fats (g)"); Spacer(); TextField("3", text: $fatsInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                }
-            }
-            .navigationTitle("Add Plate Item")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        let name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !name.isEmpty else { return }
-                        onAdd(DetectedFoodItem(
-                            name: name,
-                            calories: Int(caloriesInput) ?? 150,
-                            protein: Int(proteinInput) ?? 5,
-                            carbs: Int(carbsInput) ?? 20,
-                            fats: Int(fatsInput) ?? 3,
-                            icon: iconInput.isEmpty ? "🍲" : iconInput
-                        ))
-                        dismiss()
+                .padding()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        HStack(spacing: 12) {
+                            TextField("🍲", text: $iconInput)
+                                .font(.system(size: 32))
+                                .multilineTextAlignment(.center)
+                                .frame(width: 60, height: 60)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            
+                            TextField("e.g. Crispy Dosa", text: $nameInput)
+                                .font(PremiumFonts.headline)
+                                .padding(14)
+                                .frame(height: 60)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(PremiumColors.starkWhite)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calories")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.midGray)
+                            TextField("150", text: $caloriesInput)
+                                .keyboardType(.numbersAndPunctuation)
+                                .font(PremiumFonts.headline)
+                                .padding(14)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(PremiumColors.starkWhite)
+                        }
+                        
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Protein")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.neonCyan)
+                                TextField("5", text: $proteinInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Carbs")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                                TextField("20", text: $carbsInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Fats")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.midGray)
+                                TextField("3", text: $fatsInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                        }
+                        
+                        Button {
+                            let name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !name.isEmpty else { return }
+                            onAdd(DetectedFoodItem(
+                                name: name,
+                                calories: Int(caloriesInput) ?? 150,
+                                protein: Int(proteinInput) ?? 5,
+                                carbs: Int(carbsInput) ?? 20,
+                                fats: Int(fatsInput) ?? 3,
+                                icon: iconInput.isEmpty ? "🍲" : iconInput
+                            ))
+                            dismiss()
+                        } label: {
+                            Text("Add Item")
+                                .font(PremiumFonts.headline)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(PremiumColors.neonCyan)
+                                .foregroundStyle(PremiumColors.deepBlack)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .padding(.top, 12)
                     }
-                    .fontWeight(.bold).foregroundStyle(paleBlue)
+                    .padding(20)
                 }
             }
         }
-        .presentationDetents([.height(340)])
     }
 }
 
@@ -867,51 +937,122 @@ struct EditDetectedItemSheet: View {
     @State private var carbsInput = ""
     @State private var fatsInput = ""
     
-    let paleBlue = MutedEarth.slateBlue
-    
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Item Name") {
-                    TextField("e.g. 1 Dosa", text: $nameInput)
-                }
-                Section("Calories & Macros") {
-                    HStack { Text("Calories"); Spacer(); TextField("0", text: $caloriesInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $proteinInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $carbsInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                    HStack { Text("Fats (g)"); Spacer(); TextField("0", text: $fatsInput).keyboardType(.numbersAndPunctuation)
-                    .submitLabel(.done).multilineTextAlignment(.trailing) }
-                }
-            }
-            .navigationTitle("Edit Item")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        var updated = item
-                        updated.name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        updated.calories = Int(caloriesInput) ?? item.calories
-                        updated.protein = Int(proteinInput) ?? item.protein
-                        updated.carbs = Int(carbsInput) ?? item.carbs
-                        updated.fats = Int(fatsInput) ?? item.fats
-                        onSave(updated)
-                        dismiss()
+        ZStack {
+            PremiumColors.deepBlack.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Edit Item")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(PremiumColors.neonCyan)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(PremiumColors.starkWhite)
                     }
-                    .fontWeight(.bold).foregroundStyle(paleBlue)
                 }
-            }
-            .onAppear {
-                nameInput = item.name
-                caloriesInput = "\(item.calories)"
-                proteinInput = "\(item.protein)"
-                carbsInput = "\(item.carbs)"
-                fatsInput = "\(item.fats)"
+                .padding()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Item Name")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.midGray)
+                            TextField("Name", text: $nameInput)
+                                .font(PremiumFonts.headline)
+                                .padding(14)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(PremiumColors.starkWhite)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calories")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.midGray)
+                            TextField("0", text: $caloriesInput)
+                                .keyboardType(.numbersAndPunctuation)
+                                .font(PremiumFonts.headline)
+                                .padding(14)
+                                .background(PremiumColors.glassBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(PremiumColors.starkWhite)
+                        }
+                        
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Protein")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.neonCyan)
+                                TextField("0", text: $proteinInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Carbs")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                                TextField("0", text: $carbsInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Fats")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.midGray)
+                                TextField("0", text: $fatsInput)
+                                    .keyboardType(.numbersAndPunctuation)
+                                    .font(PremiumFonts.headline)
+                                    .padding(14)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                            }
+                        }
+                        
+                        Button {
+                            var updated = item
+                            updated.name = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                            updated.calories = Int(caloriesInput) ?? item.calories
+                            updated.protein = Int(proteinInput) ?? item.protein
+                            updated.carbs = Int(carbsInput) ?? item.carbs
+                            updated.fats = Int(fatsInput) ?? item.fats
+                            onSave(updated)
+                            dismiss()
+                        } label: {
+                            Text("Save Changes")
+                                .font(PremiumFonts.headline)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(PremiumColors.neonCyan)
+                                .foregroundStyle(PremiumColors.deepBlack)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .padding(.top, 12)
+                    }
+                    .padding(20)
+                }
             }
         }
-        .presentationDetents([.height(340)])
+        .onAppear {
+            nameInput = item.name
+            caloriesInput = "\(item.calories)"
+            proteinInput = "\(item.protein)"
+            carbsInput = "\(item.carbs)"
+            fatsInput = "\(item.fats)"
+        }
     }
 }

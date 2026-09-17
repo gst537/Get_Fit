@@ -89,87 +89,149 @@ struct DashboardView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("View", selection: $selectedTab) {
-                Text("Workouts").tag(0)
-                Text("Nutrition").tag(1)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+        ZStack {
+            // Solid Background
+            PremiumColors.deepBlack
+                .ignoresSafeArea()
             
-            if selectedTab == 0 {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        activityGraphSection
-                        
-                        // 2x2 Metric Cards Grid
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-                            stepsCard
-                            bodyWeightCard
-                            historyCard
-                            cardioCard
+            VStack(spacing: 0) {
+                // Top header from Stitch
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text("GetFit")
+                                .font(PremiumFonts.title)
+                                .foregroundStyle(PremiumColors.starkWhite)
+                            Circle()
+                                .fill(PremiumColors.neonCyan)
+                                .frame(width: 6, height: 6)
                         }
-                        
-                        WeeklyScheduleView()
-                        if let split = todaySplit {
-                            splitSection(split)
-                        } else {
-                            restDaySection
-                        }
-                        if !isRestDay {
-                            startWorkoutButton
-                                .padding(.top, 8)
-                        }
-                        
-                        HStack(spacing: 12) {
-                            Button {
-                                Haptics.playLightImpact()
-                                showScanSheet = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "camera.viewfinder")
-                                        .font(.system(size: 16))
-                                    Text("Scan Machine")
-                                        .font(.body)
-                                        .fontWeight(.regular)
-                                }
-                                .foregroundStyle(.black)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(MutedEarth.slateBlue)
-                                .clipShape(Capsule())
+                        Text(selectedTab == 0 ? "Workouts" : "Nutrition")
+                            .font(PremiumFonts.caption)
+                            .foregroundStyle(PremiumColors.midGray)
+                    }
+                    Spacer()
+                    Button {
+                        Haptics.playLightImpact()
+                        showProfileSheet = true
+                    } label: {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(PremiumColors.neonCyan)
+                            .shadow(color: PremiumColors.neonCyan.opacity(0.3), radius: 4)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+                .background(PremiumColors.deepBlack)
+                
+                // Custom Segmented Control
+                HStack(spacing: 0) {
+                    Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = 0 } }) {
+                        Text("Workouts")
+                            .font(PremiumFonts.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(selectedTab == 0 ? PremiumColors.deepBlack : PremiumColors.starkWhite)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 24)
+                            .background(selectedTab == 0 ? PremiumColors.starkWhite : Color.clear)
+                            .clipShape(Capsule())
+                    }
+                    
+                    Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = 1 } }) {
+                        Text("Nutrition")
+                            .font(PremiumFonts.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(selectedTab == 1 ? PremiumColors.deepBlack : PremiumColors.starkWhite)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 24)
+                            .background(selectedTab == 1 ? PremiumColors.starkWhite : Color.clear)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(4)
+                .background(PremiumColors.glassBorder.opacity(0.1))
+                .clipShape(Capsule())
+                .padding(.vertical, 12)
+
+                
+                if selectedTab == 0 {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            
+                            // Streak logic moved inline for now or kept as badge
+                            
+                            activityGraphSection
+                            
+                            // 2x2 Metric Cards Grid
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                                stepsCard
+                                bodyWeightCard
+                                historyCard
+                                cardioCard
                             }
                             
-                            Button {
-                                Haptics.playLightImpact()
-                                showCreateExercise = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "plus.circle")
-                                        .font(.system(size: 16))
-                                    Text("Custom")
-                                        .font(.body)
-                                        .fontWeight(.regular)
+                            WeeklyScheduleView()
+                            
+                            if let split = todaySplit {
+                                splitSection(split)
+                            } else {
+                                restDaySection
+                            }
+                            
+                            if !isRestDay {
+                                startWorkoutButton
+                                    .padding(.top, 8)
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Button {
+                                    Haptics.playLightImpact()
+                                    showScanSheet = true
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "camera.viewfinder")
+                                            .font(.system(size: 16))
+                                        Text("Scan Machine")
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                    }
+                                    .foregroundStyle(PremiumColors.deepBlack)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(PremiumColors.neonCyan)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .shadow(color: PremiumColors.neonCyan.opacity(0.3), radius: 8, x: 0, y: 4)
                                 }
-                                .foregroundStyle(MutedEarth.slateBlue)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(MutedEarth.slateBlue.opacity(0.15))
-                                .clipShape(Capsule())
+                                
+                                Button {
+                                    Haptics.playLightImpact()
+                                    showCreateExercise = true
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "plus.square.fill")
+                                            .font(.system(size: 16))
+                                        Text("Custom Exercise")
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                    }
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .glassmorphic(cornerRadius: 12)
+                                }
                             }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
+                } else {
+                    NutritionTrackerView()
                 }
-            } else {
-                NutritionTrackerView()
             }
         }
-        .background(Color(UIColor.systemBackground))
         .onAppear {
             SeedData.seedIfNeeded(context: modelContext)
             cleanupStaleSessions()
@@ -196,55 +258,32 @@ struct DashboardView: View {
         .sheet(item: $selectedEntryToEdit) { entry in
             EditSetsRepsSheet(entry: entry)
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Haptics.playLightImpact()
-                    showProfileSheet = true
-                } label: {
-                    Image(systemName: "person.circle")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white)
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showProfileSheet) {
             ProfileView()
         }
     }
     
-    // MARK: - Activity Graph (LeetCode Style)
+    // MARK: - Top Bar Section
+    // (Replaced by Stitch custom header)
+    
+    // MARK: - Activity Graph (Premium Style)
     
     private var activityGraphSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            let vibrantBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
             HStack {
-                Text("Activity")
-                    .font(.subheadline)
-                    .fontWeight(.light)
-                    .foregroundStyle(Color.gray)
+                Text("Activity Matrix")
+                    .font(PremiumFonts.headline)
+                    .foregroundStyle(PremiumColors.starkWhite)
                 Spacer()
-                
-                // Keep the rank badge
-                Text("Rookie Athlete")
-                    .font(.caption2)
+                Text("Rookie")
+                    .font(PremiumFonts.caption)
                     .fontWeight(.bold)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(vibrantBlue.opacity(0.2))
-                    .foregroundStyle(vibrantBlue)
+                    .background(PremiumColors.neonCyan.opacity(0.2))
+                    .foregroundStyle(PremiumColors.neonCyan)
                     .clipShape(Capsule())
-                
-                // Restore Profile Button
-                Button {
-                    Haptics.playLightImpact()
-                    showProfileSheet = true
-                } label: {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.white)
-                }
-                .padding(.leading, 4)
             }
             
             // Heatmap calculation
@@ -287,52 +326,61 @@ struct DashboardView: View {
                 return result
             }()
             
-            let dayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+            let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
             
             NavigationLink {
                 WorkoutHistoryView()
             } label: {
-                Chart {
-                    ForEach(heatmapData) { data in
-                        RectangleMark(
-                            x: .value("Week", data.weekIdx),
-                            y: .value("Day", data.dayIdx),
-                            width: 18,
-                            height: 18
-                        )
-                        .foregroundStyle(data.intensity > 0 
-                                         ? vibrantBlue.opacity(data.intensity) 
-                                         : Color.white.opacity(0.05))
-                        .cornerRadius(4)
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(0..<7, id: \.self) { dayIdx in
+                            Text(dayLabels[dayIdx])
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.midGray)
+                                .frame(height: 12)
+                        }
                     }
-                }
-                .frame(height: 200) // Made bigger to fit the larger boxes
-                .chartXAxis(.hidden)
-                .chartYAxis {
-                    AxisMarks(position: .leading, values: .stride(by: 1)) { value in
-                        if let dayIdx = value.as(Int.self), dayIdx >= 0 && dayIdx < 7 {
-                            AxisValueLabel {
-                                Text(dayLabels[dayIdx])
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(Color.gray.opacity(0.8))
-                                    .frame(width: 28, alignment: .leading)
+                    .padding(.trailing, 4)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(0..<10, id: \.self) { weekIdx in
+                                VStack(spacing: 6) {
+                                    ForEach(0..<7, id: \.self) { dayIdx in
+                                        if let data = heatmapData.first(where: { $0.weekIdx == weekIdx && $0.dayIdx == dayIdx }) {
+                                            Circle()
+                                                .fill(data.intensity > 0 
+                                                      ? PremiumColors.neonCyan.opacity(max(0.3, data.intensity))
+                                                      : PremiumColors.glassBorder.opacity(0.3))
+                                                .frame(width: 12, height: 12)
+                                        } else {
+                                            Circle()
+                                                .fill(Color.clear)
+                                                .frame(width: 12, height: 12)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                .chartYScale(domain: .automatic(includesZero: false, reversed: true))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
             
             HStack {
+                Text("\(completedSessions.count) Sessions")
+                    .font(PremiumFonts.caption)
+                    .foregroundStyle(PremiumColors.starkWhite)
                 Spacer()
-                Text("Tap graph to view history")
-                    .font(.caption2)
-                    .foregroundStyle(Color.gray.opacity(0.7))
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(PremiumColors.midGray)
             }
         }
         .padding(16)
-        .glassmorphic(cornerRadius: 18)
+        .glassmorphic(cornerRadius: 16)
     }
     
     // MARK: - Daily Steps Card
@@ -341,46 +389,43 @@ struct DashboardView: View {
         NavigationLink {
             StepTrackerView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Daily Steps")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
+                    Text("Steps")
+                        .font(PremiumFonts.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(PremiumColors.midGray)
                     Spacer()
                     if healthKitManager.isAuthorized {
-                        Image(systemName: "heart.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.pink)
+                        Image(systemName: "figure.walk")
+                            .font(.caption)
+                            .foregroundStyle(PremiumColors.neonCyan)
                     }
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.gray.opacity(0.5))
                 }
                 
+                Spacer()
+                
                 Text("\(stats?.dailySteps ?? 0)")
-                    .font(.system(size: 26, weight: .light))
-                    .foregroundStyle(.white)
+                    .font(PremiumFonts.title)
+                    .foregroundStyle(PremiumColors.starkWhite)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     Button(action: {
                         Haptics.playLightImpact()
                         updateSteps(by: -500)
                     }) {
-                        Image(systemName: "minus.circle")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color.gray)
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundStyle(PremiumColors.midGray)
                     }
                     
                     Button(action: {
                         Haptics.playLightImpact()
                         updateSteps(by: 500)
                     }) {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 16))
-                            .foregroundStyle(.white)
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(PremiumColors.neonCyan)
                     }
                     
                     Spacer()
@@ -390,17 +435,17 @@ struct DashboardView: View {
                             Haptics.playLightImpact()
                             syncHealthKitSteps()
                         }) {
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.pink)
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.caption)
+                                .foregroundStyle(PremiumColors.midGray)
                         }
                     }
                 }
+                .padding(.top, 8)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
-            .monochromeCard()
-            .shimmerGlow()
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 144, maxHeight: 144, alignment: .topLeading)
+            .glassmorphic(cornerRadius: 16)
         }
     }
     
@@ -435,23 +480,25 @@ struct DashboardView: View {
         NavigationLink {
             BodyWeightView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Body Weight")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
+                    Text("Weight")
+                        .font(PremiumFonts.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(PremiumColors.midGray)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.gray.opacity(0.5))
+                    Image(systemName: "scalemass.fill")
+                        .font(.caption)
+                        .foregroundStyle(PremiumColors.neonCyan)
                 }
+                
+                Spacer()
                 
                 if let latest = weightEntries.first {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(weightUnit.formatWeight(latest.weight))
-                            .font(.system(size: 26, weight: .light))
-                            .foregroundStyle(.white)
+                            .font(PremiumFonts.title)
+                            .foregroundStyle(PremiumColors.starkWhite)
                         
                         if weightEntries.count >= 2 {
                             let previous = weightEntries[1].weight
@@ -461,29 +508,31 @@ struct DashboardView: View {
                             
                             if absDisplayDiff >= 0.1 {
                                 HStack(spacing: 2) {
-                                    Image(systemName: diff < 0 ? "arrow.down" : "arrow.up")
-                                        .font(.caption2)
+                                    Image(systemName: diff < 0 ? "arrow.down.right" : "arrow.up.right")
                                     Text(String(format: "%.1f %@", absDisplayDiff, weightUnit.unitLabel))
-                                        .font(.caption2)
                                 }
-                                .foregroundStyle(diff < 0 ? Color.green.opacity(0.8) : Color.orange.opacity(0.8))
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(diff < 0 ? .green : .red)
                             } else {
-                                Text("Maintained")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.gray)
+                                Text("No change")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.midGray)
                             }
+                        } else {
+                            Text("No change")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.midGray)
                         }
                     }
                 } else {
-                    Text("Tap to log")
-                        .font(.subheadline)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
+                    Text("No Data")
+                        .font(PremiumFonts.caption)
+                        .foregroundStyle(PremiumColors.midGray)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
-            .monochromeCard()
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 144, maxHeight: 144, alignment: .topLeading)
+            .glassmorphic(cornerRadius: 16)
         }
     }
 
@@ -493,32 +542,33 @@ struct DashboardView: View {
         NavigationLink {
             WorkoutHistoryView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("History")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
+                    Text("Sessions")
+                        .font(PremiumFonts.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(PremiumColors.midGray)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.gray.opacity(0.5))
+                    Image(systemName: "dumbbell.fill")
+                        .font(.caption)
+                        .foregroundStyle(PremiumColors.neonCyan)
                 }
+                
+                Spacer()
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(completedSessions.count)")
-                        .font(.system(size: 26, weight: .light))
-                        .foregroundStyle(.white)
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(PremiumColors.starkWhite)
                     
-                    Text(completedSessions.count == 1 ? "Workout Done" : "Workouts Done")
-                        .font(.caption2)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color(UIColor.secondaryLabel))
+                    Text("Completed")
+                        .font(PremiumFonts.caption)
+                        .foregroundStyle(PremiumColors.midGray)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
-            .monochromeCard()
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 144, maxHeight: 144, alignment: .topLeading)
+            .glassmorphic(cornerRadius: 16)
         }
     }
     
@@ -528,36 +578,38 @@ struct DashboardView: View {
         NavigationLink {
             CardioTrackerView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Cardio Log")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
+                    Text("Cardio")
+                        .font(PremiumFonts.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(PremiumColors.midGray)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.gray.opacity(0.5))
+                    Image(systemName: "heart.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.red)
+                        .shadow(color: Color.red.opacity(0.5), radius: 2)
                 }
+                
+                Spacer()
                 
                 let weeklyDuration = cardioLogs.filter {
                     Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
                 }.reduce(0.0) { $0 + $1.durationMinutes }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(Int(weeklyDuration)) min")
-                        .font(.system(size: 26, weight: .light))
-                        .foregroundStyle(.white)
+                    Text("\(Int(weeklyDuration))m")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(PremiumColors.starkWhite)
                     
-                    Text("Logged This Week")
-                        .font(.caption2)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color(UIColor.secondaryLabel))
+                    Text("This Week")
+                        .font(PremiumFonts.caption)
+                        .foregroundStyle(PremiumColors.midGray)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130, alignment: .topLeading)
-            .monochromeCard()
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 144, maxHeight: 144, alignment: .topLeading)
+            .glassmorphic(cornerRadius: 16)
         }
     }
     
@@ -569,29 +621,23 @@ struct DashboardView: View {
             showRestDaySheet = true
         } label: {
             VStack(spacing: 16) {
-                Image(systemName: "moon.zzz.fill")
-                    .font(.system(size: 40))
-                    .fontWeight(.ultraLight)
-                    .foregroundStyle(.white)
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(PremiumColors.neonCyan)
+                    .shadow(color: PremiumColors.neonCyan.opacity(0.6), radius: 10)
                 
-                Text("Rest Day")
-                    .font(.title2)
-                    .fontWeight(.light)
-                    .foregroundStyle(.white)
-                
-                HStack(spacing: 4) {
-                    Text("Tap for Recovery Quote & Options")
-                        .font(.subheadline)
-                        .fontWeight(.light)
-                        .foregroundStyle(Color.gray)
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(Color.gray.opacity(0.6))
+                VStack(spacing: 4) {
+                    Text("Rest & Recover")
+                        .font(PremiumFonts.headline)
+                        .foregroundStyle(PremiumColors.starkWhite)
+                    Text("Your muscles grow when you rest.")
+                        .font(PremiumFonts.caption)
+                        .foregroundStyle(PremiumColors.midGray)
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 36)
-            .monochromeCard()
+            .glassmorphic(cornerRadius: 16)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showRestDaySheet) {
@@ -611,25 +657,22 @@ struct DashboardView: View {
                     QuickSwapSplitMenu(scheduleEntry: todaySchedule)
                 } else {
                     Text(split.name)
-                        .font(.title2)
-                        .fontWeight(.light)
-                        .foregroundStyle(.white)
+                        .font(PremiumFonts.headline)
+                        .foregroundStyle(PremiumColors.starkWhite)
                 }
                 
                 NavigationLink {
                     SplitDetailView(split: split)
                 } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
+                    Image(systemName: "pencil.circle.fill")
+                        .foregroundStyle(PremiumColors.neonCyan)
                 }
                 
                 Spacer()
                 
-                Text("\(sortedEntries.count) exercises")
-                    .font(.subheadline)
-                    .fontWeight(.light)
-                    .foregroundStyle(Color.gray)
+                Text("\(sortedEntries.count) Exercises")
+                    .font(PremiumFonts.caption)
+                    .foregroundStyle(PremiumColors.midGray)
             }
             .padding(.bottom, 16)
             
@@ -643,25 +686,26 @@ struct DashboardView: View {
                         }
                     }
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, 12)
             }
             
             // Exercise rows
             ForEach(sortedEntries) { entry in
                 VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.15))
-                        .frame(height: 0.5)
+                    Divider().background(PremiumColors.glassBorder)
                     
                     HStack {
                         Button {
                             selectedExercise = entry.machine
                         } label: {
-                            HStack {
+                            HStack(spacing: 12) {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 6))
+                                    .foregroundStyle(PremiumColors.neonCyan)
+                                
                                 Text(entry.machine?.name ?? "Unknown")
-                                    .font(.body)
-                                    .fontWeight(.regular)
-                                    .foregroundStyle(.white)
+                                    .font(PremiumFonts.body)
+                                    .foregroundStyle(PremiumColors.starkWhite)
                                 Spacer()
                             }
                         }
@@ -672,24 +716,27 @@ struct DashboardView: View {
                             HStack(spacing: 8) {
                                 if entry.defaultWeight > 0 {
                                     Text(weightUnit.formatWeight(entry.defaultWeight))
-                                        .font(.subheadline)
-                                        .fontWeight(.light)
-                                        .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
+                                        .font(PremiumFonts.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(PremiumColors.neonCyan)
                                 }
                                 
                                 Text("\(entry.defaultSets) × \(entry.defaultReps)")
-                                    .font(.subheadline)
-                                    .fontWeight(.light)
-                                    .foregroundStyle(Color.gray)
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(PremiumColors.starkWhite)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(PremiumColors.glassBorder)
+                                    .clipShape(Capsule())
                             }
                         }
                     }
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 14)
                 }
             }
         }
         .padding(20)
-        .glassmorphic(cornerRadius: 18)
+        .glassmorphic(cornerRadius: 16)
     }
     
     private func cleanupStaleSessions() {
@@ -706,14 +753,6 @@ struct DashboardView: View {
         try? modelContext.save()
     }
     
-    private func formatWeight(_ weight: Double) -> String {
-        if weight.truncatingRemainder(dividingBy: 1) == 0 {
-            return String(format: "%.0f", weight)
-        } else {
-            return String(format: "%.1f", weight)
-        }
-    }
-    
     // MARK: - Start Workout Button
     
     private var startWorkoutButton: some View {
@@ -727,14 +766,17 @@ struct DashboardView: View {
             }
             activeSession = session
         } label: {
-            Text(activeSessions.isEmpty ? "Start Workout" : "Resume Workout")
-                .font(.body)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(MutedEarth.slateBlue)
-                .clipShape(Rectangle())
+            HStack {
+                Text(activeSessions.isEmpty ? "Start Session" : "Resume Session")
+                    .font(PremiumFonts.headline)
+                Image(systemName: "play.fill")
+            }
+            .foregroundStyle(PremiumColors.deepBlack)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(PremiumColors.neonCyan)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: PremiumColors.neonCyan.opacity(0.4), radius: 10, y: 5)
         }
     }
 }

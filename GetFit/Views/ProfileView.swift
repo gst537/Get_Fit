@@ -22,7 +22,10 @@ struct ProfileView: View {
     @State private var showEditProfileSheet = false
     @State private var geminiKeyInput = AIFoodVisionService.shared.savedAPIKey ?? ""
     
-    let slateBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
+    let tCyan = PremiumColors.neonCyan
+    let tWhite = PremiumColors.starkWhite
+    let tGray = PremiumColors.midGray
+    let tBlack = PremiumColors.deepBlack
     
     private var currentWeightKg: Double {
         weightEntries.first?.weight ?? 70.0
@@ -81,15 +84,15 @@ struct ProfileView: View {
     private var athleteRank: (title: String, icon: String, color: Color) {
         let tonnes = totalTonnage / 1000.0
         if tonnes >= 100 {
-            return ("DIAMOND ATHLETE", "diamond.fill", Color.white)
+            return ("Diamond Athlete", "diamond.fill", tCyan)
         } else if tonnes >= 50 {
-            return ("PLATINUM ATHLETE", "crown.fill", Color.gray)
+            return ("Platinum Athlete", "star.fill", tGray)
         } else if tonnes >= 10 {
-            return ("GOLD ATHLETE", "trophy.fill", Color(red: 0.35, green: 0.65, blue: 0.95))
+            return ("Gold Athlete", "medal.fill", .yellow)
         } else if tonnes >= 1 {
-            return ("SILVER ATHLETE", "star.fill", Color.gray)
+            return ("Silver Athlete", "medal", tGray)
         } else {
-            return ("ROOKIE ATHLETE", "flame.fill", Color(red: 0.35, green: 0.65, blue: 0.95))
+            return ("Rookie", "figure.walk", tCyan)
         }
     }
     
@@ -122,282 +125,314 @@ struct ProfileView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    
-                    // 1. Interactive Athlete Profile Card
-                    VStack(spacing: 16) {
-                        HStack(spacing: 16) {
-                            ZStack {
-                                Rectangle()
-                                    .fill(Color.black)
-                                    .frame(width: 60, height: 60)
-                                    .border(slateBlue, width: 1.0)
-                                
-                                Text(userName.prefix(1).uppercased())
-                                    .font(.system(size: 26, weight: .bold))
-                                    .foregroundStyle(slateBlue)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(userName.isEmpty ? "Get Fit Athlete" : userName)
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(.white)
-                                
-                                HStack(spacing: 6) {
-                                    Image(systemName: athleteRank.icon)
-                                        .font(.system(size: 10))
-                                    Text(athleteRank.title)
-                                        .font(.system(size: 9, weight: .bold))
-                                        .tracking(0.8)
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color(red: 0.05, green: 0.1, blue: 0.15), PremiumColors.deepBlack]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Profile")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(tCyan)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(tGray)
+                    }
+                }
+                .padding()
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        
+                        // 1. Interactive Athlete Profile Card
+                        VStack(spacing: 16) {
+                            HStack(spacing: 16) {
+                                ZStack {
+                                    Circle()
+                                        .fill(PremiumColors.glassBackground)
+                                        .frame(width: 72, height: 72)
+                                        .overlay(Circle().stroke(tCyan, lineWidth: 2))
+                                        .shadow(color: tCyan.opacity(0.4), radius: 8)
+                                    
+                                    Text(userName.prefix(1).uppercased())
+                                        .font(PremiumFonts.title)
+                                        .foregroundStyle(tCyan)
                                 }
-                                .foregroundStyle(athleteRank.color)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color.black)
-                                .border(athleteRank.color, width: 1.0)
-                            }
-                            
-                            Spacer()
-                            
-                            Button {
-                                showEditProfileSheet = true
-                            } label: {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(slateBlue)
-                                    .padding(8)
-                                    .background(Color.black)
-                                    .border(slateBlue, width: 1.0)
-                            }
-                        }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                        
-                        // Body Stats Summary Grid
-                        HStack(spacing: 12) {
-                            statItem(label: "AGE", value: "\(userAge) yrs")
-                            statItem(label: "HEIGHT", value: "\(userHeight) cm")
-                            statItem(label: "CURRENT", value: weightUnit.formatWeight(currentWeightKg))
-                            statItem(label: "TARGET", value: weightUnit.formatWeight(targetWeightKg))
-                        }
-                    }
-                    .padding(18)
-                    .glassmorphic(cornerRadius: 18)
-                    
-                    // 2. Kokonut Activity Rings Card
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Daily Activity Rings")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        
-                        KokonutAppleActivityCard(
-                            steps: stats?.dailySteps ?? 0,
-                            stepGoal: 10000,
-                            todayWorkoutMinutes: todayWorkoutMinutes,
-                            workoutGoalMinutes: 30,
-                            weeklyWorkoutDays: weeklyWorkoutDays,
-                            weeklyGoalDays: 5,
-                            onSyncAppleHealth: syncAppleHealth
-                        )
-                    }
-                    
-                    // 3. Lifetime Stats Grid
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Lifetime Overview")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-                            // Total Tonnage
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Total Lifted")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(Color.gray)
                                 
-                                Text(formatTonnage(totalTonnage))
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(slateBlue)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassmorphic(cornerRadius: 18)
-                            
-                            // Workouts Completed
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Workouts Done")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(Color.gray)
-                                
-                                Text("\(completedSessions.count)")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(.white)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassmorphic(cornerRadius: 18)
-                            
-                            // Total Cardio Time
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Total Cardio")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(Color.gray)
-                                
-                                Text("\(Int(totalCardioMinutes)) min")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(slateBlue)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassmorphic(cornerRadius: 18)
-                            
-                            // Current Streak
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Active Streak")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(Color.gray)
-                                
-                                Text("\(streakDays) Days")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(MutedEarth.terracotta)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassmorphic(cornerRadius: 18)
-                        }
-                    }
-                    
-                    // 4. Preferences Section
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Preferences")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Weight Unit")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Color.gray)
-                            
-                            Picker("Unit", selection: $weightUnit.unit) {
-                                Text("kg").tag(WeightUnitManager.WeightUnit.kg)
-                                Text("lb").tag(WeightUnitManager.WeightUnit.lb)
-                            }
-                            .pickerStyle(.segmented)
-                        }
-                        .padding(16)
-                        .glassmorphic(cornerRadius: 18)
-                    }
-                    
-                    // 5. Workout Preferences Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Workout Preferences")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(slateBlue.opacity(0.15))
-                                    .frame(width: 36, height: 36)
-                                Image(systemName: "sun.max.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(slateBlue)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Keep Screen Awake")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(.white)
-                                Text("Prevents your phone from locking mid-set")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color.gray)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Spacer()
-                            Toggle("", isOn: $keepScreenAwake)
-                                .labelsHidden()
-                                .tint(slateBlue)
-                        }
-                    }
-                    .padding(16)
-                    .glassmorphic(cornerRadius: 18)
-                    
-                    // 6. AI Features Section
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("AI Integrations")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Gemini API Key (Deep Scan Fallback)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Color.gray)
-                            
-                            PasteFriendlyTextField(text: $geminiKeyInput, placeholder: "Tap to paste API Key")
-                                .frame(height: 44)
-                            
-                            HStack {
-                                PasteButton(payloadType: String.self) { strings in
-                                    if let text = strings.first {
-                                        geminiKeyInput = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        AIFoodVisionService.shared.savedAPIKey = geminiKeyInput
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(userName.isEmpty ? "Get Fit Athlete" : userName)
+                                        .font(PremiumFonts.title)
+                                        .foregroundStyle(tWhite)
+                                    
+                                    HStack(spacing: 6) {
+                                        Image(systemName: athleteRank.icon)
+                                            .font(.caption)
+                                        Text(athleteRank.title)
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
                                     }
+                                    .foregroundStyle(athleteRank.color)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(PremiumColors.glassBackground)
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(athleteRank.color, lineWidth: 1))
                                 }
-                                .labelStyle(.titleOnly)
-                                .tint(slateBlue)
-                                .buttonBorderShape(.capsule)
                                 
                                 Spacer()
                                 
-                                Button("Save") {
-                                    AIFoodVisionService.shared.savedAPIKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                Button {
+                                    showEditProfileSheet = true
+                                } label: {
+                                    Image(systemName: "pencil.circle.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(tCyan)
+                                        .shadow(color: tCyan.opacity(0.4), radius: 4)
                                 }
-                                .font(.caption).fontWeight(.bold).foregroundStyle(.black)
-                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                .background(slateBlue).clipShape(Capsule())
+                            }
+                            
+                            Divider()
+                                .background(PremiumColors.glassBorder)
+                            
+                            // Body Stats Summary Grid
+                            HStack(spacing: 12) {
+                                statItem(label: "Age", value: "\(userAge) YRS")
+                                statItem(label: "Height", value: "\(userHeight) CM")
+                                statItem(label: "Weight", value: weightUnit.formatWeight(currentWeightKg))
+                                statItem(label: "Target", value: weightUnit.formatWeight(targetWeightKg))
                             }
                         }
-                        .padding(16)
-                        .glassmorphic(cornerRadius: 18)
+                        .padding(20)
+                        .glassmorphic(cornerRadius: 16)
+                        
+                        // 2. Kokonut Activity Rings Card
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Daily Activity")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tWhite)
+                            
+                            KokonutAppleActivityCard(
+                                steps: stats?.dailySteps ?? 0,
+                                stepGoal: 10000,
+                                todayWorkoutMinutes: todayWorkoutMinutes,
+                                workoutGoalMinutes: 30,
+                                weeklyWorkoutDays: weeklyWorkoutDays,
+                                weeklyGoalDays: 5,
+                                onSyncAppleHealth: syncAppleHealth
+                            )
+                        }
+                        
+                        // 3. Lifetime Stats Grid
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Lifetime Stats")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tWhite)
+                            
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                                // Total Tonnage
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Volume Lifted")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
+                                    
+                                    Text(formatTonnage(totalTonnage))
+                                        .font(PremiumFonts.headline)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .glassmorphic(cornerRadius: 16)
+                                
+                                // Workouts Completed
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Workouts")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
+                                    
+                                    Text("\(completedSessions.count)")
+                                        .font(PremiumFonts.headline)
+                                        .foregroundStyle(tWhite)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .glassmorphic(cornerRadius: 16)
+                                
+                                // Total Cardio Time
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Cardio Time")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
+                                    
+                                    Text("\(Int(totalCardioMinutes)) Min")
+                                        .font(PremiumFonts.headline)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .glassmorphic(cornerRadius: 16)
+                                
+                                // Current Streak
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Active Streak")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
+                                    
+                                    Text("\(streakDays) Days")
+                                        .font(PremiumFonts.headline)
+                                        .foregroundStyle(tWhite)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .glassmorphic(cornerRadius: 16)
+                            }
+                        }
+                        
+                        // 4. Preferences Section
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Preferences")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tWhite)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Weight Unit")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(tGray)
+                                
+                                HStack(spacing: 8) {
+                                    ForEach([WeightUnitManager.WeightUnit.kg, WeightUnitManager.WeightUnit.lb], id: \.self) { unit in
+                                        Text(unit == .kg ? "Kilograms" : "Pounds")
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(weightUnit.unit == unit ? tBlack : tWhite)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(weightUnit.unit == unit ? tCyan : PremiumColors.glassBackground)
+                                            .clipShape(Capsule())
+                                            .overlay(Capsule().stroke(weightUnit.unit == unit ? tCyan : PremiumColors.glassBorder, lineWidth: 1))
+                                            .shadow(color: weightUnit.unit == unit ? tCyan.opacity(0.4) : .clear, radius: 4)
+                                            .onTapGesture {
+                                                weightUnit.unit = unit
+                                            }
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .glassmorphic(cornerRadius: 16)
+                        }
+                        
+                        // 5. Workout Preferences Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Settings")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tWhite)
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "sun.max.fill")
+                                    .foregroundStyle(tCyan)
+                                    .font(.title3)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Keep Screen On")
+                                        .font(PremiumFonts.body)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(tWhite)
+                                    Text("Prevents lock screen during workouts")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $keepScreenAwake)
+                                    .labelsHidden()
+                                    .tint(tCyan)
+                            }
+                            .padding(16)
+                            .glassmorphic(cornerRadius: 16)
+                        }
+                        
+                        // 6. AI Features Section
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("AI Integration")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tWhite)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Gemini API Key (Vision Scan)")
+                                    .font(PremiumFonts.caption)
+                                    .foregroundStyle(tGray)
+                                
+                                PasteFriendlyTextField(text: $geminiKeyInput, placeholder: "Enter API Key")
+                                    .frame(height: 44)
+                                
+                                HStack {
+                                    PasteButton(payloadType: String.self) { strings in
+                                        if let text = strings.first {
+                                            geminiKeyInput = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            AIFoodVisionService.shared.savedAPIKey = geminiKeyInput
+                                        }
+                                    }
+                                    .labelStyle(.titleOnly)
+                                    .tint(tCyan)
+                                    .clipShape(Capsule())
+                                    
+                                    Spacer()
+                                    
+                                    Button {
+                                        AIFoodVisionService.shared.savedAPIKey = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    } label: {
+                                        Text("Save Key")
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(tBlack)
+                                            .padding(.horizontal, 16).padding(.vertical, 10)
+                                            .background(tCyan)
+                                            .clipShape(Capsule())
+                                            .shadow(color: tCyan.opacity(0.4), radius: 4)
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .glassmorphic(cornerRadius: 16)
+                        }
                     }
-                }
-                .padding(20)
-            }
-            .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Profile & Stats")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                        .foregroundColor(slateBlue)
+                    .padding(20)
+                    .padding(.bottom, 40)
                 }
             }
-            .sheet(isPresented: $showEditProfileSheet) {
-                EditProfileSheet(
-                    name: $userName,
-                    age: $userAge,
-                    height: $userHeight,
-                    targetWeight: $targetWeightKg
-                )
-            }
+        }
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showEditProfileSheet) {
+            EditProfileSheet(
+                name: $userName,
+                age: $userAge,
+                height: $userHeight,
+                targetWeight: $targetWeightKg
+            )
         }
     }
     
     private func statItem(label: String, value: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(Color.gray)
+                .font(PremiumFonts.caption)
+                .foregroundStyle(tGray)
             
             Text(value)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(tWhite)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .glassmorphic(cornerRadius: 18)
+        .padding(.vertical, 12)
+        .background(PremiumColors.glassBorder.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
     private func syncAppleHealth() {
@@ -420,9 +455,9 @@ struct ProfileView: View {
     
     private func formatTonnage(_ weight: Double) -> String {
         if weight >= 1000 {
-            return String(format: "%.1f tonnes", weight / 1000.0)
+            return String(format: "%.1f TN", weight / 1000.0)
         } else {
-            return String(format: "%.0f kg", weight)
+            return String(format: "%.0f KG", weight)
         }
     }
 }
@@ -441,115 +476,140 @@ struct EditProfileSheet: View {
     @State private var inputHeightStr: String = ""
     @State private var inputTargetWeightStr: String = ""
     
-    let slateBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
+    let tCyan = PremiumColors.neonCyan
+    let tWhite = PremiumColors.starkWhite
+    let tGray = PremiumColors.midGray
+    let tBlack = PremiumColors.deepBlack
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Personal Info")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Color.gray)
-                            .padding(.leading, 4)
-                        
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("Name")
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                TextField("Your Name", text: $inputName)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundStyle(slateBlue)
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color(red: 0.05, green: 0.1, blue: 0.15), PremiumColors.deepBlack]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Edit Profile")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(tCyan)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(tGray)
+                    }
+                }
+                .padding()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Personal Details")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(tGray)
+                            
+                            VStack(spacing: 0) {
+                                HStack {
+                                    Text("Name")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tWhite)
+                                    Spacer()
+                                    TextField("Name", text: $inputName)
+                                        .font(PremiumFonts.headline)
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
+                                
+                                Divider().background(PremiumColors.glassBorder)
+                                
+                                HStack {
+                                    Text("Age")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tWhite)
+                                    Spacer()
+                                    TextField("Yrs", text: $inputAgeStr)
+                                        .font(PremiumFonts.headline)
+                                        .keyboardType(.numbersAndPunctuation)
+                                        .submitLabel(.done)
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
+                                
+                                Divider().background(PremiumColors.glassBorder)
+                                
+                                HStack {
+                                    Text("Height (cm)")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tWhite)
+                                    Spacer()
+                                    TextField("cm", text: $inputHeightStr)
+                                        .font(PremiumFonts.headline)
+                                        .keyboardType(.numbersAndPunctuation)
+                                        .submitLabel(.done)
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
                             }
-                            .padding(16)
-                            
-                            Divider().background(Color.white.opacity(0.1))
-                            
-                            HStack {
-                                Text("Age")
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                TextField("Age", text: $inputAgeStr)
-                                    .keyboardType(.numbersAndPunctuation)
-                                    .submitLabel(.done)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundStyle(slateBlue)
-                            }
-                            .padding(16)
-                            
-                            Divider().background(Color.white.opacity(0.1))
-                            
-                            HStack {
-                                Text("Height (cm)")
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                TextField("Height in cm", text: $inputHeightStr)
-                                    .keyboardType(.numbersAndPunctuation)
-                                    .submitLabel(.done)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundStyle(slateBlue)
-                            }
-                            .padding(16)
+                            .glassmorphic(cornerRadius: 16)
                         }
-                        .glassmorphic(cornerRadius: 18)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Body Recomp Target")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Color.gray)
-                            .padding(.leading, 4)
                         
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("Target Weight (kg)")
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                TextField("Target Weight", text: $inputTargetWeightStr)
-                                    .keyboardType(.numbersAndPunctuation)
-                                    .submitLabel(.done)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundStyle(slateBlue)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Goals")
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(tGray)
+                            
+                            VStack(spacing: 0) {
+                                HStack {
+                                    Text("Target Weight")
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tWhite)
+                                    Spacer()
+                                    TextField("kg/lb", text: $inputTargetWeightStr)
+                                        .font(PremiumFonts.headline)
+                                        .keyboardType(.numbersAndPunctuation)
+                                        .submitLabel(.done)
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(tCyan)
+                                }
+                                .padding(16)
                             }
-                            .padding(16)
+                            .glassmorphic(cornerRadius: 16)
                         }
-                        .glassmorphic(cornerRadius: 18)
+                        
+                        Button {
+                            name = inputName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if let a = Int(inputAgeStr) { age = a }
+                            if let h = Int(inputHeightStr) { height = h }
+                            if let w = Double(inputTargetWeightStr) { targetWeight = w }
+                            dismiss()
+                        } label: {
+                            Text("Save Changes")
+                                .font(PremiumFonts.headline)
+                                .foregroundStyle(tBlack)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(tCyan)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .shadow(color: tCyan.opacity(0.4), radius: 8, y: 4)
+                        }
                     }
+                    .padding(20)
                 }
-                .padding(20)
-            }
-            .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Edit Athlete Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        name = inputName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if let a = Int(inputAgeStr) { age = a }
-                        if let h = Int(inputHeightStr) { height = h }
-                        if let w = Double(inputTargetWeightStr) { targetWeight = w }
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                    .foregroundStyle(slateBlue)
-                }
-            }
-            .onAppear {
-                inputName = name
-                inputAgeStr = "\(age)"
-                inputHeightStr = "\(height)"
-                inputTargetWeightStr = String(format: "%.1f", targetWeight)
             }
         }
+        .onAppear {
+            inputName = name
+            inputAgeStr = "\(age)"
+            inputHeightStr = "\(height)"
+            inputTargetWeightStr = String(format: "%.1f", targetWeight)
+        }
     }
-}
-
-#Preview {
-    ProfileView()
-        .modelContainer(for: [UserStats.self, WorkoutSession.self, CardioLog.self, BodyWeightEntry.self], inMemory: true)
-        .preferredColorScheme(.dark)
 }

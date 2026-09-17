@@ -1,4 +1,4 @@
- import SwiftUI
+import SwiftUI
 import SwiftData
 
 struct QuickSwapSplitMenu: View {
@@ -97,3 +97,6 @@ struct QuickSwapSplitMenu: View {
         .modelContainer(for: [WeeklySchedule.self, WorkoutSplit.self], inMemory: true)
         .preferredColorScheme(.dark)
 }
+
+
+

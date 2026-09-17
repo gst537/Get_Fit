@@ -13,39 +13,46 @@ struct WeeklyScheduleView: View {
         return weekday == 1 ? 7 : weekday - 1
     }
     
+    let tCyan = PremiumColors.neonCyan
+    let tWhite = PremiumColors.starkWhite
+    let tGray = PremiumColors.midGray
+    let tBlack = PremiumColors.deepBlack
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(schedule) { day in
                         let isToday = day.dayOfWeek == todayDayOfWeek
                         let isSelected = selectedDay?.id == day.id && showDaySplit
                         
-                        let vibrantBlue = Color(red: 0.35, green: 0.65, blue: 0.95)
-                        
-                        VStack(spacing: 6) {
+                        VStack(spacing: 8) {
                             Text(String(day.dayName.prefix(3)))
-                                .font(.caption)
-                                .fontWeight(isToday ? .medium : .light)
-                                .foregroundStyle(isToday ? .black : isSelected ? .black : .white)
+                                .font(PremiumFonts.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(isToday ? tBlack : isSelected ? tBlack : tWhite)
                             
                             Text(day.assignedSplit?.name.replacingOccurrences(of: " Day", with: "") ?? "Rest")
-                                .font(.system(size: 10))
-                                .fontWeight(.light)
-                                .foregroundStyle(isToday ? Color.black.opacity(0.7) : isSelected ? Color.black.opacity(0.7) : Color.gray)
+                                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                                .foregroundStyle(isToday ? tBlack : isSelected ? tBlack : tGray)
                                 .lineLimit(1)
                         }
-                        .frame(width: 52, height: 58)
+                        .frame(width: 60, height: 68)
                         .background(
-                            isToday ? vibrantBlue :
-                            isSelected ? vibrantBlue.opacity(0.8) :
-                            Color.white.opacity(0.05)
+                            isToday ? tCyan :
+                            isSelected ? tWhite :
+                            PremiumColors.glassBackground
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(isToday ? tCyan : isSelected ? tWhite : PremiumColors.glassBorder, lineWidth: 1)
+                        )
+                        .shadow(color: isToday ? tCyan.opacity(0.4) : .clear, radius: 4)
                         .onTapGesture {
                             selectedDay = day
                             if day.assignedSplit != nil {
-                                withAnimation(.easeInOut(duration: 0.2)) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     if selectedDay?.id == day.id && showDaySplit {
                                         showDaySplit = false
                                     } else {
@@ -69,9 +76,8 @@ struct WeeklyScheduleView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("\(day.dayName) —")
-                            .font(.subheadline)
-                            .fontWeight(.regular)
-                            .foregroundStyle(.white)
+                            .font(PremiumFonts.headline)
+                            .foregroundStyle(tWhite)
                         
                         QuickSwapSplitMenu(scheduleEntry: day)
                         
@@ -80,57 +86,55 @@ struct WeeklyScheduleView: View {
                         NavigationLink {
                             SplitDetailView(split: split)
                         } label: {
-                            Text("Edit")
-                                .font(.caption)
-                                .fontWeight(.regular)
-                                .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundStyle(tCyan)
                         }
                     }
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 16)
                     
                     let sortedEntries = split.entries.sorted { $0.order < $1.order }
                     ForEach(sortedEntries) { entry in
                         VStack(spacing: 0) {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.15))
-                                .frame(height: 0.5)
+                            Divider().background(PremiumColors.glassBorder)
                             
                             HStack {
                                 Text(entry.machine?.name ?? "Unknown")
-                                    .font(.caption)
-                                    .fontWeight(.regular)
-                                    .foregroundStyle(.white)
+                                    .font(PremiumFonts.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(tWhite)
                                 
                                 Spacer()
                                 
-                                HStack(spacing: 8) {
+                                HStack(spacing: 12) {
                                     if entry.defaultWeight > 0 {
                                         Text("\(formatWeight(entry.defaultWeight)) kg")
-                                            .font(.caption)
-                                            .fontWeight(.light)
-                                            .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
+                                            .font(PremiumFonts.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(tCyan)
                                     }
                                     Text("\(entry.defaultSets) × \(entry.defaultReps)")
-                                        .font(.caption)
-                                        .fontWeight(.light)
-                                        .foregroundStyle(Color.gray)
+                                        .font(PremiumFonts.caption)
+                                        .foregroundStyle(tGray)
                                 }
                             }
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 12)
                         }
                     }
                 }
                 .padding(20)
-                .glassmorphic(cornerRadius: 18)
+                .glassmorphic(cornerRadius: 16)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
             
             // Hint text
             if !showDaySplit {
-                Text("Tap a day to preview · Long-press to edit")
-                    .font(.system(size: 10))
-                    .fontWeight(.light)
-                    .foregroundStyle(Color.gray.opacity(0.5))
+                HStack(spacing: 6) {
+                    Image(systemName: "hand.tap.fill")
+                    Text("Tap to preview, Long-press to edit")
+                }
+                .font(PremiumFonts.caption)
+                .foregroundStyle(tGray)
             }
         }
         .sheet(isPresented: $showCustomizer) {
@@ -152,16 +156,4 @@ struct WeeklyScheduleView: View {
             return String(format: "%.1f", value)
         }
     }
-}
-
-#Preview {
-    NavigationStack {
-        WeeklyScheduleView()
-    }
-    .modelContainer(for: [
-        WeeklySchedule.self, WorkoutSplit.self, SplitMachineEntry.self,
-        GymMachine.self, WorkoutSession.self, SetLog.self, UserStats.self,
-        BodyWeightEntry.self
-    ], inMemory: true)
-    .preferredColorScheme(.dark)
 }

@@ -19,7 +19,7 @@ struct ScanMachineSheet: View {
     @State private var isAnalyzing = false
     @State private var analysisResult: MachineAnalysisResult? = nil
     
-    let slateBlue = MutedEarth.slateBlue
+    let slateBlue = PremiumColors.neonCyan
     
     var body: some View {
         NavigationView {
@@ -94,7 +94,7 @@ struct ScanMachineSheet: View {
                             if let error = result.errorMessage {
                                 Text(error)
                                     .font(.callout)
-                                    .foregroundStyle(MutedEarth.terracotta)
+                                    .foregroundStyle(Color.red)
                                     .multilineTextAlignment(.center)
                                     .padding()
                             } else if let machine = result.machine {

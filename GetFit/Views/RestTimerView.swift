@@ -27,31 +27,49 @@ struct RestTimerView: View {
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color(red: 0.05, green: 0.1, blue: 0.15), PremiumColors.deepBlack]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            VStack(spacing: 32) {
-                Text("Rest")
-                    .font(.subheadline)
-                    .fontWeight(.light)
-                    .foregroundColor(.gray)
+            VStack(spacing: 40) {
+                VStack(spacing: 8) {
+                    Text("Rest Timer")
+                        .font(PremiumFonts.title)
+                        .foregroundStyle(PremiumColors.starkWhite)
+                    
+                    Text("\(exerciseName) • Set \(currentSet)/\(totalSets)")
+                        .font(PremiumFonts.body)
+                        .foregroundStyle(PremiumColors.midGray)
+                }
                 
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+                        .stroke(PremiumColors.glassBorder.opacity(0.5), lineWidth: 8)
                     
                     Circle()
                         .trim(from: 0, to: progress)
-                        .stroke(MutedEarth.slateBlue, style: StrokeStyle(lineWidth: 4, lineCap: .square))
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [PremiumColors.neonCyan, PremiumColors.neonCyan.opacity(0.5)]),
+                                center: .center,
+                                startAngle: .degrees(-90),
+                                endAngle: .degrees(270)
+                            ),
+                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        )
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 1.0), value: progress)
+                        .shadow(color: PremiumColors.neonCyan.opacity(0.6), radius: 10)
                     
                     Text(String(format: "%d:%02d", timeRemaining / 60, timeRemaining % 60))
-                        .font(.system(size: 80, weight: .black))
-                        .monospacedDigit()
-                        .foregroundColor(.white)
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundStyle(PremiumColors.starkWhite)
                 }
-                .frame(width: 200, height: 200)
+                .frame(width: 240, height: 240)
                 
                 HStack(spacing: 16) {
                     ForEach([60, 90, 120], id: \.self) { sec in
@@ -61,12 +79,15 @@ struct RestTimerView: View {
                             RestTimerActivityManager.shared.startActivity(duration: sec, exerciseName: exerciseName, currentSet: currentSet, totalSets: totalSets, isResting: true)
                         }) {
                             Text("\(sec)s")
-                                .font(.subheadline)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(selectedDuration == sec ? MutedEarth.slateBlue : Color.black)
-                                .foregroundColor(selectedDuration == sec ? .black : .gray)
-                                .border(selectedDuration == sec ? MutedEarth.slateBlue : Color.white.opacity(0.3), width: 0.5)
+                                .font(PremiumFonts.headline)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(selectedDuration == sec ? PremiumColors.neonCyan : PremiumColors.glassBackground)
+                                .foregroundStyle(selectedDuration == sec ? PremiumColors.deepBlack : PremiumColors.starkWhite)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(selectedDuration == sec ? PremiumColors.neonCyan : PremiumColors.glassBorder, lineWidth: 1))
+                                .shadow(color: selectedDuration == sec ? PremiumColors.neonCyan.opacity(0.4) : .clear, radius: 4)
                         }
                     }
                 }
@@ -77,11 +98,15 @@ struct RestTimerView: View {
                     dismiss()
                     onComplete()
                 }) {
-                    Text("Skip")
-                        .font(.body)
-                        .fontWeight(.regular)
-                        .foregroundColor(MutedEarth.slateBlue)
+                    Text("Skip Timer")
+                        .font(PremiumFonts.headline)
+                        .foregroundStyle(Color.red)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 14)
+                        .background(Color.red.opacity(0.15))
+                        .clipShape(Capsule())
                 }
+                .padding(.top, 20)
             }
         }
         .onAppear {

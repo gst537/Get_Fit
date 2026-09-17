@@ -19,7 +19,7 @@ struct ExerciseDetailSheet: View {
     @Query private var allSetLogs: [SetLog]
     @StateObject private var weightUnit = WeightUnitManager.shared
     
-    let slateBlue = MutedEarth.slateBlue
+    let slateBlue = PremiumColors.neonCyan
     
     private var max1RM: Double {
         let historicalSets = allSetLogs.filter { $0.machineId == exercise.id }

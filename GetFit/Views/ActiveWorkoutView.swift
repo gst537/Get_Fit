@@ -123,14 +123,14 @@ struct ActiveWorkoutView: View {
             HStack {
                 Image(systemName: "figure.run")
                     .font(.system(size: 18))
-                    .foregroundStyle(MutedEarth.slateBlue)
+                    .foregroundStyle(PremiumColors.neonCyan)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     if let mins = loggedCardioMinutes {
                         Text("Cardio Finisher Logged ✓")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundStyle(MutedEarth.slateBlue)
+                            .foregroundStyle(PremiumColors.neonCyan)
                         Text("\(Int(mins)) min · \(String(format: "%.1f km", loggedCardioDistance ?? 0))")
                             .font(.caption)
                             .foregroundStyle(Color.gray)
@@ -149,7 +149,7 @@ struct ActiveWorkoutView: View {
                 
                 Image(systemName: loggedCardioMinutes != nil ? "checkmark.square.fill" : "plus.square")
                     .font(.system(size: 18))
-                    .foregroundStyle(MutedEarth.slateBlue)
+                    .foregroundStyle(PremiumColors.neonCyan)
             }
             .padding(16)
             .monochromeCard()
@@ -186,7 +186,7 @@ struct ActiveWorkoutView: View {
                     showCardioFinisherSheet = false
                 }
                 .font(.body)
-                .foregroundStyle(MutedEarth.slateBlue)
+                .foregroundStyle(PremiumColors.neonCyan)
             }
             
             VStack(alignment: .leading, spacing: 8) {
@@ -202,8 +202,8 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(finisherActivity == act ? .black : Color.gray)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(finisherActivity == act ? MutedEarth.slateBlue : Color.black)
-                            .border(finisherActivity == act ? MutedEarth.slateBlue : Color.white.opacity(0.3), width: 0.5)
+                            .background(finisherActivity == act ? PremiumColors.neonCyan : Color.black)
+                            .border(finisherActivity == act ? PremiumColors.neonCyan : Color.white.opacity(0.3), width: 0.5)
                             .onTapGesture {
                                 finisherActivity = act
                             }
@@ -285,7 +285,7 @@ struct ActiveWorkoutView: View {
                             Text("Plates")
                         }
                         .font(.caption)
-                        .foregroundStyle(MutedEarth.slateBlue)
+                        .foregroundStyle(PremiumColors.neonCyan)
                     }
                     .padding(.trailing, 8)
                 }
@@ -325,7 +325,7 @@ struct ActiveWorkoutView: View {
                             Text("Set \(idx + 1)")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                                .foregroundColor(MutedEarth.slateBlue)
+                                .foregroundColor(PremiumColors.neonCyan)
                             
                             Spacer()
                             
@@ -334,8 +334,8 @@ struct ActiveWorkoutView: View {
                                     .font(.system(size: 11, weight: .bold))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(MutedEarth.slateBlue.opacity(0.15))
-                                    .foregroundStyle(MutedEarth.slateBlue)
+                                    .background(PremiumColors.neonCyan.opacity(0.15))
+                                    .foregroundStyle(PremiumColors.neonCyan)
                                     .clipShape(Capsule())
                             }
                             
@@ -368,12 +368,12 @@ struct ActiveWorkoutView: View {
                     HStack(spacing: 6) {
                         Image(systemName: rec.isOverloadTriggered ? "sparkles" : "arrow.triangle.2.circlepath")
                             .font(.caption)
-                            .foregroundStyle(rec.isOverloadTriggered ? MutedEarth.slateBlue : MutedEarth.terracotta)
+                            .foregroundStyle(rec.isOverloadTriggered ? PremiumColors.neonCyan : Color.red)
                         
                         Text(rec.isOverloadTriggered ? "Progressive Overload Target" : "Form & Recovery Reset")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(rec.isOverloadTriggered ? MutedEarth.slateBlue : MutedEarth.terracotta)
+                            .foregroundStyle(rec.isOverloadTriggered ? PremiumColors.neonCyan : Color.red)
                     }
                     
                     Text(rec.reason)
@@ -394,11 +394,11 @@ struct ActiveWorkoutView: View {
                             }
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(isAccepted ? .black : MutedEarth.slateBlue)
+                            .foregroundStyle(isAccepted ? .black : PremiumColors.neonCyan)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(isAccepted ? MutedEarth.slateBlue : Color.clear)
-                            .border(isAccepted ? MutedEarth.slateBlue : MutedEarth.slateBlue.opacity(0.5), width: 1)
+                            .background(isAccepted ? PremiumColors.neonCyan : Color.clear)
+                            .border(isAccepted ? PremiumColors.neonCyan : PremiumColors.neonCyan.opacity(0.5), width: 1)
                         }
                         
                         Button {
@@ -428,16 +428,16 @@ struct ActiveWorkoutView: View {
                 HStack {
                     Image(systemName: "sparkles")
                         .font(.caption)
-                        .foregroundStyle(MutedEarth.slateBlue)
+                        .foregroundStyle(PremiumColors.neonCyan)
                     Text(rec.reason)
                         .font(.caption)
                         .fontWeight(.light)
-                        .foregroundStyle(MutedEarth.slateBlue)
+                        .foregroundStyle(PremiumColors.neonCyan)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(MutedEarth.slateBlue.opacity(0.12))
-                .border(MutedEarth.slateBlue.opacity(0.3), width: 1)
+                .background(PremiumColors.neonCyan.opacity(0.12))
+                .border(PremiumColors.neonCyan.opacity(0.3), width: 1)
             }
             
             HStack(alignment: .bottom) {
@@ -502,7 +502,7 @@ struct ActiveWorkoutView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.black)
                         .frame(width: 36, height: 28)
-                        .background(MutedEarth.slateBlue)
+                        .background(PremiumColors.neonCyan)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .padding(.bottom, 0)
@@ -537,7 +537,7 @@ struct ActiveWorkoutView: View {
                 Text(formatTime(elapsedTime))
                     .font(.caption)
                     .monospacedDigit()
-                    .foregroundColor(MutedEarth.slateBlue)
+                    .foregroundColor(PremiumColors.neonCyan)
             }
             
             Spacer()
@@ -548,7 +548,7 @@ struct ActiveWorkoutView: View {
                 Text("Finish")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(MutedEarth.slateBlue)
+                    .foregroundColor(PremiumColors.neonCyan)
             }
         }
         .padding(.horizontal, 20)
@@ -599,7 +599,7 @@ struct ActiveWorkoutView: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(MutedEarth.slateBlue)
+                    .foregroundColor(PremiumColors.neonCyan)
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -636,7 +636,7 @@ struct ActiveWorkoutView: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(MutedEarth.slateBlue)
+                    .foregroundColor(PremiumColors.neonCyan)
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 6))

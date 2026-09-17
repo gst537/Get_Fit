@@ -1,50 +1,51 @@
 import SwiftUI
 
-// MARK: - Muted Earth Palette
-public struct MutedEarth {
-    public static let slateBlue = Color(red: 0.45, green: 0.55, blue: 0.65)
-    public static let softSage = Color(red: 0.55, green: 0.65, blue: 0.55)
-    public static let terracotta = Color(red: 0.85, green: 0.45, blue: 0.35)
+// MARK: - Premium Palette
+public struct PremiumColors {
+    public static let neonCyan = Color(red: 0/255, green: 251/255, blue: 251/255) // True Bright Cyan (#00FBFB)
+    public static let deepBlack = Color(red: 13/255, green: 13/255, blue: 20/255) // #0D0D14
+    public static let starkWhite = Color.white
+    public static let glassBackground = Color(red: 27/255, green: 27/255, blue: 36/255) // #1B1B24
+    public static let glassBorder = Color(red: 53/255, green: 52/255, blue: 62/255) // #35343E
+    public static let midGray = Color(red: 161/255, green: 161/255, blue: 170/255) // #A1A1AA
 }
 
-// MARK: - Monochrome Card
+// MARK: - Premium Fonts
+public struct PremiumFonts {
+    public static let title = Font.system(.title, design: .rounded).weight(.bold)
+    public static let headline = Font.system(.headline, design: .rounded).weight(.semibold)
+    public static let body = Font.system(.body, design: .rounded)
+    public static let caption = Font.system(.caption, design: .rounded)
+}
 
-struct MonochromeCardModifier: ViewModifier {
+// MARK: - Glassmorphic Card
+struct GlassmorphicModifier: ViewModifier {
     let cornerRadius: CGFloat
-    
-    init(cornerRadius: CGFloat = 0) {
-        self.cornerRadius = cornerRadius
-    }
     
     func body(content: Content) -> some View {
         content
-            .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-            )
+            .background(PremiumColors.glassBackground)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 
 @MainActor
 extension View {
-    func monochromeCard(cornerRadius: CGFloat = 0) -> some View {
-        self.modifier(MonochromeCardModifier(cornerRadius: cornerRadius))
+    func glassmorphic(cornerRadius: CGFloat = 16) -> some View {
+        self.modifier(GlassmorphicModifier(cornerRadius: cornerRadius))
     }
     
-    // Backwards compatibility aliases to avoid breaking existing views before they are updated
-    func matteBlack(cornerRadius: CGFloat = 0, accentColor: Color = .white) -> some View {
-        self.modifier(MonochromeCardModifier(cornerRadius: cornerRadius))
+    // Backwards compatibility alias
+    func monochromeCard(cornerRadius: CGFloat = 16) -> some View {
+        self.glassmorphic(cornerRadius: cornerRadius)
     }
     
-    func glassmorphic(cornerRadius: CGFloat = 0, glowColor: Color = .white, glowOpacity: Double = 0) -> some View {
-        self.modifier(MonochromeCardModifier(cornerRadius: cornerRadius))
+    func matteBlack(cornerRadius: CGFloat = 16, accentColor: Color = .white) -> some View {
+        self.glassmorphic(cornerRadius: cornerRadius)
     }
 }
 
-// MARK: - Animated Ring View (Monochrome Style)
-
+// MARK: - Animated Ring View (Premium Style)
 struct AnimatedRingView: View {
     let progress: Double
     let lineWidth: CGFloat
@@ -56,7 +57,7 @@ struct AnimatedRingView: View {
     init(progress: Double, lineWidth: CGFloat = 8, gradient: [Color] = [], size: CGFloat = 100) {
         self.progress = min(progress, 1.0)
         self.lineWidth = lineWidth
-        self.gradient = gradient.isEmpty ? [MutedEarth.slateBlue, Color(white: 0.8)] : gradient
+        self.gradient = gradient.isEmpty ? [PremiumColors.neonCyan] : gradient
         self.size = size
     }
     
@@ -64,7 +65,7 @@ struct AnimatedRingView: View {
         ZStack {
             // Background Track
             Circle()
-                .stroke(Color.white.opacity(0.1), lineWidth: lineWidth)
+                .stroke(PremiumColors.glassBorder, lineWidth: lineWidth)
             
             // Animated Progress Arc
             Circle()
@@ -76,27 +77,26 @@ struct AnimatedRingView: View {
                         startAngle: .degrees(0),
                         endAngle: .degrees(360)
                     ),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt)
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
 
         }
         .frame(width: size, height: size)
         .onAppear {
-            withAnimation(.easeOut(duration: 1.0)) {
+            withAnimation(.spring(response: 1.2, dampingFraction: 0.8)) {
                 animatedProgress = progress
             }
         }
         .onChange(of: progress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
                 animatedProgress = min(newValue, 1.0)
             }
         }
     }
 }
 
-// MARK: - Monochrome Muscle Group Badge
-
+// MARK: - Premium Muscle Group Badge
 struct MuscleGroupBadge: View {
     let muscle: String
     let color: Color
@@ -109,32 +109,32 @@ struct MuscleGroupBadge: View {
     static func colorForMuscle(_ muscle: String) -> Color {
         switch muscle.lowercased() {
         case "quads", "legs", "glutes", "hamstrings", "calves":
-            return MutedEarth.terracotta
+            return Color.teal
         case "chest", "back", "lats", "shoulders", "delts", "traps":
-            return MutedEarth.slateBlue
+            return PremiumColors.neonCyan
         case "biceps", "triceps", "core", "abs", "forearms":
-            return MutedEarth.softSage
+            return Color.mint
         default:
-            return MutedEarth.slateBlue
+            return PremiumColors.starkWhite
         }
     }
     
     var body: some View {
         Text(muscle.uppercased())
-            .font(.system(size: 10, weight: .bold))
-            .tracking(1.2)
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .tracking(1.0)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
-            .foregroundStyle(Color.black)
-            .padding(.horizontal, 12)
+            .foregroundStyle(PremiumColors.deepBlack)
+            .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(color)
-            .clipShape(Rectangle()) // Brutalist flat rectangle
+            .clipShape(Capsule())
+            .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
     }
 }
 
-// MARK: - Monochrome Body Part Activation Card
-
+// MARK: - Premium Body Part Activation Card
 struct BodyPartActivationCard: View {
     let machineName: String
     let targetMuscles: [String]
@@ -145,99 +145,91 @@ struct BodyPartActivationCard: View {
         VStack(alignment: .leading, spacing: 14) {
             // Section Header
             HStack {
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.subheadline)
-                    .foregroundStyle(.white)
-                
-                Text("Body Part Activation & Form Guide")
-                    .font(.caption)
+                Text("Form Guide")
+                    .font(PremiumFonts.caption)
                     .fontWeight(.bold)
-                    .foregroundStyle(MutedEarth.slateBlue)
+                    .foregroundStyle(PremiumColors.neonCyan)
                 
                 Spacer()
                 
-                Text(equipmentType.uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.black)
+                Text(equipmentType.capitalized)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(PremiumColors.starkWhite)
                     .padding(.horizontal, 8)
-                    .background(MutedEarth.slateBlue)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.vertical, 4)
+                    .background(PremiumColors.glassBorder)
+                    .clipShape(Capsule())
             }
             
             // Targeted Muscle Activation Gauges
             if !targetMuscles.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     ForEach(Array(targetMuscles.enumerated()), id: \.offset) { index, muscle in
                         let isPrimary = index == 0
                         let percentage = isPrimary ? 90 : max(40, 75 - (index * 20))
                         
                         HStack(spacing: 10) {
-                            Text(isPrimary ? "🎯" : "⚡")
-                                .font(.caption2)
-                            
                             Text(muscle.capitalized)
-                                .font(.caption)
+                                .font(PremiumFonts.caption)
                                 .fontWeight(isPrimary ? .bold : .regular)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(PremiumColors.starkWhite)
                                 .frame(width: 80, alignment: .leading)
                             
                             // Activation Bar Gauge
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(Color.white.opacity(0.2))
-                                        .frame(height: 4)
+                                    Capsule()
+                                        .fill(PremiumColors.glassBorder)
+                                        .frame(height: 8)
                                     
-                                    Rectangle()
-                                        .fill(MuscleGroupBadge.colorForMuscle(muscle))
-                                        .frame(width: geo.size.width * (CGFloat(percentage) / 100.0), height: 4)
+                                    Capsule()
+                                        .fill(isPrimary ? PremiumColors.neonCyan : PremiumColors.midGray)
+                                        .frame(width: geo.size.width * (CGFloat(percentage) / 100.0), height: 8)
+                                        .shadow(color: isPrimary ? PremiumColors.neonCyan.opacity(0.5) : .clear, radius: 4)
                                 }
                             }
-                            .frame(height: 4)
+                            .frame(height: 8)
                             
                             Text("\(percentage)%")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(PremiumColors.starkWhite)
                                 .frame(width: 32, alignment: .trailing)
                         }
                     }
                 }
-                .padding(12)
-                .background(Color.white.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(14)
+                .background(Color.black.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             
             // Instructions
             let steps = parseInstructions(instructions, machineName: machineName, equipmentType: equipmentType)
             if !steps.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("EXECUTION TIPS")
-                        .font(.caption2)
+                    Text("Execution Tips")
+                        .font(PremiumFonts.caption)
                         .fontWeight(.bold)
-                        .foregroundStyle(Color.gray)
-                        .tracking(1.0)
+                        .foregroundStyle(PremiumColors.midGray)
                     
                     ForEach(Array(steps.enumerated()), id: \.offset) { idx, step in
                         HStack(alignment: .top, spacing: 10) {
                             Text("\(idx + 1)")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.black)
-                                .frame(width: 20, height: 20)
-                                .background(MutedEarth.slateBlue)
-                                .clipShape(Circle())
+                                .font(PremiumFonts.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(PremiumColors.neonCyan)
+                                .frame(width: 16)
                             
                             Text(step)
-                                .font(.caption)
-                                .fontWeight(.regular)
-                                .foregroundStyle(.white)
+                                .font(PremiumFonts.caption)
+                                .foregroundStyle(PremiumColors.starkWhite)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
             }
         }
-        .padding(14)
-        .monochromeCard(cornerRadius: 12)
+        .padding(16)
+        .glassmorphic(cornerRadius: 16)
     }
     
     private func parseInstructions(_ text: String, machineName: String, equipmentType: String) -> [String] {
@@ -273,9 +265,9 @@ struct BodyPartActivationCard: View {
         
         if cleanedSteps.isEmpty {
             return [
-                "Setup with proper posture and engage your core before starting.",
-                "Execute movement through a complete, smooth range of motion.",
-                "Control the eccentric phase and breathe out on contraction."
+                "Setup with proper posture and engage your core.",
+                "Execute movement through complete range of motion.",
+                "Control eccentric phase and breathe out."
             ]
         }
         
@@ -283,27 +275,28 @@ struct BodyPartActivationCard: View {
     }
 }
 
-// MARK: - Monochrome PR Badge
-
+// MARK: - Premium PR Badge
 struct PRBadge: View {
     let weight: String
     
     var body: some View {
         HStack(spacing: 4) {
-            Text("PR")
-                .font(.system(size: 10, weight: .black))
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(PremiumColors.deepBlack)
             Text(weight)
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(PremiumColors.deepBlack)
         }
-        .foregroundStyle(Color.black)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(PremiumColors.neonCyan)
+        .clipShape(Capsule())
+        .shadow(color: PremiumColors.neonCyan.opacity(0.4), radius: 4)
     }
 }
 
-// MARK: - Set Completion Animation Modifier (Stripped down)
-
+// MARK: - Set Completion Animation Modifier
 struct SetCompletionEffect: ViewModifier {
     let isCompleted: Bool
     
@@ -311,15 +304,13 @@ struct SetCompletionEffect: ViewModifier {
         content
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isCompleted ? Color.white.opacity(0.08) : Color.clear)
-            )
+            .background(isCompleted ? PremiumColors.neonCyan.opacity(0.2) : PremiumColors.glassBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isCompleted ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.0)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isCompleted ? PremiumColors.neonCyan : PremiumColors.glassBorder, lineWidth: 1)
             )
-            .animation(.easeIn(duration: 0.1), value: isCompleted)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCompleted)
     }
 }
 
@@ -329,17 +320,49 @@ extension View {
     }
 }
 
-// MARK: - Shimmer/Glow Animation (Disabled for Brutalism)
+// MARK: - Shimmer/Glow Animation
+struct ShimmerModifier: ViewModifier {
+    let color: Color
+    @State private var phase: CGFloat = -0.5
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geo in
+                    color
+                        .opacity(0.2)
+                        .mask(
+                            Rectangle()
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(stops: [
+                                            .init(color: .clear, location: 0),
+                                            .init(color: .white, location: 0.5),
+                                            .init(color: .clear, location: 1)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .offset(x: geo.size.width * phase * 2, y: geo.size.height * phase * 2)
+                        )
+                }
+            )
+            .onAppear {
+                withAnimation(Animation.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                    phase = 1.0
+                }
+            }
+    }
+}
 
 extension View {
-    func shimmerGlow(color: Color = .white) -> some View {
-        // No-op for minimalist design
-        self
+    func shimmerGlow(color: Color = PremiumColors.neonCyan) -> some View {
+        self.modifier(ShimmerModifier(color: color))
     }
 }
 
 // MARK: - Haptic Feedback
-
 @MainActor
 public struct Haptics {
     public static func playLightImpact() {
